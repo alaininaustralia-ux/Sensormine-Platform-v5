@@ -18,6 +18,7 @@ vi.mock('next/navigation', () => ({
   }),
   usePathname: () => '/',
   useSearchParams: () => new URLSearchParams(),
+  useParams: () => ({ id: '1' }),
 }));
 
 // Mock Next.js Link
