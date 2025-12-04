@@ -29,7 +29,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     defaultSize: { w: 6, h: 4 },
     minSize: { w: 3, h: 3 },
     category: 'data-visualization',
-    available: false, // Will be implemented in Story 4.2
+    available: true, // ✅ Implemented in Story 4.2
   },
   {
     type: 'table',
@@ -49,7 +49,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     defaultSize: { w: 6, h: 6 },
     minSize: { w: 4, h: 4 },
     category: 'monitoring',
-    available: false, // Will be implemented in Story 4.6
+    available: true, // ✅ Implemented in Story 4.6
   },
   {
     type: 'video',

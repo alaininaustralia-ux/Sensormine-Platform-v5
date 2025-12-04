@@ -2,7 +2,7 @@
 
 **Last Updated**: 2025-12-04  
 **Current Sprint**: Epic 4 - Visualization & Dashboards (Frontend Foundation)  
-**Active Story**: Story 4.2 - Time-Series Charts (✅ Complete)
+**Active Story**: Story 4.6 - GIS Map Widget (✅ Complete)
 
 ---
 
@@ -61,7 +61,7 @@ src/
 
 ## Current Epic: Visualization & Dashboards (Frontend Foundation)
 
-### Epic Status: 🟢 Time-Series Charts Complete (3 of 11 stories completed)
+### Epic Status: 🟢 GIS Map Widget Complete (4 of 11 stories completed)
 
 | Story | Title | Priority | Points | Status | Notes |
 |-------|-------|----------|--------|--------|-------|
@@ -71,7 +71,7 @@ src/
 | 4.3  | Video Timeline Widget | High | 13 | 🔴 Not Started | Video event correlation |
 | 4.4  | 3D CAD Viewer | Medium | 21 | 🔴 Not Started | Facility visualization |
 | 4.5  | LiDAR Point Cloud Viewer | Low | 21 | 🔴 Not Started | Advanced visualization |
-| 4.6  | GIS Map Widget | High | 13 | 🔴 Not Started | Geographic device display |
+| 4.6  | GIS Map Widget | High | 13 | ✅ Complete | Leaflet map with clustering & geofences |
 | 4.7  | Gauge and KPI Widgets | Medium | 8 | 🔴 Not Started | Operational metrics |
 | 4.8  | Dashboard Templates | Low | 8 | 🔴 Not Started | User onboarding |
 | 4.9  | Real-Time Dashboard Updates | High | 13 | 🔴 Not Started | WebSocket/SignalR |
@@ -100,22 +100,22 @@ src/
 - **Monitoring**: Prometheus + Grafana + OpenTelemetry
 
 ### Next Story Recommendation
-**Story 4.6: GIS Map Widget** (High Priority, 13 points)
+**Story 4.7: Gauge and KPI Widgets** (Medium Priority, 8 points)
 
 **Prerequisites Complete:**
 - ✅ Frontend project initialized (Story 0.0)
 - ✅ Dashboard builder with widget system (Story 4.1)
 - ✅ Time-series charts for data visualization (Story 4.2)
+- ✅ GIS map widget for geographic visualization (Story 4.6)
 
-**Story 4.6 - GIS Map Widget** will implement:
-- Display devices on an interactive map
-- Support for Leaflet or Mapbox GL JS
-- Device markers with status indicators
-- Clustering for many devices
-- Click device for details popup
-- Map layers and controls
+**Story 4.7 - Gauge and KPI Widgets** will implement:
+- Circular, linear, and bullet gauges
+- KPI cards with trend indicators
+- Configurable thresholds (green/yellow/red)
+- Comparison to historical data
+- Auto-refresh capabilities
 
-Alternative: Story 4.7 (Gauge/KPI Widgets) is lower complexity and can build on chart foundations.
+Alternative: Story 4.9 (Real-Time Dashboard Updates) is high priority but complex.
 
 ---
 
@@ -195,10 +195,10 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 ### Overall Progress
 - **Total Stories**: 123 (including Story 0.0)
 - **Total Points**: ~1,533
-- **Completed**: 3 (2.4%)
-- **Completed Points**: 47 points
+- **Completed**: 4 (3.3%)
+- **Completed Points**: 60 points
 - **In Progress**: 0
-- **Not Started**: 120
+- **Not Started**: 119
 
 ### Epic Completion
 | Epic | Name | Stories | Completed | % | Priority |
@@ -207,7 +207,7 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 | 2 | Data Ingestion & Modeling | 10 | 0 | 0% | Backend |
 | 3 | Video Processing & AI/ML | 13 | 0 | 0% | Backend |
 | 0 | Frontend Foundation | 1 | 1 | 100% | **✅ Complete** |
-| 4 | Visualization & Dashboards | 10 | 2 | 20% | **🎯 Frontend - In Progress** |
+| 4 | Visualization & Dashboards | 10 | 3 | 30% | **🎯 Frontend - In Progress** |
 | 5 | LLM Interaction & Analytics | 6 | 0 | 0% | Frontend/Backend |
 | 6 | Alerting & Notifications | 12 | 0 | 0% | Backend |
 | 7 | Industrial Connectivity | 10 | 0 | 0% | Backend |
@@ -225,6 +225,7 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 - ~~**Frontend project does not exist yet**~~ - ✅ RESOLVED: Next.js 14 project created
 - ~~**Dashboard builder not implemented**~~ - ✅ RESOLVED: Full dashboard system with drag-and-drop
 - ~~**No real-time data visualization**~~ - ✅ RESOLVED: Full time-series charts with Recharts
+- ~~**No geographic device visualization**~~ - ✅ RESOLVED: GIS map with Leaflet, clustering, geofences
 - **Backend APIs are scaffolds only** - APIs need implementation to support frontend data
 - **No authentication/authorization implemented** - Frontend ready, needs backend Keycloak integration
 
