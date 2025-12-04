@@ -4,16 +4,27 @@
 
 'use client';
 
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus, LayoutDashboard } from 'lucide-react';
 
 export default function DashboardPage() {
   return (
     <div className="container py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome to your Sensormine dashboard
-        </p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome to your Sensormine dashboard
+          </p>
+        </div>
+        <Link href="/dashboard/builder">
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Dashboard
+          </Button>
+        </Link>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -88,13 +99,20 @@ export default function DashboardPage() {
               Common tasks and shortcuts
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              • View all devices<br />
-              • Create new dashboard<br />
-              • Configure alerts<br />
+          <CardContent className="space-y-3">
+            <Link href="/devices" className="flex items-center text-sm text-muted-foreground hover:text-foreground">
+              • View all devices
+            </Link>
+            <Link href="/dashboard/builder" className="flex items-center text-sm text-primary hover:underline">
+              <LayoutDashboard className="w-4 h-4 mr-2" />
+              Create new dashboard
+            </Link>
+            <Link href="/alerts" className="flex items-center text-sm text-muted-foreground hover:text-foreground">
+              • Configure alerts
+            </Link>
+            <span className="flex items-center text-sm text-muted-foreground">
               • Export data
-            </p>
+            </span>
           </CardContent>
         </Card>
       </div>

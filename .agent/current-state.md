@@ -2,7 +2,7 @@
 
 **Last Updated**: 2025-12-04  
 **Current Sprint**: Epic 4 - Visualization & Dashboards (Frontend Foundation)  
-**Active Story**: None (Ready to start frontend development)
+**Active Story**: Story 4.2 - Time-Series Charts (Next recommended)
 
 ---
 
@@ -55,11 +55,11 @@ src/
 
 ## Current Epic: Visualization & Dashboards (Frontend Foundation)
 
-### Epic Status: 🟡 Starting Frontend Development (0 of 10 stories completed)
+### Epic Status: 🟢 In Progress (1 of 10 stories completed)
 
 | Story | Title | Priority | Points | Status | Notes |
 |-------|-------|----------|--------|--------|-------|
-| 4.1  | Dashboard Builder | High | 21 | 🔴 Not Started | Core frontend capability |
+| 4.1  | Dashboard Builder | High | 21 | ✅ Complete | Core frontend capability - drag & drop editor |
 | 4.2  | Time-Series Charts | High | 13 | 🔴 Not Started | Data visualization foundation |
 | 4.3  | Video Timeline Widget | High | 13 | 🔴 Not Started | Video event correlation |
 | 4.4  | 3D CAD Viewer | Medium | 21 | 🔴 Not Started | Facility visualization |
@@ -184,9 +184,9 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 ### Overall Progress
 - **Total Stories**: 122
 - **Total Points**: ~1,520
-- **Completed**: 0 (0%)
-- **In Progress**: 0 (Starting Frontend)
-- **Not Started**: 122
+- **Completed**: 1 (0.8%)
+- **In Progress**: 0
+- **Not Started**: 121
 
 ### Epic Completion
 | Epic | Name | Stories | Completed | % | Priority |
@@ -194,7 +194,7 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 | 1 | Device Management | 11 | 0 | 0% | Backend |
 | 2 | Data Ingestion & Modeling | 10 | 0 | 0% | Backend |
 | 3 | Video Processing & AI/ML | 13 | 0 | 0% | Backend |
-| 4 | Visualization & Dashboards | 10 | 0 | 0% | **🎯 Frontend - Active** |
+| 4 | Visualization & Dashboards | 10 | 1 | 10% | **🎯 Frontend - Active** |
 | 5 | LLM Interaction & Analytics | 6 | 0 | 0% | Frontend/Backend |
 | 6 | Alerting & Notifications | 12 | 0 | 0% | Backend |
 | 7 | Industrial Connectivity | 10 | 0 | 0% | Backend |
