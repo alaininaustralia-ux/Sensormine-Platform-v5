@@ -2,7 +2,8 @@
 
 **Last Updated**: 2025-12-05  
 **Current Sprint**: Epic 4 - Visualization & Dashboards (Frontend Foundation)  
-**Active Story**: Infrastructure improvements (✅ Complete)
+**Active Story**: Documentation updates (✅ Complete)  
+**Build Status**: ✅ All services building successfully
 
 ---
 
@@ -68,7 +69,7 @@ src/
 - **Story 4.2**: Time-Series Charts - Recharts with zoom/pan/aggregation
 - **Story 4.6**: GIS Map Widget - Leaflet with clustering & geofences
 
-### ✅ Infrastructure Improvements (Latest - Dec 5, 2025)
+### ✅ Infrastructure & Documentation (Latest - Dec 5, 2025)
 - **Frontend UI**: Added AppLayout, Sidebar components for navigation
 - **Authentication**: AuthController in ApiGateway + documentation
 - **Azure Deployment**: Complete Terraform modules for Azure infrastructure
@@ -76,7 +77,12 @@ src/
   - Container Registry, Key Vault, Storage
   - Multi-environment support (dev/staging/prod)
 - **CI/CD**: GitHub Actions workflow for Azure deployment
-- **Documentation**: Authentication setup guide, frontend test report
+- **Local Infrastructure Documentation** (`docs/local-infrastructure.md`):
+  - Complete guide to all 9 Docker containers
+  - Connection strings and credentials for all services
+  - Troubleshooting guide and resource requirements
+  - Quick reference for developers
+- **Documentation Updates**: Updated README.md, development.md with infrastructure references
 
 ### ✅ Backend Stories (6 complete)
 - **Story 2.7**: Time-Series Query API - Query.API with TimescaleDB
