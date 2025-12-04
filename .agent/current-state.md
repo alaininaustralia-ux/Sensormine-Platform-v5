@@ -2,7 +2,7 @@
 
 **Last Updated**: 2025-12-04  
 **Current Sprint**: Epic 4 - Visualization & Dashboards (Frontend Foundation)  
-**Active Story**: Story 4.1 - Dashboard Builder (✅ Complete)
+**Active Story**: Story 4.2 - Time-Series Charts (✅ Complete)
 
 ---
 
@@ -61,13 +61,13 @@ src/
 
 ## Current Epic: Visualization & Dashboards (Frontend Foundation)
 
-### Epic Status: 🟢 Dashboard Builder Complete (2 of 11 stories completed)
+### Epic Status: 🟢 Time-Series Charts Complete (3 of 11 stories completed)
 
 | Story | Title | Priority | Points | Status | Notes |
 |-------|-------|----------|--------|--------|-------|
 | 0.0  | Frontend Project Setup | Critical | 13 | ✅ Complete | Foundation ready |
 | 4.1  | Dashboard Builder | High | 21 | ✅ Complete | Drag-and-drop dashboard system |
-| 4.2  | Time-Series Charts | High | 13 | 🔴 Not Started | Data visualization foundation |
+| 4.2  | Time-Series Charts | High | 13 | ✅ Complete | All chart types + zoom/aggregation |
 | 4.3  | Video Timeline Widget | High | 13 | 🔴 Not Started | Video event correlation |
 | 4.4  | 3D CAD Viewer | Medium | 21 | 🔴 Not Started | Facility visualization |
 | 4.5  | LiDAR Point Cloud Viewer | Low | 21 | 🔴 Not Started | Advanced visualization |
@@ -100,24 +100,22 @@ src/
 - **Monitoring**: Prometheus + Grafana + OpenTelemetry
 
 ### Next Story Recommendation
-**Story 4.2: Time-Series Charts** (High Priority, 13 points)
+**Story 4.6: GIS Map Widget** (High Priority, 13 points)
 
 **Prerequisites Complete:**
 - ✅ Frontend project initialized (Story 0.0)
 - ✅ Dashboard builder with widget system (Story 4.1)
-- ✅ Widget placeholder architecture ready
-- ✅ React + Next.js 14 with TypeScript
-- ✅ Tailwind CSS + shadcn/ui components
+- ✅ Time-series charts for data visualization (Story 4.2)
 
-**Story 4.2 - Time-Series Charts** will implement:
-- Line, bar, area, and scatter chart types
-- Time range selection and zooming
-- Multiple series per chart
-- Aggregation intervals
-- Chart legends and axis labels
-- Export functionality
+**Story 4.6 - GIS Map Widget** will implement:
+- Display devices on an interactive map
+- Support for Leaflet or Mapbox GL JS
+- Device markers with status indicators
+- Clustering for many devices
+- Click device for details popup
+- Map layers and controls
 
-This story replaces the chart widget placeholder with actual visualization using Recharts or D3.js.
+Alternative: Story 4.7 (Gauge/KPI Widgets) is lower complexity and can build on chart foundations.
 
 ---
 
@@ -197,10 +195,10 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 ### Overall Progress
 - **Total Stories**: 123 (including Story 0.0)
 - **Total Points**: ~1,533
-- **Completed**: 2 (1.6%)
-- **Completed Points**: 34 points
+- **Completed**: 3 (2.4%)
+- **Completed Points**: 47 points
 - **In Progress**: 0
-- **Not Started**: 121
+- **Not Started**: 120
 
 ### Epic Completion
 | Epic | Name | Stories | Completed | % | Priority |
@@ -209,7 +207,7 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 | 2 | Data Ingestion & Modeling | 10 | 0 | 0% | Backend |
 | 3 | Video Processing & AI/ML | 13 | 0 | 0% | Backend |
 | 0 | Frontend Foundation | 1 | 1 | 100% | **✅ Complete** |
-| 4 | Visualization & Dashboards | 10 | 1 | 10% | **🎯 Frontend - In Progress** |
+| 4 | Visualization & Dashboards | 10 | 2 | 20% | **🎯 Frontend - In Progress** |
 | 5 | LLM Interaction & Analytics | 6 | 0 | 0% | Frontend/Backend |
 | 6 | Alerting & Notifications | 12 | 0 | 0% | Backend |
 | 7 | Industrial Connectivity | 10 | 0 | 0% | Backend |
@@ -226,9 +224,9 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 
 - ~~**Frontend project does not exist yet**~~ - ✅ RESOLVED: Next.js 14 project created
 - ~~**Dashboard builder not implemented**~~ - ✅ RESOLVED: Full dashboard system with drag-and-drop
+- ~~**No real-time data visualization**~~ - ✅ RESOLVED: Full time-series charts with Recharts
 - **Backend APIs are scaffolds only** - APIs need implementation to support frontend data
 - **No authentication/authorization implemented** - Frontend ready, needs backend Keycloak integration
-- **No real-time data visualization** - Chart widgets are placeholders (Story 4.2 needed)
 
 ---
 

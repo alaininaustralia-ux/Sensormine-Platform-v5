@@ -1,32 +1,29 @@
 /**
- * Chart Widget (Placeholder)
+ * Chart Widget
  * 
- * Placeholder for time-series charts.
- * Full implementation in Story 4.2.
+ * Dashboard widget wrapper for time-series charts.
+ * Story 4.2 - Time-Series Charts
  */
 
 'use client';
 
 import { BaseWidget, type BaseWidgetProps } from './base-widget';
-import { LineChart } from 'lucide-react';
+import { TimeSeriesChart } from './charts/time-series-chart';
+import type { ChartConfiguration } from '@/lib/types/chart-types';
 
 interface ChartWidgetProps extends Omit<BaseWidgetProps, 'children'> {
-  /** Chart type */
-  chartType?: 'line' | 'bar' | 'area';
+  /** Chart configuration */
+  config: ChartConfiguration;
 }
 
 export function ChartWidget({
-  chartType = 'line',
+  config,
   ...baseProps
 }: ChartWidgetProps) {
   return (
     <BaseWidget {...baseProps}>
-      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-        <LineChart className="h-12 w-12 mb-4" />
-        <p className="text-sm font-medium">Chart Widget</p>
-        <p className="text-xs mt-1">
-          {chartType.charAt(0).toUpperCase() + chartType.slice(1)} chart will be available in Story 4.2
-        </p>
+      <div className="h-full p-4">
+        <TimeSeriesChart config={config} />
       </div>
     </BaseWidget>
   );
