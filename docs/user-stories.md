@@ -1445,20 +1445,23 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-### Story 8.7: Multi-Tenant Management
+### Story 8.7: Hierarchical Multi-Tenant Management
 **As a** platform operator  
-**I want** to create and manage multiple tenants  
-**So that** customers are isolated
+**I want** to create tenants and sub-tenants with inheritance  
+**So that** I can support reseller and enterprise hierarchies
 
 **Acceptance Criteria:**
-- Create tenant accounts
-- Tenant-specific subdomain or URL path
-- Data isolation between tenants
-- Tenant-specific configuration
-- Tenant usage metrics
-- Tenant billing integration (optional)
+- Create parent tenants (organizations)
+- Create sub-tenants under parent tenants (departments, sites)
+- Inherit permissions and configurations from parent
+- Override parent settings at sub-tenant level
+- Data isolation between tenant hierarchies
+- Cross-tenant reporting for parent tenants
+- Tenant-specific branding (logo, colors, domain)
+- Soft delete with data retention policies
+- Tenant provisioning API
 
-**Priority:** Low  
+**Priority:** High  
 **Story Points:** 21
 
 ---
@@ -1868,9 +1871,268 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 12: Performance & Scalability
+## Epic 12: Billing, Metering & Payments
 
-### Story 12.1: Horizontal Scalability Testing
+### Story 12.1: Usage Metering Infrastructure
+**As a** platform operator  
+**I want** to track resource consumption per tenant  
+**So that** I can bill based on usage
+
+**Acceptance Criteria:**
+- Meter device count (active devices)
+- Meter data ingestion volume (messages/bytes per month)
+- Meter API calls per tenant
+- Meter storage usage (time-series, object storage)
+- Meter video processing hours
+- Meter ML inference requests
+- Real-time usage dashboards per tenant
+- Historical usage reports
+- Usage anomaly detection
+- Export usage data to billing system
+
+**Priority:** High  
+**Story Points:** 21
+
+---
+
+### Story 12.2: Stripe Integration for Payments
+**As a** platform operator  
+**I want** to integrate with Stripe for payment processing  
+**So that** tenants can pay via credit card
+
+**Acceptance Criteria:**
+- Stripe account connection
+- Create Stripe customers for tenants
+- Store payment methods securely
+- Process one-time payments
+- Set up recurring subscriptions
+- Handle payment failures and retries
+- PCI compliance (use Stripe Elements)
+- Payment receipt emails
+- Refund processing
+- Webhook handling for payment events
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 12.3: Subscription Plan Management
+**As a** platform operator  
+**I want** to define subscription plans (Free, Pro, Enterprise)  
+**So that** tenants can choose the right plan
+
+**Acceptance Criteria:**
+- Create subscription plans in Stripe
+- Define plan features (device limits, storage, API calls)
+- Pricing tiers (monthly, annual)
+- Free trial periods
+- Plan upgrade/downgrade workflows
+- Prorated billing on plan changes
+- Usage-based add-ons (extra devices, storage)
+- Custom enterprise pricing
+- Plan comparison page
+- Tenant self-service plan selection
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 12.4: Automated Invoice Generation
+**As a** platform operator  
+**I want** to generate invoices automatically based on usage  
+**So that** tenants receive accurate bills
+
+**Acceptance Criteria:**
+- Monthly invoice generation
+- Invoice includes metered usage
+- Line items for each billable resource
+- Calculate taxes based on location
+- Apply discounts and credits
+- Send invoices via email (Stripe)
+- Invoice PDF generation
+- Invoice payment tracking
+- Dunning emails for failed payments
+- Invoice history per tenant
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 12.5: Tenant Billing Portal
+**As a** tenant administrator  
+**I want** to view invoices and manage payment methods  
+**So that** I can control billing without contacting support
+
+**Acceptance Criteria:**
+- View current usage and costs (real-time)
+- Access invoice history
+- Download invoice PDFs
+- Add/update payment methods
+- View payment history
+- Update billing address
+- Apply promotional codes
+- Cancel subscription
+- Request refunds
+- Usage breakdown by resource type
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 12.6: Resource Quota Enforcement
+**As a** platform operator  
+**I want** to enforce resource quotas per subscription plan  
+**So that** tenants stay within their limits
+
+**Acceptance Criteria:**
+- Define quotas per plan (devices, API calls, storage)
+- Soft limits with warnings
+- Hard limits that block operations
+- Quota exceeded notifications
+- Grace period before hard limit
+- Overage charges for metered resources
+- Real-time quota monitoring
+- Tenant quota dashboard
+- Auto-upgrade suggestions when approaching limits
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 12.7: Multi-Currency Support
+**As a** platform operator  
+**I want** to support multiple currencies  
+**So that** I can bill international customers
+
+**Acceptance Criteria:**
+- Configure supported currencies in Stripe
+- Tenant selects preferred currency
+- Display prices in tenant currency
+- Currency conversion for invoices
+- VAT/GST handling by region
+- Localized pricing (geo-specific plans)
+- Currency symbol and formatting
+- Exchange rate updates
+
+**Priority:** Medium  
+**Story Points:** 8
+
+---
+
+### Story 12.8: Revenue Analytics Dashboard
+**As a** business executive  
+**I want** to view revenue metrics and forecasts  
+**So that** I can make business decisions
+
+**Acceptance Criteria:**
+- Monthly Recurring Revenue (MRR) chart
+- Annual Recurring Revenue (ARR)
+- Revenue by plan
+- Revenue by tenant
+- Churn rate and retention metrics
+- Customer Lifetime Value (LTV)
+- Trial conversion rate
+- Revenue forecasting
+- Subscription growth trends
+- Payment success/failure rates
+
+**Priority:** Medium  
+**Story Points:** 13
+
+---
+
+### Story 12.9: Billing Webhooks and Events
+**As a** developer  
+**I want** to handle Stripe webhooks for billing events  
+**So that** the platform reacts to payment changes
+
+**Acceptance Criteria:**
+- Webhook endpoint for Stripe events
+- Handle payment succeeded/failed events
+- Handle subscription created/updated/cancelled
+- Handle invoice finalized/payment_failed
+- Handle customer updated
+- Webhook signature verification
+- Idempotent event processing
+- Event logging and replay
+- Alert on webhook failures
+- Webhook testing tools
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+### Story 12.10: Sub-Tenant Billing Allocation
+**As a** parent tenant administrator  
+**I want** to allocate costs to sub-tenants  
+**So that** I can charge back or show back usage
+
+**Acceptance Criteria:**
+- Track usage per sub-tenant
+- Allocate parent tenant costs to sub-tenants
+- Generate sub-tenant invoices or reports
+- Configurable allocation rules (direct, proportional, fixed)
+- Sub-tenant cost center tagging
+- Consolidated billing for parent
+- Sub-tenant billing visibility (optional)
+- Export allocation data
+- Chargeback vs showback modes
+
+**Priority:** Medium  
+**Story Points:** 13
+
+---
+
+### Story 12.11: Promotional Codes and Discounts
+**As a** marketing manager  
+**I want** to create promotional codes for discounts  
+**So that** I can run marketing campaigns
+
+**Acceptance Criteria:**
+- Create coupon codes in Stripe
+- Percentage or fixed amount discounts
+- Limited-use or unlimited codes
+- Expiration dates
+- Applicable to specific plans
+- First-time customer only codes
+- Track code redemption
+- Discount appears on invoices
+- Code validation at checkout
+
+**Priority:** Low  
+**Story Points:** 8
+
+---
+
+### Story 12.12: Payment Method Compliance
+**As a** compliance officer  
+**I want** to ensure PCI-DSS compliance for payments  
+**So that** customer payment data is secure
+
+**Acceptance Criteria:**
+- All payment forms use Stripe Elements (no PCI scope)
+- No credit card data stored in platform database
+- Stripe tokenization for payment methods
+- TLS 1.2+ for all payment communications
+- Annual PCI compliance attestation
+- Security audit logging for billing operations
+- Data encryption at rest for billing data
+- GDPR compliance for billing data
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+## Epic 13: Performance & Scalability
+
+### Story 13.1: Horizontal Scalability Testing
 **As a** platform engineer  
 **I want** to verify the platform scales horizontally  
 **So that** I can handle increasing load
@@ -1888,7 +2150,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-### Story 12.2: Query Performance Optimization
+### Story 13.2: Query Performance Optimization
 **As a** database engineer  
 **I want** to optimize time-series query performance  
 **So that** dashboards load quickly
@@ -1906,7 +2168,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-### Story 12.3: Data Archival and Tiering
+### Story 13.3: Data Archival and Tiering
 **As a** platform administrator  
 **I want** to archive old data to cheaper storage  
 **So that** I reduce storage costs
@@ -1924,7 +2186,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-### Story 12.4: Connection Pooling and Resource Management
+### Story 13.4: Connection Pooling and Resource Management
 **As a** platform engineer  
 **I want** efficient connection pooling for databases and brokers  
 **So that** resources are used efficiently
@@ -1942,7 +2204,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-### Story 12.5: CDN Integration for Static Assets
+### Story 13.5: CDN Integration for Static Assets
 **As a** frontend engineer  
 **I want** static assets served via CDN  
 **So that** global users have fast load times
@@ -1962,28 +2224,29 @@ This document organizes user stories into epics that align with the platform's f
 
 ## Story Summary
 
-### Total Stories: 110
+### Total Stories: 122
 
 ### By Epic:
-1. **Device & Hardware Management**: 11 stories (added 1.9, 1.10, 1.11)
-2. **Data Ingestion & Modeling**: 10 stories (added 2.9, 2.10)
-3. **Video Processing & AI/ML**: 13 stories (added 3.11, 3.12, 3.13)
-4. **Visualization & Dashboards**: 10 stories (added 4.9, 4.10)
-5. **LLM Interaction & Analytics**: 6 stories (added 5.6)
-6. **Alerting & Notifications**: 12 stories (added 6.11, 6.12)
+1. **Device & Hardware Management**: 11 stories
+2. **Data Ingestion & Modeling**: 10 stories
+3. **Video Processing & AI/ML**: 13 stories
+4. **Visualization & Dashboards**: 10 stories
+5. **LLM Interaction & Analytics**: 6 stories
+6. **Alerting & Notifications**: 12 stories
 7. **Industrial Connectivity & Edge**: 10 stories
-8. **Administration & System Management**: 9 stories (added 8.8, 8.9)
+8. **Administration & System Management**: 9 stories
 9. **Reporting & Data Export**: 6 stories
-10. **Mobile Application**: 6 stories (added 10.6)
-11. **Integration & APIs**: 8 stories (added 11.7, 11.8)
-12. **Performance & Scalability**: 5 stories (new epic)
+10. **Mobile Application**: 6 stories
+11. **Integration & APIs**: 8 stories
+12. **Billing, Metering & Payments**: 12 stories (NEW)
+13. **Performance & Scalability**: 5 stories
 
 ### By Priority:
-- **High**: 48 stories
-- **Medium**: 50 stories
-- **Low**: 12 stories
+- **High**: 56 stories
+- **Medium**: 55 stories
+- **Low**: 11 stories
 
-### Total Story Points: ~1,380
+### Total Story Points: ~1,520
 
 **New Stories Added (27 total, 280 story points):**
 - Device firmware management, groups/tags, templates (29 pts)
@@ -2077,7 +2340,8 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-**Document Version:** 1.0  
+**Document Version:** 2.0  
 **Last Updated:** December 4, 2025  
-**Total Stories:** 110  
-**Total Story Points:** ~1,100
+**Total Stories:** 122  
+**Total Story Points:** ~1,520  
+**New in v2.0:** Billing & metering (Epic 12), Enhanced multi-tenancy (8.7), Stripe payment integration

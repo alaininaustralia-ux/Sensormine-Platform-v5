@@ -144,23 +144,54 @@ Edge Gateway → Kafka Topic → Ingestion Service → Validation → Storage
 - Natural language queries
 - Context-aware search
 
-## Multi-Tenancy
+## Multi-Tenancy Architecture
+
+### Hierarchical Tenant Model
+```
+Platform (Root)
+├── Tenant A (Organization)
+│   ├── Sub-Tenant A1 (Site/Department)
+│   ├── Sub-Tenant A2 (Site/Department)
+│   └── Sub-Tenant A3 (Site/Department)
+└── Tenant B (Organization)
+    ├── Sub-Tenant B1 (Site/Department)
+    └── Sub-Tenant B2 (Site/Department)
+```
+
+**Key Concepts**:
+- **Parent Tenants**: Top-level organizations with billing and user management
+- **Sub-Tenants**: Child organizations inheriting settings from parent
+- **Inheritance**: Permissions, configurations, and policies cascade down
+- **Isolation**: Data strictly isolated between tenant hierarchies
 
 ### Tenant Isolation Strategy
-1. **Application Level**
-   - Tenant ID in all requests
-   - Row-level filtering
-   - Tenant-aware queries
 
-2. **Data Level**
-   - Partitioned tables by tenant
-   - Separate Kafka topics per tenant
-   - Isolated object storage buckets
+#### 1. Application Level
+- Tenant ID (`TenantId`) and Parent Tenant ID (`ParentTenantId`) in all entities
+- Row-level security filtering in all queries
+- Tenant context injected via middleware
+- Multi-tenant aware repository pattern
+- Cross-tenant queries only for parent accessing sub-tenants
 
-3. **Resource Level**
-   - Kubernetes namespaces per tenant (enterprise)
-   - Resource quotas
-   - Network policies
+#### 2. Data Level
+- **Database**: Shared schema with tenant_id discriminator
+- **Partitioning**: Table partitions by tenant for large tables
+- **Kafka**: Topic naming convention: `{environment}.{tenant}.{datatype}`
+- **Object Storage**: Bucket per tenant or folder hierarchy
+- **Redis**: Key prefix with tenant ID
+
+#### 3. Resource Level
+- **Kubernetes Namespaces**: Per tenant for enterprise customers
+- **Resource Quotas**: CPU, memory, storage limits per tenant
+- **Network Policies**: Isolate tenant workloads
+- **Rate Limiting**: API throttling per tenant
+
+#### 4. Tenant Configuration
+- **Branding**: Custom logo, colors, domain per tenant
+- **Features**: Feature flags per subscription plan
+- **Integrations**: Tenant-specific external connections
+- **Schemas**: Tenant-specific device schemas
+- **Billing Settings**: Currency, tax rules, payment methods
 
 ## Security Architecture
 
@@ -181,6 +212,215 @@ Edge Gateway → Kafka Topic → Ingestion Service → Validation → Storage
 - Network policies
 - API gateway rate limiting
 - DDoS protection
+
+## Billing & Metering Architecture
+
+### Billing.API Microservice
+**Purpose**: Handle all billing, metering, and payment operations
+
+**Responsibilities**:
+- Track resource consumption per tenant
+- Generate usage-based invoices
+- Integrate with Stripe for payments
+- Manage subscriptions and plans
+- Enforce resource quotas
+- Process webhook events from Stripe
+
+### Metering Infrastructure
+
+#### Metered Resources
+```
+┌─────────────────────────────────────────────┐
+│ Resource Type          │ Unit              │
+├─────────────────────────────────────────────┤
+│ Active Devices         │ per device/month  │
+│ Data Ingestion         │ GB ingested       │
+│ API Calls              │ per 1,000 calls   │
+│ Time-Series Storage    │ GB/month          │
+│ Object Storage         │ GB/month          │
+│ Video Processing       │ hours processed   │
+│ ML Inference           │ per 1,000 calls   │
+│ Data Egress            │ GB transferred    │
+└─────────────────────────────────────────────┘
+```
+
+#### Metering Collection Strategy
+1. **Event-Based Metering**
+   - Emit usage events to Kafka topic `metering.events`
+   - StreamProcessing.Service aggregates in real-time
+   - Store aggregated metrics in TimescaleDB
+
+2. **Periodic Polling**
+   - Background job queries resource counts (devices, storage)
+   - Snapshot taken daily
+   - Stored in `tenant_usage_snapshots` table
+
+3. **API Gateway Metering**
+   - API Gateway increments Redis counters per tenant
+   - Periodic flush to database
+   - Rate limiting based on plan quotas
+
+#### Usage Data Model
+```csharp
+public class UsageRecord
+{
+    public Guid Id { get; set; }
+    public Guid TenantId { get; set; }
+    public DateTime Timestamp { get; set; }
+    public string ResourceType { get; set; }  // "devices", "api_calls", etc.
+    public decimal Quantity { get; set; }
+    public string Unit { get; set; }
+    public Dictionary<string, string> Metadata { get; set; }
+}
+```
+
+### Stripe Integration
+
+#### Architecture Overview
+```
+┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+│  Billing.API │ ────▶│    Stripe    │ ────▶│   Webhooks   │
+│              │      │              │      │   Handler    │
+│  - Customers │      │  - Customers │      │              │
+│  - Invoices  │      │  - Subscriptions   │      │
+│  - Usage     │      │  - Invoices  │      └──────────────┘
+└──────────────┘      │  - PaymentIntents  │
+                      └──────────────┘
+```
+
+#### Stripe Components
+
+**1. Customer Management**
+- Create Stripe Customer for each tenant
+- Store Stripe Customer ID in `tenants` table
+- Sync tenant updates to Stripe
+
+**2. Subscription Plans** (Stripe Products & Prices)
+```
+Free Tier
+├── $0/month
+├── 10 devices max
+├── 1GB storage
+└── 10,000 API calls/month
+
+Pro Tier
+├── $99/month (monthly) or $990/year (annual)
+├── 100 devices
+├── 50GB storage
+├── 1M API calls/month
+└── Email support
+
+Enterprise Tier
+├── Custom pricing
+├── Unlimited devices
+├── Custom storage
+├── Unlimited API calls
+└── Dedicated support
+```
+
+**3. Usage-Based Billing**
+- Report usage to Stripe via Metering API
+- Stripe calculates overage charges
+- Invoices generated automatically on billing cycle
+
+**4. Webhook Handling**
+```csharp
+public class StripeWebhookHandler
+{
+    // Handle payment events
+    - payment_intent.succeeded
+    - payment_intent.payment_failed
+    
+    // Handle subscription events
+    - customer.subscription.created
+    - customer.subscription.updated
+    - customer.subscription.deleted
+    - customer.subscription.trial_will_end
+    
+    // Handle invoice events
+    - invoice.payment_succeeded
+    - invoice.payment_failed
+    - invoice.finalized
+}
+```
+
+**5. Payment Flow**
+```
+Tenant Signs Up
+    ↓
+Create Stripe Customer
+    ↓
+Select Subscription Plan
+    ↓
+Add Payment Method (Stripe Elements)
+    ↓
+Create Subscription
+    ↓
+Activate Tenant Account
+    ↓
+Begin Metering Usage
+    ↓
+Monthly: Report Usage → Generate Invoice → Charge Card
+```
+
+### Quota Enforcement
+
+#### Soft Limits (Warnings)
+- Alert sent at 80% of quota
+- Email and in-app notifications
+- Grace period before hard limit
+
+#### Hard Limits (Blocking)
+- API returns 429 Too Many Requests
+- Device provisioning blocked
+- Data ingestion throttled
+- Dashboard shows upgrade prompts
+
+#### Implementation
+```csharp
+public class QuotaEnforcementMiddleware
+{
+    public async Task InvokeAsync(HttpContext context)
+    {
+        var tenant = await GetTenantFromContext(context);
+        var quota = await GetQuotaForTenant(tenant.Id);
+        var usage = await GetCurrentUsage(tenant.Id);
+        
+        if (usage.Devices >= quota.MaxDevices)
+        {
+            context.Response.StatusCode = 429;
+            await context.Response.WriteAsync(
+                "Device quota exceeded. Please upgrade your plan."
+            );
+            return;
+        }
+        
+        await _next(context);
+    }
+}
+```
+
+### Sub-Tenant Billing Allocation
+
+**Chargeback Model**: Parent tenant pays, costs allocated to sub-tenants
+```
+Parent Tenant Invoice: $500
+├── Sub-Tenant A: $200 (40%)
+├── Sub-Tenant B: $150 (30%)
+└── Sub-Tenant C: $150 (30%)
+```
+
+**Allocation Strategies**:
+1. **Direct**: Each sub-tenant's actual usage
+2. **Proportional**: Based on device count or data volume
+3. **Fixed**: Predetermined percentage or amount
+4. **Showback**: Report costs without actual billing
+
+**Implementation**:
+- Track usage per sub-tenant separately
+- Generate allocation reports monthly
+- Parent can view consolidated or itemized costs
+- Export to CSV for internal billing systems
 
 ## Scalability & Performance
 
