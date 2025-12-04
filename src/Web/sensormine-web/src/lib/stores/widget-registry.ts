@@ -24,12 +24,12 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
   {
     type: 'chart',
     name: 'Time-Series Chart',
-    description: 'Line, bar, and area charts for time-series data visualization',
+    description: 'Line, bar, area, scatter, and step charts for time-series data visualization',
     icon: 'LineChart',
     defaultSize: { w: 6, h: 4 },
     minSize: { w: 3, h: 3 },
     category: 'data-visualization',
-    available: false, // Will be implemented in Story 4.2
+    available: true, // Implemented in Story 4.2
   },
   {
     type: 'table',
