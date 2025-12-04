@@ -1,0 +1,29 @@
+# Example Terraform variables file
+# Copy to terraform.tfvars and customize for your environment
+
+# Core Configuration
+project_name = "sensormine"
+environment  = "dev"  # dev, staging, or prod
+location     = "eastus"
+
+# Database Credentials (use Key Vault or secure secret management in production)
+db_admin_username = "sensormineadmin"
+db_admin_password = "CHANGE_ME_STRONG_PASSWORD_HERE"
+
+# AKS Configuration
+aks_node_vm_size   = "Standard_D4s_v3"
+aks_node_min_count = 3
+aks_node_max_count = 10
+
+# PostgreSQL Configuration
+postgresql_sku        = "GP_Standard_D4s_v3"
+postgresql_storage_mb = 131072  # 128 GB
+
+# Redis Configuration
+redis_sku_name = "Premium"
+redis_family   = "P"
+redis_capacity = 1
+
+# Storage Configuration
+storage_account_tier     = "Standard"
+storage_replication_type = "GRS"

@@ -107,6 +107,17 @@ export function TimeSeriesChart({
     // Implementation will filter data based on preset
   };
 
+  // Guard against undefined config or series
+  if (!config || !config.series) {
+    return (
+      <div className={`flex items-center justify-center h-full ${className || ''}`}>
+        <div className="text-center text-muted-foreground">
+          <p>No chart configuration available</p>
+        </div>
+      </div>
+    );
+  }
+
   // Loading state
   if (isLoading) {
     return (

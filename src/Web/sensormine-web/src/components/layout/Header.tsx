@@ -1,7 +1,7 @@
 /**
  * Header Component
  * 
- * Main application header with navigation and user menu
+ * Top bar with user menu - works with sidebar navigation
  */
 
 'use client';
@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/lib/auth';
+import { Bell, Search } from 'lucide-react';
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -30,53 +31,62 @@ export function Header() {
     }
   };
 
-  return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="container flex h-16 items-center">
-        <div className="mr-8 flex items-center space-x-2">
+  if (!isAuthenticated) {
+    return (
+      <header className="sticky top-0 z-30 w-full border-b bg-white/80 backdrop-blur">
+        <div className="container flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold">Sensormine</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-[#0066CC] to-[#00AAFF]">
+              <span className="text-xl font-bold text-white">S</span>
+            </div>
+            <span className="text-xl font-bold bg-linear-to-r from-[#0066CC] to-[#00AAFF] bg-clip-text text-transparent">
+              SensorMine
+            </span>
+          </Link>
+          <Link href="/login">
+            <Button className="bg-linear-to-r from-[#0066CC] to-[#0088FF] hover:from-[#0055BB] hover:to-[#0077EE]">
+              Log in
+            </Button>
           </Link>
         </div>
+      </header>
+    );
+  }
 
-        <nav className="flex flex-1 items-center space-x-6 text-sm font-medium">
-          {isAuthenticated && (
-            <>
-              <Link
-                href="/dashboard"
-                className="transition-colors hover:text-foreground/80"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/devices"
-                className="transition-colors hover:text-foreground/80"
-              >
-                Devices
-              </Link>
-              <Link
-                href="/alerts"
-                className="transition-colors hover:text-foreground/80"
-              >
-                Alerts
-              </Link>
-            </>
-          )}
-        </nav>
+  return (
+    <header className="sticky top-0 z-30 border-b bg-white/80 backdrop-blur">
+      <div className="flex h-16 items-center justify-between px-6 lg:px-8">
+        {/* Left side - Page title will go here, managed by pages */}
+        <div className="flex-1">
+          {/* Spacer */}
+        </div>
 
-        <div className="flex items-center space-x-4">
-          {isAuthenticated && user ? (
+        {/* Right side - Actions and user menu */}
+        <div className="flex items-center gap-4">
+          {/* Search */}
+          <Button variant="ghost" size="icon" className="relative">
+            <Search className="h-5 w-5" />
+          </Button>
+
+          {/* Notifications */}
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
+          </Button>
+
+          {/* User menu */}
+          {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar>
-                    <AvatarFallback>
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-linear-to-br from-[#0066CC] to-[#00AAFF] text-white">
                       {user.name.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{user.name}</p>
@@ -87,17 +97,17 @@ export function Header() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <Link href="/settings">Settings</Link>
+                  <Link href="/settings" className="w-full">Settings</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuItem>
+                  <Link href="/profile" className="w-full">Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
-            <Link href="/login">
-              <Button variant="default">Log in</Button>
-            </Link>
           )}
         </div>
       </div>
