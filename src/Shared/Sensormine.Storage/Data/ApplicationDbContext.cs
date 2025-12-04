@@ -1,0 +1,152 @@
+using Microsoft.EntityFrameworkCore;
+using Sensormine.Core.Models;
+
+namespace Sensormine.Storage.Data;
+
+/// <summary>
+/// Main database context for the Sensormine platform
+/// </summary>
+public class ApplicationDbContext : DbContext
+{
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options)
+    {
+    }
+
+    // Schema Management
+    public DbSet<Schema> Schemas { get; set; } = null!;
+    public DbSet<SchemaVersion> SchemaVersions { get; set; } = null!;
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        ConfigureSchemaEntities(modelBuilder);
+    }
+
+    private void ConfigureSchemaEntities(ModelBuilder modelBuilder)
+    {
+        // Schema Configuration
+        modelBuilder.Entity<Schema>(entity =>
+        {
+            entity.ToTable("schemas");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedNever();
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(e => e.Description)
+                .HasColumnName("description")
+                .HasMaxLength(1000);
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at");
+
+            entity.Property(e => e.IsDeleted)
+                .HasColumnName("is_deleted")
+                .HasDefaultValue(false);
+
+            // Indexes
+            entity.HasIndex(e => new { e.TenantId, e.Name })
+                .HasDatabaseName("ix_schemas_tenant_name")
+                .IsUnique()
+                .HasFilter("is_deleted = false");
+
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("ix_schemas_tenant");
+
+            entity.HasIndex(e => e.IsDeleted)
+                .HasDatabaseName("ix_schemas_deleted");
+
+            // Relationships
+            entity.HasMany(e => e.Versions)
+                .WithOne(v => v.Schema)
+                .HasForeignKey(v => v.SchemaId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Query filter for soft delete
+            entity.HasQueryFilter(e => !e.IsDeleted);
+        });
+
+        // SchemaVersion Configuration
+        modelBuilder.Entity<SchemaVersion>(entity =>
+        {
+            entity.ToTable("schema_versions");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedNever();
+
+            entity.Property(e => e.SchemaId)
+                .HasColumnName("schema_id")
+                .IsRequired();
+
+            entity.Property(e => e.Version)
+                .HasColumnName("version")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.JsonSchema)
+                .HasColumnName("json_schema")
+                .HasColumnType("text")
+                .IsRequired();
+
+            entity.Property(e => e.Status)
+                .HasColumnName("status")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.IsDefault)
+                .HasColumnName("is_default")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            // Store DeviceTypes as JSON array
+            entity.Property(e => e.DeviceTypes)
+                .HasColumnName("device_types")
+                .HasColumnType("jsonb");
+
+            // Indexes
+            entity.HasIndex(e => new { e.SchemaId, e.Version })
+                .HasDatabaseName("ix_schema_versions_schema_version")
+                .IsUnique();
+
+            entity.HasIndex(e => new { e.SchemaId, e.IsDefault })
+                .HasDatabaseName("ix_schema_versions_schema_default")
+                .HasFilter("is_default = true");
+
+            entity.HasIndex(e => e.Status)
+                .HasDatabaseName("ix_schema_versions_status");
+
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("ix_schema_versions_tenant");
+        });
+    }
+}
