@@ -1,12 +1,23 @@
 /**
  * Gauge Widget
  * 
- * Displays a circular gauge with current value and min/max thresholds.
+ * Displays gauges (circular, linear, bullet) with current value and thresholds.
  */
 
 'use client';
 
 import { BaseWidget, type BaseWidgetProps } from './base-widget';
+import { CircularGauge } from './gauges/circular-gauge';
+import { LinearGauge } from './gauges/linear-gauge';
+import { BulletGauge, type BulletRange } from './gauges/bullet-gauge';
+
+interface GaugeWidgetConfig {
+  gaugeType?: 'circular' | 'linear' | 'bullet';
+  orientation?: 'horizontal' | 'vertical';
+  target?: number;
+  ranges?: BulletRange[];
+  compact?: boolean;
+}
 
 interface GaugeWidgetProps extends Omit<BaseWidgetProps, 'children'> {
   /** Current value */
@@ -21,6 +32,8 @@ interface GaugeWidgetProps extends Omit<BaseWidgetProps, 'children'> {
   warningThreshold?: number;
   /** Critical threshold (red) */
   criticalThreshold?: number;
+  /** Gauge configuration */
+  config?: GaugeWidgetConfig;
 }
 
 export function GaugeWidget({
@@ -30,79 +43,55 @@ export function GaugeWidget({
   unit = '',
   warningThreshold,
   criticalThreshold,
+  config = {},
   ...baseProps
 }: GaugeWidgetProps) {
-  // Calculate percentage
-  const percentage = ((value - min) / (max - min)) * 100;
-  const clampedPercentage = Math.max(0, Math.min(100, percentage));
+  const { gaugeType = 'circular', orientation = 'horizontal', target, ranges, compact } = config;
   
-  // Determine color based on thresholds
-  const getColor = () => {
-    if (criticalThreshold !== undefined && value >= criticalThreshold) {
-      return 'text-red-600';
+  const renderGauge = () => {
+    const commonProps = {
+      value,
+      min,
+      max,
+      unit,
+      warningThreshold,
+      criticalThreshold,
+    };
+    
+    switch (gaugeType) {
+      case 'linear':
+        return (
+          <LinearGauge
+            {...commonProps}
+            orientation={orientation}
+          />
+        );
+      
+      case 'bullet':
+        return (
+          <BulletGauge
+            {...commonProps}
+            target={target}
+            ranges={ranges}
+            orientation={orientation}
+            compact={compact}
+          />
+        );
+      
+      case 'circular':
+      default:
+        return (
+          <CircularGauge
+            {...commonProps}
+          />
+        );
     }
-    if (warningThreshold !== undefined && value >= warningThreshold) {
-      return 'text-yellow-600';
-    }
-    return 'text-green-600';
   };
-  
-  const getStrokeColor = () => {
-    if (criticalThreshold !== undefined && value >= criticalThreshold) {
-      return '#dc2626'; // red-600
-    }
-    if (warningThreshold !== undefined && value >= warningThreshold) {
-      return '#ca8a04'; // yellow-600
-    }
-    return '#16a34a'; // green-600
-  };
-  
-  // SVG circle parameters
-  const size = 120;
-  const strokeWidth = 10;
-  const center = size / 2;
-  const radius = center - strokeWidth / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (clampedPercentage / 100) * circumference;
   
   return (
     <BaseWidget {...baseProps}>
-      <div className="flex flex-col items-center justify-center h-full space-y-4">
-        <svg width={size} height={size} className="transform -rotate-90">
-          {/* Background circle */}
-          <circle
-            cx={center}
-            cy={center}
-            r={radius}
-            stroke="currentColor"
-            strokeWidth={strokeWidth}
-            fill="none"
-            className="text-muted"
-          />
-          {/* Progress circle */}
-          <circle
-            cx={center}
-            cy={center}
-            r={radius}
-            stroke={getStrokeColor()}
-            strokeWidth={strokeWidth}
-            fill="none"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            className="transition-all duration-500"
-          />
-        </svg>
-        
-        <div className="text-center">
-          <div className={`text-3xl font-bold ${getColor()}`}>
-            {value.toFixed(1)}
-            {unit && <span className="text-base ml-1">{unit}</span>}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {min} - {max} {unit}
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-full p-4">
+        {renderGauge()}
       </div>
     </BaseWidget>
   );
