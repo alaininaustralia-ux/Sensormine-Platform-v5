@@ -257,7 +257,10 @@ public partial class TimeSeriesQueryService : ITimeSeriesQueryService
         if (!match.Success)
             return null;
 
-        var value = int.Parse(match.Groups[1].Value);
+        // Safely parse the numeric value
+        if (!int.TryParse(match.Groups[1].Value, out var value))
+            return null;
+            
         var unit = match.Groups[2].Value.ToLowerInvariant();
 
         return unit switch

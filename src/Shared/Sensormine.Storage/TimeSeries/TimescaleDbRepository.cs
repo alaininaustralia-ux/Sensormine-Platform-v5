@@ -190,8 +190,8 @@ public class TimescaleDbRepository : ITimeSeriesRepository
 
     private static string GetTableName(string measurement)
     {
-        // Sanitize table name to prevent SQL injection
-        var sanitized = new string(measurement.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray());
+        // Use the shared sanitization method from TimeSeriesQueryBuilder
+        var sanitized = TimeSeriesQueryBuilder.SanitizeIdentifier(measurement);
         return string.IsNullOrEmpty(sanitized) ? DefaultTableName : sanitized;
     }
 
@@ -284,7 +284,7 @@ public class TimescaleDbRepository : ITimeSeriesRepository
             JsonValueKind.Number when element.TryGetDouble(out var d) => d,
             JsonValueKind.True => true,
             JsonValueKind.False => false,
-            JsonValueKind.Null => null!,
+            JsonValueKind.Null => (object)DBNull.Value,
             _ => element.GetRawText()
         };
     }

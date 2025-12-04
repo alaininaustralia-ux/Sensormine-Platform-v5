@@ -15,6 +15,26 @@ public class TimeSeriesController : ControllerBase
     private readonly ITimeSeriesQueryService _queryService;
     private readonly ILogger<TimeSeriesController> _logger;
 
+    /// <summary>
+    /// Maximum time range allowed for queries (90 days)
+    /// </summary>
+    private static readonly TimeSpan MaxTimeRange = TimeSpan.FromDays(90);
+    
+    /// <summary>
+    /// Maximum hours to look back for recent data
+    /// </summary>
+    private const int MaxLookbackHours = 168; // 7 days
+    
+    /// <summary>
+    /// Maximum results limit
+    /// </summary>
+    private const int MaxResultsLimit = 1000;
+    
+    /// <summary>
+    /// Maximum number of devices per batch request
+    /// </summary>
+    private const int MaxDevicesPerRequest = 100;
+
     public TimeSeriesController(
         ITimeSeriesQueryService queryService,
         ILogger<TimeSeriesController> logger)
@@ -52,13 +72,12 @@ public class TimeSeriesController : ControllerBase
         }
 
         // Limit time range to prevent expensive queries
-        var maxTimeRange = TimeSpan.FromDays(90);
-        if (request.EndTime - request.StartTime > maxTimeRange)
+        if (request.EndTime - request.StartTime > MaxTimeRange)
         {
             return BadRequest(new ProblemDetails
             {
                 Title = "Time range too large",
-                Detail = $"Maximum time range is {maxTimeRange.TotalDays} days",
+                Detail = $"Maximum time range is {MaxTimeRange.TotalDays} days",
                 Status = StatusCodes.Status400BadRequest
             });
         }
@@ -183,13 +202,12 @@ public class TimeSeriesController : ControllerBase
         }
 
         // Limit number of devices to prevent expensive queries
-        const int maxDevices = 100;
-        if (deviceIds.Count > maxDevices)
+        if (deviceIds.Count > MaxDevicesPerRequest)
         {
             return BadRequest(new ProblemDetails
             {
                 Title = "Too many devices",
-                Detail = $"Maximum {maxDevices} devices can be queried at once",
+                Detail = $"Maximum {MaxDevicesPerRequest} devices can be queried at once",
                 Status = StatusCodes.Status400BadRequest
             });
         }
@@ -220,9 +238,9 @@ public class TimeSeriesController : ControllerBase
         [FromQuery] int limit = 100,
         CancellationToken cancellationToken = default)
     {
-        // Validate and clamp parameters
-        hours = Math.Clamp(hours, 1, 168); // Max 7 days
-        limit = Math.Clamp(limit, 1, 1000);
+        // Validate and clamp parameters using class constants
+        hours = Math.Clamp(hours, 1, MaxLookbackHours);
+        limit = Math.Clamp(limit, 1, MaxResultsLimit);
 
         var request = new TimeSeriesQueryRequest
         {

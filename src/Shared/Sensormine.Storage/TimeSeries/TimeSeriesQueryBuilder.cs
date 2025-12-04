@@ -1,12 +1,21 @@
 namespace Sensormine.Storage.TimeSeries;
 
 using Sensormine.Storage.Interfaces;
+using System.Text.RegularExpressions;
 
 /// <summary>
 /// Builds SQL queries for TimescaleDB time-series operations
 /// </summary>
-public class TimeSeriesQueryBuilder
+public partial class TimeSeriesQueryBuilder
 {
+    /// <summary>
+    /// Allowed column names for ORDER BY clause
+    /// </summary>
+    private static readonly HashSet<string> AllowedOrderByColumns = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "timestamp", "device_id", "tenant_id"
+    };
+
     /// <summary>
     /// Builds a SELECT query for time-series data with filters
     /// </summary>
@@ -51,12 +60,13 @@ WHERE tenant_id = @tenantId
                 }
                 else if (filter.Key.StartsWith("tag.", StringComparison.OrdinalIgnoreCase))
                 {
-                    var tagKey = filter.Key[4..]; // Remove "tag." prefix
+                    var tagKey = SanitizeIdentifier(filter.Key[4..]); // Remove "tag." prefix and sanitize
                     sql += $"\n    AND tags ->> '{tagKey}' = {paramName}";
                 }
                 else
                 {
-                    sql += $"\n    AND values ->> '{filter.Key}' = {paramName}";
+                    var fieldKey = SanitizeIdentifier(filter.Key);
+                    sql += $"\n    AND values ->> '{fieldKey}' = {paramName}";
                 }
                 
                 parameters[paramName] = filter.Value;
@@ -64,8 +74,12 @@ WHERE tenant_id = @tenantId
             }
         }
 
-        // Add ordering
+        // Add ordering - only allow whitelisted columns
         var orderBy = string.IsNullOrEmpty(query.OrderBy) ? "timestamp" : query.OrderBy;
+        if (!AllowedOrderByColumns.Contains(orderBy))
+        {
+            orderBy = "timestamp"; // Default to safe column
+        }
         sql += $"\nORDER BY {orderBy} DESC";
 
         // Add limit
@@ -95,7 +109,8 @@ WHERE tenant_id = @tenantId
         };
 
         var aggregateFunction = GetSqlAggregateFunction(query.AggregateFunction);
-        var valueExpression = $"(values ->> '{valueField}')::numeric";
+        var sanitizedValueField = SanitizeIdentifier(valueField);
+        var valueExpression = $"(values ->> '{sanitizedValueField}')::numeric";
 
         var selectClause = new List<string>();
         var groupByClause = new List<string>();
@@ -120,7 +135,7 @@ WHERE tenant_id = @tenantId
                 }
                 else if (field.StartsWith("tag.", StringComparison.OrdinalIgnoreCase))
                 {
-                    var tagKey = field[4..];
+                    var tagKey = SanitizeIdentifier(field[4..]);
                     selectClause.Add($"tags ->> '{tagKey}' AS \"{tagKey}\"");
                     groupByClause.Add($"tags ->> '{tagKey}'");
                 }
@@ -153,12 +168,13 @@ WHERE tenant_id = @tenantId
                 }
                 else if (filter.Key.StartsWith("tag.", StringComparison.OrdinalIgnoreCase))
                 {
-                    var tagKey = filter.Key[4..];
+                    var tagKey = SanitizeIdentifier(filter.Key[4..]);
                     sql += $"\n    AND tags ->> '{tagKey}' = {paramName}";
                 }
                 else
                 {
-                    sql += $"\n    AND values ->> '{filter.Key}' = {paramName}";
+                    var fieldKey = SanitizeIdentifier(filter.Key);
+                    sql += $"\n    AND values ->> '{fieldKey}' = {paramName}";
                 }
                 
                 parameters[paramName] = filter.Value;
@@ -222,4 +238,28 @@ VALUES (@deviceId, @tenantId, @timestamp, @values::jsonb, @quality::jsonb, @tags
             return $"{(int)interval.TotalMinutes} minute";
         return $"{(int)interval.TotalSeconds} second";
     }
+
+    /// <summary>
+    /// Sanitizes an identifier (field name, tag key) to prevent SQL injection.
+    /// Only allows letters, numbers, and underscores.
+    /// </summary>
+    public static string SanitizeIdentifier(string identifier)
+    {
+        if (string.IsNullOrEmpty(identifier))
+            return string.Empty;
+        
+        // Only allow alphanumeric characters and underscores
+        var sanitized = IdentifierRegex().Replace(identifier, string.Empty);
+        
+        // Ensure it doesn't start with a number
+        if (sanitized.Length > 0 && char.IsDigit(sanitized[0]))
+        {
+            sanitized = "_" + sanitized;
+        }
+        
+        return sanitized;
+    }
+
+    [GeneratedRegex(@"[^a-zA-Z0-9_]")]
+    private static partial Regex IdentifierRegex();
 }
