@@ -1,5 +1,18 @@
 # Sensormine Platform v5 - Copilot Instructions
 
+## ⚡ MANDATORY: Read Standing Orders First
+**At the start of EVERY chat session, read `.github/copilot-standing-orders.md`**
+
+This file contains:
+- Automatic startup procedure (read `.agent/current-state.md` first)
+- Workflow rules (TDD, story planning, state updates)
+- Story selection priority
+- Session handoff protocol
+
+**Then provide project status summary and recommend next story.**
+
+---
+
 ## Project Overview
 This is a cloud-agnostic industrial IoT platform built with C# .NET 8 microservices architecture.
 
@@ -43,3 +56,10 @@ This is a cloud-agnostic industrial IoT platform built with C# .NET 8 microservi
 - Implement IDisposable/IAsyncDisposable when needed
 - Add XML documentation for public APIs
 - Write unit tests for business logic
+
+## AI-Driven Development Workflow
+- **Always read** `.agent/current-state.md` at session start
+- **Follow TDD workflow** defined in `.agent/workflow.md`
+- **One story per commit** with `[Story X.Y]` prefix
+- **Update state** after completing each story
+- **See** `.github/copilot-standing-orders.md` for complete protocol
