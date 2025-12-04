@@ -103,11 +103,12 @@ export function DashboardWidgetComponent({
       const deltaY = e.clientY - dragStart.y;
 
       // Calculate new size based on grid
-      const cellWidth = GRID_CONFIG.rowHeight;
-      const cellHeight = GRID_CONFIG.rowHeight;
+      // Use rowHeight for both since we're working with a square-ish grid
+      // The actual width will be determined by CSS grid columns
+      const cellSize = GRID_CONFIG.rowHeight;
 
-      const widthDelta = Math.round(deltaX / cellWidth);
-      const heightDelta = Math.round(deltaY / cellHeight);
+      const widthDelta = Math.round(deltaX / cellSize);
+      const heightDelta = Math.round(deltaY / cellSize);
 
       if (widthDelta !== 0 || heightDelta !== 0) {
         const newWidth = Math.max(

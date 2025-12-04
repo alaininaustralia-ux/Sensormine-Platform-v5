@@ -6,6 +6,7 @@
 'use client';
 
 import React from 'react';
+import { X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,8 +55,8 @@ export function WidgetConfigPanel({ className }: WidgetConfigPanelProps) {
           <CardTitle className="text-lg">Widget Configuration</CardTitle>
           <CardDescription>Configure {selectedWidget.type} widget</CardDescription>
         </div>
-        <Button variant="ghost" size="sm" onClick={handleClose}>
-          ✕
+        <Button variant="ghost" size="icon-sm" onClick={handleClose} aria-label="Close configuration panel">
+          <X className="w-4 h-4" />
         </Button>
       </CardHeader>
       <CardContent className="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">

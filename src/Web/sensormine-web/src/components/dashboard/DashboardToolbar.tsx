@@ -98,7 +98,12 @@ export function DashboardToolbar({ className, onCreateNew, onOpenTemplates }: Da
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${dashboard.name.replace(/\s+/g, '-').toLowerCase()}.json`;
+      // Sanitize filename: replace spaces with dashes and remove invalid characters
+      const safeName = dashboard.name
+        .replace(/\s+/g, '-')
+        .replace(/[/\\:*?"<>|]/g, '')
+        .toLowerCase();
+      a.download = `${safeName || 'dashboard'}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
