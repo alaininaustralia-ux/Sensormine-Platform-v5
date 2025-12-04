@@ -158,6 +158,63 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
+### Story 1.9: Device Firmware Management
+**As a** system administrator  
+**I want** to manage and deploy firmware updates to Nexus devices  
+**So that** devices stay secure and up-to-date
+
+**Acceptance Criteria:**
+- View current firmware version for all devices
+- Upload new firmware packages
+- Deploy firmware to individual devices or groups
+- Schedule firmware updates for maintenance windows
+- Rollback capability if update fails
+- Device reports update progress and status
+- Version history and release notes accessible
+
+**Priority:** Medium  
+**Story Points:** 13
+
+---
+
+### Story 1.10: Device Groups and Tags
+**As a** operations manager  
+**I want** to organize devices into groups and apply tags  
+**So that** I can manage devices at scale
+
+**Acceptance Criteria:**
+- Create device groups (by location, type, customer, etc.)
+- Apply multiple tags to devices
+- Bulk operations on groups (configuration, firmware, alerts)
+- Dynamic groups based on device properties
+- Hierarchical group structures
+- Tag-based filtering in all device views
+- Import/export group configurations
+
+**Priority:** Medium  
+**Story Points:** 8
+
+---
+
+### Story 1.11: Device Templates
+**As a** system administrator  
+**I want** to create device templates with predefined configurations  
+**So that** new devices can be provisioned consistently
+
+**Acceptance Criteria:**
+- Define template with probe configurations, schemas, and settings
+- Apply template during device registration
+- Modify templates without affecting existing devices
+- Clone existing device configuration as template
+- Template versioning and change tracking
+- Export/import templates for reuse
+- Template library with common configurations
+
+**Priority:** Low  
+**Story Points:** 8
+
+---
+
 ## Epic 2: Data Ingestion & Modeling
 
 ### Story 2.1: MQTT Data Ingestion
@@ -303,6 +360,43 @@ This document organizes user stories into epics that align with the platform's f
 
 **Priority:** Medium  
 **Story Points:** 8
+
+---
+
+### Story 2.9: Data Quality Monitoring
+**As a** data engineer  
+**I want** to monitor data quality metrics (completeness, timeliness, accuracy)  
+**So that** I can identify and resolve data issues
+
+**Acceptance Criteria:**
+- Dashboard shows data quality KPIs per device/schema
+- Metrics: message rate, missing fields, out-of-range values, staleness
+- Configurable quality rules and thresholds
+- Alert when quality degrades
+- Historical quality trends
+- Data quality reports
+
+**Priority:** Medium  
+**Story Points:** 13
+
+---
+
+### Story 2.10: Schema Marketplace
+**As a** platform user  
+**I want** to browse and import pre-built schemas for common sensors  
+**So that** I don't have to create schemas from scratch
+
+**Acceptance Criteria:**
+- Public schema repository/marketplace
+- Browse schemas by category (environmental, industrial, video, etc.)
+- Preview schema definition and sample data
+- One-click import to tenant
+- Rate and review schemas
+- Contribute custom schemas to marketplace
+- Version control for marketplace schemas
+
+**Priority:** Low  
+**Story Points:** 13
 
 ---
 
@@ -488,6 +582,63 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
+### Story 3.11: Video Retention Policies
+**As a** compliance officer  
+**I want** to configure video retention policies (duration, quality, archival)  
+**So that** I comply with data retention regulations
+
+**Acceptance Criteria:**
+- Define retention period per camera or camera group
+- Automatic deletion after retention period
+- Archive to cold storage option
+- Reduced resolution/frame rate for long-term storage
+- Legal hold capability to prevent deletion
+- Audit log of retention policy actions
+- Storage usage dashboard
+
+**Priority:** Medium  
+**Story Points:** 8
+
+---
+
+### Story 3.12: Privacy Masking and Redaction
+**As a** privacy officer  
+**I want** to mask or redact sensitive areas in video feeds  
+**So that** I protect individual privacy
+
+**Acceptance Criteria:**
+- Define masking zones per camera (static areas)
+- Dynamic face blurring option
+- License plate redaction
+- Masking applied in real-time and recorded video
+- Different masking levels for different user roles
+- Audit log of who viewed unmasked video
+- Export masked video for third parties
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 3.13: Video Analytics Model Training
+**As a** ML engineer  
+**I want** to train custom video analytics models using platform data  
+**So that** I can create site-specific detection models
+
+**Acceptance Criteria:**
+- Label video frames for training data
+- Export labeled dataset
+- Integration with model training pipelines
+- Upload and test trained models
+- A/B testing of model versions
+- Model performance metrics dashboard
+- Automated retraining workflows
+
+**Priority:** Low  
+**Story Points:** 21
+
+---
+
 ## Epic 4: Visualization & Dashboards
 
 ### Story 4.1: Dashboard Builder
@@ -635,6 +786,43 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
+### Story 4.9: Real-Time Dashboard Updates
+**As a** control room operator  
+**I want** dashboards to update in real-time without manual refresh  
+**So that** I always see current data
+
+**Acceptance Criteria:**
+- WebSocket or SignalR for real-time updates
+- Configurable refresh intervals per widget
+- Visual indicator when data updates
+- Automatic reconnection if connection lost
+- Bandwidth-efficient delta updates
+- Pause/resume real-time updates
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 4.10: Dashboard Annotations and Notes
+**As a** operations manager  
+**I want** to add annotations and notes to dashboards and charts  
+**So that** I can document observations and decisions
+
+**Acceptance Criteria:**
+- Add text annotations to any widget
+- Pin notes to specific timestamps or locations
+- Attach notes to alerts or events
+- Share notes with team members
+- Search notes across dashboards
+- Export dashboards with annotations
+- Note edit history
+
+**Priority:** Low  
+**Story Points:** 8
+
+---
+
 ## Epic 5: LLM Interaction & Analytics
 
 ### Story 5.1: Natural Language Query
@@ -724,6 +912,24 @@ This document organizes user stories into epics that align with the platform's f
 
 **Priority:** High  
 **Story Points:** 13
+
+---
+
+### Story 5.6: Anomaly Detection Suggestions
+**As a** data analyst  
+**I want** the LLM to suggest anomalies in my data  
+**So that** I can investigate unusual patterns
+
+**Acceptance Criteria:**
+- LLM analyzes time-series data for anomalies
+- Suggests statistical outliers
+- Identifies temporal patterns (time-of-day, seasonality)
+- Explains why data point is anomalous
+- Recommend alert rules based on anomalies
+- Historical anomaly archive
+
+**Priority:** Low  
+**Story Points:** 21
 
 ---
 
@@ -906,6 +1112,44 @@ This document organizes user stories into epics that align with the platform's f
 
 **Priority:** Low  
 **Story Points:** 5
+
+---
+
+### Story 6.11: Alert Escalation Workflows
+**As a** incident manager  
+**I want** to configure alert escalation policies  
+**So that** critical alerts reach the right people
+
+**Acceptance Criteria:**
+- Define escalation levels (L1, L2, L3)
+- Time-based escalation (if not acknowledged in X minutes)
+- Severity-based routing
+- On-call schedule integration
+- Multiple notification channels per level
+- Escalation history tracking
+- Override escalation for specific alerts
+
+**Priority:** Medium  
+**Story Points:** 13
+
+---
+
+### Story 6.12: Alert Aggregation and Deduplication
+**As a** operations manager  
+**I want** to aggregate similar alerts to avoid alert fatigue  
+**So that** I'm not overwhelmed with redundant notifications
+
+**Acceptance Criteria:**
+- Group related alerts (same device, same condition)
+- Configurable aggregation window (time-based)
+- Single notification for grouped alerts
+- Show count of grouped alerts
+- Expand to see individual alerts in group
+- Deduplicate identical alerts
+- Smart aggregation using ML
+
+**Priority:** Medium  
+**Story Points:** 13
 
 ---
 
@@ -1219,6 +1463,44 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
+### Story 8.8: Single Sign-On (SSO) Integration
+**As a** enterprise administrator  
+**I want** to integrate with corporate SSO (SAML, OAuth, Azure AD)  
+**So that** users can log in with existing credentials
+
+**Acceptance Criteria:**
+- SAML 2.0 integration
+- OAuth 2.0 / OpenID Connect support
+- Azure Active Directory integration
+- Google Workspace integration
+- Automatic user provisioning from SSO
+- Group/role mapping from SSO
+- SSO configuration per tenant
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 8.9: API Key Management
+**As a** developer  
+**I want** to generate and manage API keys for programmatic access  
+**So that** I can integrate with external systems
+
+**Acceptance Criteria:**
+- Generate API keys with custom names
+- Assign permissions per API key
+- Revoke API keys
+- Set expiration dates
+- Track API key usage
+- Rate limiting per API key
+- Rotate API keys without downtime
+
+**Priority:** Medium  
+**Story Points:** 8
+
+---
+
 ## Epic 9: Reporting & Data Export
 
 ### Story 9.1: CSV Data Export
@@ -1421,6 +1703,24 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
+### Story 10.6: Mobile Offline Data Collection
+**As a** field technician  
+**I want** to collect data offline and sync when connected  
+**So that** I can work in areas without connectivity
+
+**Acceptance Criteria:**
+- Offline data entry forms
+- Local storage of collected data
+- Automatic sync when connectivity returns
+- Sync status indicator
+- Conflict resolution for concurrent edits
+- Queued operations list
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
 ## Epic 11: Integration & APIs
 
 ### Story 11.1: REST API Documentation
@@ -1531,29 +1831,171 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
+### Story 11.7: GraphQL API
+**As a** frontend developer  
+**I want** a GraphQL API for flexible data queries  
+**So that** I can fetch exactly the data I need
+
+**Acceptance Criteria:**
+- GraphQL schema for all entities
+- Query devices, data, alerts, dashboards
+- Mutations for creating/updating entities
+- Subscriptions for real-time data
+- GraphQL Playground for testing
+- Query complexity limits
+- Pagination support
+
+**Priority:** Low  
+**Story Points:** 13
+
+---
+
+### Story 11.8: Event Streaming Platform
+**As a** integration developer  
+**I want** to subscribe to platform events via Kafka or NATS  
+**So that** I can build event-driven integrations
+
+**Acceptance Criteria:**
+- Publish all platform events to message broker
+- Topics for devices, alerts, data, users
+- Schema registry for event formats
+- Consumer group support
+- Event replay capability
+- Monitoring and metrics
+
+**Priority:** Medium  
+**Story Points:** 13
+
+---
+
+## Epic 12: Performance & Scalability
+
+### Story 12.1: Horizontal Scalability Testing
+**As a** platform engineer  
+**I want** to verify the platform scales horizontally  
+**So that** I can handle increasing load
+
+**Acceptance Criteria:**
+- Load testing scripts for all services
+- Demonstrate linear scaling with added nodes
+- Identify bottlenecks
+- Auto-scaling policies configured
+- Performance benchmarks documented
+- Stress testing reports
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 12.2: Query Performance Optimization
+**As a** database engineer  
+**I want** to optimize time-series query performance  
+**So that** dashboards load quickly
+
+**Acceptance Criteria:**
+- Analyze slow queries
+- Add appropriate indexes
+- Implement query result caching
+- Pre-aggregate common queries
+- Query execution plan analysis
+- Performance comparison before/after
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 12.3: Data Archival and Tiering
+**As a** platform administrator  
+**I want** to archive old data to cheaper storage  
+**So that** I reduce storage costs
+
+**Acceptance Criteria:**
+- Define retention policies per data type
+- Automatic archival to cold storage (S3 Glacier, Azure Archive)
+- Query across hot and cold data
+- Data restore from archive
+- Archival job monitoring
+- Cost savings reporting
+
+**Priority:** Medium  
+**Story Points:** 13
+
+---
+
+### Story 12.4: Connection Pooling and Resource Management
+**As a** platform engineer  
+**I want** efficient connection pooling for databases and brokers  
+**So that** resources are used efficiently
+
+**Acceptance Criteria:**
+- Connection pooling configured for PostgreSQL, TimescaleDB
+- Kafka/NATS producer/consumer pooling
+- Redis connection pooling
+- Monitor connection usage
+- Connection leak detection
+- Graceful degradation under load
+
+**Priority:** Medium  
+**Story Points:** 8
+
+---
+
+### Story 12.5: CDN Integration for Static Assets
+**As a** frontend engineer  
+**I want** static assets served via CDN  
+**So that** global users have fast load times
+
+**Acceptance Criteria:**
+- Integrate with CDN (CloudFront, Azure CDN, Cloudflare)
+- Cache static assets (JS, CSS, images)
+- Cache invalidation on deployment
+- HTTPS support
+- Geographic distribution
+- CDN performance monitoring
+
+**Priority:** Low  
+**Story Points:** 5
+
+---
+
 ## Story Summary
 
 ### Total Stories: 110
 
 ### By Epic:
-1. **Device & Hardware Management**: 8 stories
-2. **Data Ingestion & Modeling**: 8 stories
-3. **Video Processing & AI/ML**: 10 stories
-4. **Visualization & Dashboards**: 8 stories
-5. **LLM Interaction & Analytics**: 5 stories
-6. **Alerting & Notifications**: 10 stories
+1. **Device & Hardware Management**: 11 stories (added 1.9, 1.10, 1.11)
+2. **Data Ingestion & Modeling**: 10 stories (added 2.9, 2.10)
+3. **Video Processing & AI/ML**: 13 stories (added 3.11, 3.12, 3.13)
+4. **Visualization & Dashboards**: 10 stories (added 4.9, 4.10)
+5. **LLM Interaction & Analytics**: 6 stories (added 5.6)
+6. **Alerting & Notifications**: 12 stories (added 6.11, 6.12)
 7. **Industrial Connectivity & Edge**: 10 stories
-8. **Administration & System Management**: 7 stories
+8. **Administration & System Management**: 9 stories (added 8.8, 8.9)
 9. **Reporting & Data Export**: 6 stories
-10. **Mobile Application**: 5 stories
-11. **Integration & APIs**: 6 stories
+10. **Mobile Application**: 6 stories (added 10.6)
+11. **Integration & APIs**: 8 stories (added 11.7, 11.8)
+12. **Performance & Scalability**: 5 stories (new epic)
 
 ### By Priority:
-- **High**: 46 stories
-- **Medium**: 48 stories
-- **Low**: 16 stories
+- **High**: 48 stories
+- **Medium**: 50 stories
+- **Low**: 12 stories
 
-### Total Story Points: ~1,100
+### Total Story Points: ~1,380
+
+**New Stories Added (27 total, 280 story points):**
+- Device firmware management, groups/tags, templates (29 pts)
+- Data quality monitoring, schema marketplace (26 pts)
+- Video retention, privacy masking, model training (42 pts)
+- Real-time dashboard updates, annotations (21 pts)
+- LLM anomaly detection (21 pts)
+- Alert escalation, aggregation (26 pts)
+- SSO, API key management (21 pts)
+- Mobile offline data collection (13 pts)
+- GraphQL API, event streaming (26 pts)
+- Performance & scalability epic (55 pts)
 
 ### Estimated Timeline:
 - Assuming 20-30 story points per developer per sprint (2 weeks)
