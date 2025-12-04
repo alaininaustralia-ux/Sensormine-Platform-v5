@@ -1,5 +1,9 @@
 # Sensormine Platform v5 - Completion Checklist
 
+> **📌 AI-Driven Development**: This project uses TDD workflow with state tracking.  
+> **Start Here**: Read `.agent/current-state.md` for current progress and next steps.  
+> **Workflow**: Follow `.agent/workflow.md` for story development process.
+
 ## ✅ Project Setup Complete
 
 ### Core Infrastructure
