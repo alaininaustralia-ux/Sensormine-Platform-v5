@@ -7,6 +7,7 @@
 'use client';
 
 import type { Widget } from '@/lib/types/dashboard';
+import type { ChartType } from '@/lib/types/chart';
 import { KPIWidget } from './kpi-widget';
 import { GaugeWidget } from './gauge-widget';
 import { TableWidget } from './table-widget';
@@ -55,8 +56,9 @@ const mockDataGenerators = {
       value: Math.floor(Math.random() * 100),
     })),
   }),
-  chart: () => ({
-    chartType: 'line' as const,
+  chart: (config?: Widget['config']) => ({
+    chartType: (config?.chartType as ChartType) || 'line',
+    showToolbar: config?.showToolbar !== false,
   }),
   map: () => ({}),
   video: () => ({}),
@@ -78,21 +80,18 @@ export function WidgetFactory({
     onDelete: onDelete ? () => onDelete(widget.id) : undefined,
   };
   
-  // Get mock data based on widget type
-  const mockData = mockDataGenerators[widget.type]();
-  
   switch (widget.type) {
     case 'kpi':
-      return <KPIWidget {...baseProps} {...(mockData as ReturnType<typeof mockDataGenerators.kpi>)} />;
+      return <KPIWidget {...baseProps} {...mockDataGenerators.kpi()} />;
     
     case 'gauge':
-      return <GaugeWidget {...baseProps} {...(mockData as ReturnType<typeof mockDataGenerators.gauge>)} />;
+      return <GaugeWidget {...baseProps} {...mockDataGenerators.gauge()} />;
     
     case 'table':
-      return <TableWidget {...baseProps} {...(mockData as ReturnType<typeof mockDataGenerators.table>)} />;
+      return <TableWidget {...baseProps} {...mockDataGenerators.table()} />;
     
     case 'chart':
-      return <ChartWidget {...baseProps} {...(mockData as ReturnType<typeof mockDataGenerators.chart>)} />;
+      return <ChartWidget {...baseProps} {...mockDataGenerators.chart(widget.config)} />;
     
     case 'map':
       return <MapWidget {...baseProps} />;
