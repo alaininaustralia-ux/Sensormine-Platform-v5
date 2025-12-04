@@ -1,0 +1,212 @@
+# Default values for sensormine-platform
+# This is a YAML-formatted file.
+
+global:
+  imagePullSecrets: []
+  storageClass: ""
+  
+# Microservices Configuration
+services:
+  edgeGateway:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: sensormine/edge-gateway
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    
+  ingestion:
+    enabled: true
+    replicaCount: 3
+    image:
+      repository: sensormine/ingestion-service
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+
+  streamProcessing:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: sensormine/stream-processing
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+
+  deviceAPI:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: sensormine/device-api
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+  queryAPI:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: sensormine/query-api
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+
+  schemaRegistry:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: sensormine/schema-registry
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+
+  alertsAPI:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: sensormine/alerts-api
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+
+  digitalTwinAPI:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: sensormine/digital-twin-api
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+
+  videoMetadataAPI:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: sensormine/video-metadata-api
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+
+  apiGateway:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: sensormine/api-gateway
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+
+# External Dependencies
+kafka:
+  enabled: true
+  replicaCount: 3
+  # Use external Kafka cluster in production
+  external:
+    enabled: false
+    bootstrapServers: ""
+
+timescaledb:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 100Gi
+  external:
+    enabled: false
+    host: ""
+    port: 5432
+    database: ""
+    username: ""
+    password: ""
+
+postgresql:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 50Gi
+  external:
+    enabled: false
+    host: ""
+
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: true
+  persistence:
+    enabled: true
+    size: 20Gi
+
+minio:
+  enabled: true
+  mode: standalone
+  persistence:
+    enabled: true
+    size: 500Gi
+  external:
+    enabled: false
+    endpoint: ""
+    accessKey: ""
+    secretKey: ""
+
+mqtt:
+  enabled: true
+  replicaCount: 2
+
+opensearch:
+  enabled: true
+  replicaCount: 3
+  persistence:
+    enabled: true
+    size: 100Gi
+
+# Ingress
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: api.sensormine.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: sensormine-tls
+      hosts:
+        - api.sensormine.example.com
+
+# Monitoring & Observability
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+  jaeger:
+    enabled: true
