@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, vi } from 'vitest';
+import React from 'react';
 
 // Cleanup after each test
 afterEach(() => {
@@ -17,11 +18,11 @@ vi.mock('next/navigation', () => ({
   }),
   usePathname: () => '/',
   useSearchParams: () => new URLSearchParams(),
+  useParams: () => ({ id: '1' }),
 }));
 
 // Mock Next.js Link
 vi.mock('next/link', () => ({
-  default: ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
-  ),
+  default: ({ children, href }: { children: React.ReactNode; href: string }) => 
+    React.createElement('a', { href }, children),
 }));
