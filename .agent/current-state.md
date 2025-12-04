@@ -1,8 +1,8 @@
 # Sensormine Platform v5 - Current State
 
 **Last Updated**: 2025-12-04  
-**Current Sprint**: Epic 4 - Visualization & Dashboards (Frontend Foundation)  
-**Active Story**: Story 0.0 - Frontend Project Setup (✅ Complete)
+**Current Sprint**: Backend Time-Series Framework (Story 2.7)  
+**Active Story**: Story 2.7 - Time-Series Query API (✅ Complete)
 
 ---
 
@@ -35,7 +35,7 @@ src/
 │   ├── Ingestion.Service/ # Data ingestion pipeline
 │   ├── Device.API/        # Device management CRUD
 │   ├── SchemaRegistry.API/# Schema versioning and validation
-│   ├── Query.API/         # Time-series data queries
+│   ├── Query.API/         # ✅ Time-series data queries (IMPLEMENTED)
 │   ├── Alerts.API/        # Alert rules and notifications
 │   ├── DigitalTwin.API/   # Digital twin state management
 │   ├── VideoMetadata.API/ # Video processing metadata
@@ -45,10 +45,13 @@ src/
 └── Shared/                # 6 Shared Libraries
     ├── Sensormine.Core/   # Domain models, interfaces, utilities
     ├── Sensormine.Messaging/ # Kafka/NATS abstractions
-    ├── Sensormine.Storage/   # Repository patterns, DB abstractions
+    ├── Sensormine.Storage/   # ✅ Repository patterns, TimescaleDB (IMPLEMENTED)
     ├── Sensormine.AI/        # ML pipelines, anomaly detection
     ├── Sensormine.Schemas/   # Avro/JSON schema definitions
     └── Sensormine.Billing/   # Billing models, Stripe SDK wrappers
+
+tests/
+└── Sensormine.Storage.Tests/  # ✅ Unit tests for time-series (27 tests passing)
 ```
 
 ### Infrastructure
@@ -56,6 +59,60 @@ src/
 - **Helm Charts**: `infrastructure/helm/` - Kubernetes deployment
 - **Terraform**: `infrastructure/terraform/` - Cloud infrastructure (AWS/Azure/GCP agnostic)
 - **Scripts**: `scripts/` - Automation scripts (PowerShell)
+
+---
+
+## Backend Time-Series Framework (Story 2.7) - ✅ COMPLETE
+
+### Implementation Summary
+**Story 2.7: Time-Series Query API** has been fully implemented with:
+
+#### 1. Storage Layer (Sensormine.Storage)
+- `ITimeSeriesRepository` interface (already existed)
+- `TimescaleDbRepository` - PostgreSQL/TimescaleDB implementation
+- `InMemoryTimeSeriesRepository` - In-memory implementation for testing/development
+- `TimeSeriesQueryBuilder` - SQL query builder for complex time-series queries
+- `TimeSeriesServiceExtensions` - DI registration helpers
+
+#### 2. Query.API Service
+- **REST API Endpoints:**
+  - `GET /api/timeseries/{measurement}` - Get recent data
+  - `POST /api/timeseries/{measurement}/query` - Query with filters
+  - `POST /api/timeseries/{measurement}/aggregate` - Aggregated queries
+  - `GET /api/timeseries/{measurement}/device/{deviceId}/latest` - Latest device data
+  - `POST /api/timeseries/{measurement}/devices/latest` - Latest for multiple devices
+
+- **Features Implemented:**
+  - Time range queries
+  - Device ID filtering
+  - Tag-based filtering
+  - Custom field filtering
+  - Aggregation functions (avg, sum, min, max, count)
+  - Time-interval grouping (1s, 5m, 1h, 1d)
+  - Pagination support
+  - Query performance metadata
+
+#### 3. Unit Tests (27 tests passing)
+- `InMemoryTimeSeriesRepositoryTests` - Repository tests
+- `TimeSeriesQueryBuilderTests` - SQL generation tests
+
+### API Response Format
+```json
+{
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "pageSize": 100,
+    "hasMore": true
+  },
+  "metadata": {
+    "executionTimeMs": 45,
+    "startTime": "2024-01-01T00:00:00Z",
+    "endTime": "2024-01-31T23:59:59Z",
+    "resultCount": 100
+  }
+}
+```
 
 ---
 
@@ -76,6 +133,12 @@ src/
 | 4.8  | Dashboard Templates | Low | 8 | 🔴 Not Started | User onboarding |
 | 4.9  | Real-Time Dashboard Updates | High | 13 | 🔴 Not Started | WebSocket/SignalR |
 | 4.10 | Dashboard Annotations | Low | 8 | 🔴 Not Started | Collaboration feature |
+
+## Epic 2: Data Ingestion & Modeling
+
+| Story | Title | Priority | Points | Status | Notes |
+|-------|-------|----------|--------|--------|-------|
+| 2.7  | Time-Series Query API | High | 13 | ✅ Complete | Backend framework implemented |
 
 ### Frontend Technology Stack
 **Selected Stack** (See `docs/technology-stack.md` for full details):
@@ -109,6 +172,7 @@ src/
 - ✅ API client infrastructure ready
 - ✅ Authentication structure in place
 - ✅ Base layout and routing configured
+- ✅ Backend Time-Series Query API (Story 2.7)
 
 **Story 4.1 - Dashboard Builder** creates the foundation for all Epic 4 visualization features:
 - Drag-and-drop dashboard builder

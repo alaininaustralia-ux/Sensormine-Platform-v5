@@ -1,41 +1,109 @@
+using Query.API.Services;
+using Sensormine.Core.Interfaces;
+using Sensormine.Storage.TimeSeries;
+using Microsoft.OpenApi.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddControllers();
+
+// OpenAPI/Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Sensormine Query API",
+        Version = "v1",
+        Description = "Time-series data query API for the Sensormine Platform. " +
+                      "Provides endpoints for querying, aggregating, and analyzing time-series sensor data.",
+        Contact = new OpenApiContact
+        {
+            Name = "Sensormine Platform",
+            Email = "support@sensormine.io"
+        }
+    });
+    
+    // Include XML comments for API documentation
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
+});
+
+// Register tenant provider (default implementation)
+builder.Services.AddScoped<ITenantProvider, DefaultTenantProvider>();
+
+// Register time-series repository (in-memory for development, use TimescaleDb in production)
+var connectionString = builder.Configuration.GetConnectionString("TimescaleDb");
+if (!string.IsNullOrEmpty(connectionString))
+{
+    builder.Services.AddTimescaleDbTimeSeriesRepository(connectionString);
+}
+else
+{
+    builder.Services.AddInMemoryTimeSeriesRepository();
+}
+
+// Register query service
+builder.Services.AddScoped<ITimeSeriesQueryService, TimeSeriesQueryService>();
+
+// Add health checks
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Sensormine Query API v1");
+        c.RoutePrefix = string.Empty; // Serve Swagger at root
+    });
 }
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.UseAuthorization();
 
-app.MapGet("/weatherforecast", () =>
+app.MapControllers();
+
+app.MapHealthChecks("/health");
+
+// Add a simple info endpoint
+app.MapGet("/info", () => new
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    Service = "Query.API",
+    Version = "1.0.0",
+    Description = "Sensormine Time-Series Query API",
+    Endpoints = new[]
+    {
+        "GET  /api/timeseries/{measurement}",
+        "POST /api/timeseries/{measurement}/query",
+        "POST /api/timeseries/{measurement}/aggregate",
+        "GET  /api/timeseries/{measurement}/device/{deviceId}/latest",
+        "POST /api/timeseries/{measurement}/devices/latest"
+    }
+}).WithName("ServiceInfo").WithTags("Info");
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+/// <summary>
+/// Default tenant provider implementation
+/// </summary>
+public class DefaultTenantProvider : ITenantProvider
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    private string _tenantId = "default";
+
+    public string GetTenantId() => _tenantId;
+
+    public void SetTenantId(string tenantId)
+    {
+        _tenantId = tenantId ?? throw new ArgumentNullException(nameof(tenantId));
+    }
 }
