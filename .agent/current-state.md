@@ -1,8 +1,8 @@
 # Sensormine Platform v5 - Current State
 
 **Last Updated**: 2025-12-04  
-**Current Sprint**: Epic 12 - Billing, Metering & Payments  
-**Active Story**: None (Ready to start)
+**Current Sprint**: Epic 4 - Visualization & Dashboards (Frontend Foundation)  
+**Active Story**: None (Ready to start frontend development)
 
 ---
 
@@ -11,6 +11,7 @@
 ### Requirements & Planning
 - **User Stories**: `docs/user-stories.md` - 122 stories across 13 epics (~1,520 points)
 - **Architecture**: `docs/architecture.md` - System design, patterns, technology decisions
+- **Technology Stack**: `docs/technology-stack.md` - Complete technology choices and rationale
 - **User Requirements**: `docs/requirements.md` - Functional and non-functional requirements
 - **Checklist**: `CHECKLIST.md` - High-level implementation tracking
 - **GitHub Issues**: https://github.com/alaininaustralia-ux/Sensormine-Platform-v5/issues (201 issues)
@@ -18,7 +19,11 @@
 ### Project Structure
 ```
 src/
-├── Services/              # 11 Microservices
+├── Web/                   # ⚠️ TO BE CREATED - Frontend Applications
+│   ├── Sensormine.Web/    # Main web application (React/Next.js)
+│   └── Sensormine.Mobile/ # Mobile app (React Native/Flutter)
+│
+├── Services/              # 11 Microservices (Backend - Foundation Ready)
 │   ├── ApiGateway/        # Entry point, rate limiting, auth
 │   ├── Edge.Gateway/      # MQTT broker, device connectivity
 │   ├── Ingestion.Service/ # Data ingestion pipeline
@@ -29,7 +34,7 @@ src/
 │   ├── DigitalTwin.API/   # Digital twin state management
 │   ├── VideoMetadata.API/ # Video processing metadata
 │   ├── StreamProcessing.Service/ # Real-time stream processing
-│   └── Billing.API/       # ⚠️ NEW - Billing, metering, Stripe integration
+│   └── Billing.API/       # Billing, metering, Stripe integration
 │
 └── Shared/                # 6 Shared Libraries
     ├── Sensormine.Core/   # Domain models, interfaces, utilities
@@ -37,7 +42,7 @@ src/
     ├── Sensormine.Storage/   # Repository patterns, DB abstractions
     ├── Sensormine.AI/        # ML pipelines, anomaly detection
     ├── Sensormine.Schemas/   # Avro/JSON schema definitions
-    └── Sensormine.Billing/   # ⚠️ NEW - Billing models, Stripe SDK wrappers
+    └── Sensormine.Billing/   # Billing models, Stripe SDK wrappers
 ```
 
 ### Infrastructure
@@ -48,37 +53,58 @@ src/
 
 ---
 
-## Current Epic: Billing, Metering & Payments
+## Current Epic: Visualization & Dashboards (Frontend Foundation)
 
-### Epic Status: 🟡 In Progress (0 of 12 stories completed)
+### Epic Status: 🟡 Starting Frontend Development (0 of 10 stories completed)
 
 | Story | Title | Priority | Points | Status | Notes |
 |-------|-------|----------|--------|--------|-------|
-| 12.1  | Usage Metering Infrastructure | High | 21 | 🔴 Not Started | Foundation for all billing |
-| 12.2  | Stripe Integration for Payments | High | 13 | 🔴 Not Started | Critical path dependency |
-| 12.3  | Subscription Plan Management | High | 13 | 🔴 Not Started | Depends on 12.2 |
-| 12.4  | Automated Invoice Generation | High | 13 | 🔴 Not Started | Depends on 12.1, 12.2 |
-| 12.5  | Tenant Billing Portal | High | 13 | 🔴 Not Started | Frontend component |
-| 12.6  | Resource Quota Enforcement | High | 13 | 🔴 Not Started | Depends on 12.1 |
-| 12.7  | Multi-Currency Support | Medium | 8 | 🔴 Not Started | Enhancement to 12.2 |
-| 12.8  | Revenue Analytics Dashboard | Medium | 13 | 🔴 Not Started | Reporting feature |
-| 12.9  | Billing Webhooks and Events | High | 8 | 🔴 Not Started | Stripe webhook handler |
-| 12.10 | Sub-Tenant Billing Allocation | Medium | 13 | 🔴 Not Started | Depends on 12.1 |
-| 12.11 | Promotional Codes and Discounts | Low | 8 | 🔴 Not Started | Nice-to-have |
-| 12.12 | Payment Method Compliance | High | 8 | 🔴 Not Started | Security requirement |
+| 4.1  | Dashboard Builder | High | 21 | 🔴 Not Started | Core frontend capability |
+| 4.2  | Time-Series Charts | High | 13 | 🔴 Not Started | Data visualization foundation |
+| 4.3  | Video Timeline Widget | High | 13 | 🔴 Not Started | Video event correlation |
+| 4.4  | 3D CAD Viewer | Medium | 21 | 🔴 Not Started | Facility visualization |
+| 4.5  | LiDAR Point Cloud Viewer | Low | 21 | 🔴 Not Started | Advanced visualization |
+| 4.6  | GIS Map Widget | High | 13 | 🔴 Not Started | Geographic device display |
+| 4.7  | Gauge and KPI Widgets | Medium | 8 | 🔴 Not Started | Operational metrics |
+| 4.8  | Dashboard Templates | Low | 8 | 🔴 Not Started | User onboarding |
+| 4.9  | Real-Time Dashboard Updates | High | 13 | 🔴 Not Started | WebSocket/SignalR |
+| 4.10 | Dashboard Annotations | Low | 8 | 🔴 Not Started | Collaboration feature |
 
-### Completed Work (Foundation)
-- ✅ Created Sensormine.Billing shared library (models + interfaces)
-- ✅ Created Billing.API microservice (ASP.NET Core scaffold)
-- ✅ Enhanced Tenant model with ParentTenantId, StripeCustomerId, billing address
-- ✅ Documented billing architecture in `docs/architecture.md`
-- ✅ All 12 stories created as GitHub issues (#190-201)
+### Frontend Technology Stack
+**Selected Stack** (See `docs/technology-stack.md` for full details):
+- **Web Framework**: React 18+ with Next.js 14
+- **State Management**: Zustand
+- **UI Components**: shadcn/ui + Tailwind CSS
+- **Charts**: Recharts (primary), D3.js (advanced)
+- **Maps**: Leaflet (primary), Mapbox GL JS (advanced)
+- **3D Viewer**: Three.js
+- **Real-time**: Socket.IO or SignalR client
+- **Testing**: Vitest + React Testing Library + Playwright
+- **API Client**: Generated TypeScript client from OpenAPI specs
+
+### Backend Technology Stack
+**Core Stack** (See `docs/technology-stack.md` for full details):
+- **Runtime**: .NET 8 (C# 12)
+- **Database**: PostgreSQL 15+ with TimescaleDB extension
+- **Cache**: Redis 7+
+- **Messaging**: Apache Kafka (primary), NATS (edge)
+- **Authentication**: Keycloak (OIDC/JWT)
+- **Container Orchestration**: Kubernetes + Helm
+- **Monitoring**: Prometheus + Grafana + OpenTelemetry
 
 ### Next Story Recommendation
-**Start with Story 12.2: Stripe Integration for Payments** (Critical Path)
-- Establishes foundation for subscription management and payment processing
-- Required by stories 12.3, 12.4, 12.7, 12.9
-- High business value, unblocks other work
+**Story 0.0: Frontend Project Setup** (Prerequisites)
+Before starting Epic 4 stories, we need to:
+1. ✅ Choose frontend framework: **React + Next.js 14** (confirmed)
+2. Set up project structure in `src/Web/Sensormine.Web/`
+3. Initialize Next.js with TypeScript and Tailwind CSS
+4. Install shadcn/ui and configure components
+5. Set up API client for backend services
+6. Configure authentication (JWT/OIDC with Keycloak)
+7. Create base layout, navigation, and routing
+8. Establish design system and theming
+
+**Then proceed to Story 4.1: Dashboard Builder** (Foundation for all dashboards)
 
 ---
 
@@ -159,33 +185,79 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 - **Total Stories**: 122
 - **Total Points**: ~1,520
 - **Completed**: 0 (0%)
-- **In Progress**: 0
+- **In Progress**: 0 (Starting Frontend)
 - **Not Started**: 122
 
 ### Epic Completion
-| Epic | Name | Stories | Completed | % |
-|------|------|---------|-----------|---|
-| 1 | Device Management | 11 | 0 | 0% |
-| 2 | Data Ingestion & Schema Registry | 10 | 0 | 0% |
-| 3 | Video Metadata & Annotation | 13 | 0 | 0% |
-| 4 | Query & Historical Data Access | 10 | 0 | 0% |
-| 5 | Anomaly Detection & ML | 6 | 0 | 0% |
-| 6 | Alerts & Notification Engine | 12 | 0 | 0% |
-| 7 | Digital Twin & Real-time State | 10 | 0 | 0% |
-| 8 | Multi-Tenancy & RBAC | 9 | 0 | 0% |
-| 9 | Observability & Monitoring | 8 | 0 | 0% |
-| 10 | Mobile & Edge Support | 6 | 0 | 0% |
-| 11 | Developer Experience | 8 | 0 | 0% |
-| 12 | Billing, Metering & Payments | 12 | 0 | 0% |
-| 13 | Performance & Scalability | 5 | 0 | 0% |
+| Epic | Name | Stories | Completed | % | Priority |
+|------|------|---------|-----------|---|----------|
+| 1 | Device Management | 11 | 0 | 0% | Backend |
+| 2 | Data Ingestion & Modeling | 10 | 0 | 0% | Backend |
+| 3 | Video Processing & AI/ML | 13 | 0 | 0% | Backend |
+| 4 | Visualization & Dashboards | 10 | 0 | 0% | **🎯 Frontend - Active** |
+| 5 | LLM Interaction & Analytics | 6 | 0 | 0% | Frontend/Backend |
+| 6 | Alerting & Notifications | 12 | 0 | 0% | Backend |
+| 7 | Industrial Connectivity | 10 | 0 | 0% | Backend |
+| 8 | Administration & System Mgmt | 9 | 0 | 0% | Frontend/Backend |
+| 9 | Reporting & Data Export | 8 | 0 | 0% | Frontend/Backend |
+| 10 | Mobile Application | 6 | 0 | 0% | **Mobile - Later** |
+| 11 | Integration & APIs | 8 | 0 | 0% | Backend |
+| 12 | Billing, Metering & Payments | 12 | 0 | 0% | Frontend/Backend |
+| 13 | Performance & Scalability | 5 | 0 | 0% | Backend
 
 ---
 
 ## Active Blockers
 
-- None
+- **Frontend project does not exist yet** - Need to initialize web application
+- **Backend APIs are scaffolds only** - APIs need implementation to support frontend
+- **No authentication/authorization implemented** - Required for frontend security
 
 ---
+
+## Frontend Development Strategy
+
+### Phase 1: Foundation (Current Focus)
+1. **Setup Frontend Project** - Choose React/Next.js or Blazor WebAssembly
+2. **Core Infrastructure** - Auth, API clients, routing, state management
+3. **Design System** - UI component library, theming, layouts
+4. **Story 4.1** - Dashboard Builder (foundation for all visualizations)
+
+### Phase 2: Data Visualization
+5. **Story 4.2** - Time-Series Charts
+6. **Story 4.6** - GIS Map Widget
+7. **Story 4.7** - Gauge and KPI Widgets
+8. **Story 4.9** - Real-Time Dashboard Updates
+
+### Phase 3: Advanced Visualization
+9. **Story 4.3** - Video Timeline Widget
+10. **Story 4.4** - 3D CAD Viewer
+11. **Story 4.5** - LiDAR Point Cloud Viewer (optional)
+
+### Phase 4: User Experience
+12. **Story 4.8** - Dashboard Templates
+13. **Story 4.10** - Dashboard Annotations
+
+### Backend Support Needed
+- **Device.API** - Basic CRUD for devices (Story 1.x dependencies)
+- **Query.API** - Time-series data endpoints (Story 4.2 dependency)
+- **Authentication** - JWT/OAuth implementation (Epic 8 subset)
+- **ApiGateway** - CORS, routing, rate limiting
+
+### Technology Decision Required
+**Option A: React + Next.js** (Recommended)
+- ✅ Large ecosystem, excellent tooling
+- ✅ TypeScript support
+- ✅ Rich component libraries (shadcn/ui, MUI)
+- ✅ Strong data visualization options
+- ❌ Separate codebase from backend
+
+**Option B: Blazor WebAssembly**
+- ✅ Share C# models with backend
+- ✅ .NET ecosystem consistency
+- ✅ Strong typing across stack
+- ❌ Smaller ecosystem
+- ❌ Less mature visualization libraries
 
 ## Notes for AI Agent
 
@@ -194,5 +266,6 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 - Keep story plans in `.agent/story-templates/` during active work
 - Move completed plans to `.agent/completed-stories/` with test results
 - Update GitHub issue status when marking stories complete
-- Commit changes with story number in commit message: `git commit -m "[Story 12.2] Implement Stripe payment integration"`
+- Commit changes with story number in commit message: `git commit -m "[Story 4.1] Implement dashboard builder"`
 - This file serves as context for new chat sessions - read it first!
+- **Frontend First**: Prioritize user-facing features to demonstrate value early

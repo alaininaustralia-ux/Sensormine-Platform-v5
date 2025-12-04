@@ -83,19 +83,30 @@ When recommending next story, prioritize:
 3. **No Dependencies** - Stories with all dependencies met
 4. **Context Continuity** - Stories in same service/domain as previous work
 
-### Epic 12 (Billing) Recommended Order
-1. **12.2** - Stripe Integration (Foundation for all payments)
-2. **12.1** - Usage Metering Infrastructure (Foundation for billing)
-3. **12.9** - Billing Webhooks (Completes Stripe integration)
-4. **12.3** - Subscription Plan Management (Depends on 12.2)
-5. **12.4** - Automated Invoice Generation (Depends on 12.1, 12.2)
-6. **12.6** - Resource Quota Enforcement (Depends on 12.1)
-7. **12.10** - Sub-Tenant Billing Allocation (Depends on 12.1)
-8. **12.5** - Tenant Billing Portal (Frontend, depends on 12.3, 12.4)
-9. **12.8** - Revenue Analytics Dashboard (Reporting, depends on 12.4)
-10. **12.7** - Multi-Currency Support (Enhancement to 12.2)
-11. **12.11** - Promotional Codes (Nice-to-have)
-12. **12.12** - Payment Method Compliance (Security)
+### Epic 4 (Frontend Dashboard) Recommended Order
+**Phase 1: Foundation**
+1. **0.0** - Frontend Project Setup (Choose React/Next.js or Blazor, establish architecture)
+2. **4.1** - Dashboard Builder (Core framework for all dashboards)
+
+**Phase 2: Essential Visualizations**
+3. **4.2** - Time-Series Charts (Foundation for data visualization)
+4. **4.6** - GIS Map Widget (Geographic device visualization)
+5. **4.7** - Gauge and KPI Widgets (Operational metrics)
+6. **4.9** - Real-Time Dashboard Updates (WebSocket integration)
+
+**Phase 3: Advanced Features**
+7. **4.3** - Video Timeline Widget (Video event correlation)
+8. **4.4** - 3D CAD Viewer (Facility visualization)
+9. **4.8** - Dashboard Templates (User onboarding)
+10. **4.10** - Dashboard Annotations (Collaboration)
+
+**Phase 4: Optional Advanced**
+11. **4.5** - LiDAR Point Cloud Viewer (Advanced 3D visualization)
+
+### Backend Support Stories (As Needed)
+- **Epic 1 subset**: Device API basics (1.1, 1.4, 1.5, 1.7)
+- **Epic 8 subset**: Authentication & Authorization (8.1, 8.2, 8.3)
+- **Epic 4 backend**: Query API for time-series data
 
 ---
 

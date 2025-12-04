@@ -1,9 +1,12 @@
 # Development Guide
 
+> **See also**: [`technology-stack.md`](technology-stack.md) for complete technology choices and architecture decisions.
+
 ## Prerequisites
 
 ### Required Tools
 - [.NET 8+ SDK](https://dotnet.microsoft.com/download) - Latest LTS version
+- [Node.js 20+ LTS](https://nodejs.org/) - For frontend development
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) - For running dependencies
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) or [VS Code](https://code.visualstudio.com/)
 - [Git](https://git-scm.com/)

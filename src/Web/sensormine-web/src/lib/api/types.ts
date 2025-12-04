@@ -1,0 +1,121 @@
+/**
+ * Common API Types
+ * 
+ * TypeScript types for API requests and responses
+ */
+
+export interface ApiResponse<T = unknown> {
+  data: T;
+  status: number;
+  message?: string;
+}
+
+export interface ApiError {
+  message: string;
+  status: number;
+  code?: string;
+  details?: unknown;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface PaginationParams {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+// Device types
+export interface Device {
+  id: string;
+  name: string;
+  serialNumber: string;
+  type: string;
+  status: 'online' | 'offline' | 'error';
+  lastSeen?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Time-series types
+export interface TimeSeriesQuery {
+  deviceId?: string;
+  startTime: string;
+  endTime: string;
+  metrics?: string[];
+  aggregation?: 'avg' | 'sum' | 'min' | 'max' | 'count';
+  interval?: string;
+}
+
+export interface TimeSeriesDataPoint {
+  timestamp: string;
+  value: number;
+  metric: string;
+  deviceId: string;
+}
+
+// Dashboard types
+export interface Dashboard {
+  id: string;
+  name: string;
+  description?: string;
+  widgets: DashboardWidget[];
+  layout?: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DashboardWidget {
+  id: string;
+  type: 'chart' | 'map' | 'gauge' | 'video' | 'table';
+  title: string;
+  config: unknown;
+  position: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
+// Alert types
+export interface Alert {
+  id: string;
+  name: string;
+  condition: string;
+  severity: 'info' | 'warning' | 'error' | 'critical';
+  enabled: boolean;
+  deviceId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Auth types
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  tenantId: string;
+  permissions?: string[];
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  refreshToken: string;
+  user: User;
+  expiresIn: number;
+}

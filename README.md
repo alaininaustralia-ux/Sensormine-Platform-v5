@@ -13,19 +13,23 @@ A cloud-agnostic industrial IoT platform built with C# .NET 8 microservices arch
 
 ### Technology Stack
 
+**Full stack details**: See [`docs/technology-stack.md`](docs/technology-stack.md)
+
 | Category | Technology |
 |----------|-----------|
-| **Runtime** | .NET 8 |
+| **Frontend** | React 18 + Next.js 14, shadcn/ui, Tailwind CSS |
+| **Backend Runtime** | .NET 8 (C# 12) |
 | **API Framework** | ASP.NET Core Web API |
-| **Messaging** | Kafka, NATS, MQTT |
-| **Time-Series DB** | TimescaleDB |
-| **Metadata DB** | PostgreSQL |
-| **Cache** | Redis |
+| **Messaging** | Apache Kafka, NATS, MQTT |
+| **Time-Series DB** | TimescaleDB (PostgreSQL extension) |
+| **Relational DB** | PostgreSQL 15+ |
+| **Cache** | Redis 7+ |
 | **Object Storage** | S3-Compatible (MinIO, AWS S3, Azure Blob) |
-| **Search** | OpenSearch |
-| **Container Orchestration** | Kubernetes |
-| **IaC** | Terraform, Helm |
-| **Observability** | OpenTelemetry, Jaeger |
+| **Search** | OpenSearch / Elasticsearch |
+| **Authentication** | Keycloak (OIDC/JWT) |
+| **Container Orchestration** | Kubernetes + Helm |
+| **IaC** | Terraform |
+| **Observability** | Prometheus, Grafana, OpenTelemetry, Jaeger |
 
 ## 📁 Project Structure
 
