@@ -1,6 +1,115 @@
-@Query.API_HostAddress = http://localhost:5079
+@Query.API_HostAddress = http://localhost:5000
 
-GET {{Query.API_HostAddress}}/weatherforecast/
+### Get API Info
+GET {{Query.API_HostAddress}}/info
 Accept: application/json
+
+###
+
+### Health Check
+GET {{Query.API_HostAddress}}/health
+Accept: application/json
+
+###
+
+### Get Recent Time-Series Data
+GET {{Query.API_HostAddress}}/api/timeseries/telemetry?hours=24&limit=100
+Accept: application/json
+
+###
+
+### Get Recent Data for a Specific Device
+GET {{Query.API_HostAddress}}/api/timeseries/telemetry?deviceId=device-001&hours=24&limit=50
+Accept: application/json
+
+###
+
+### Query Time-Series Data with Time Range
+POST {{Query.API_HostAddress}}/api/timeseries/telemetry/query
+Content-Type: application/json
+
+{
+    "startTime": "2024-01-01T00:00:00Z",
+    "endTime": "2024-01-31T23:59:59Z",
+    "deviceId": "device-001",
+    "page": 1,
+    "pageSize": 100,
+    "sortBy": "timestamp",
+    "sortDirection": "desc"
+}
+
+###
+
+### Query with Custom Filters
+POST {{Query.API_HostAddress}}/api/timeseries/telemetry/query
+Content-Type: application/json
+
+{
+    "startTime": "2024-01-01T00:00:00Z",
+    "endTime": "2024-01-31T23:59:59Z",
+    "filters": {
+        "tag.location": "warehouse-a",
+        "sensorType": "temperature"
+    },
+    "page": 1,
+    "pageSize": 100
+}
+
+###
+
+### Aggregate Query - Average Temperature per Hour
+POST {{Query.API_HostAddress}}/api/timeseries/telemetry/aggregate
+Content-Type: application/json
+
+{
+    "startTime": "2024-01-01T00:00:00Z",
+    "endTime": "2024-01-02T00:00:00Z",
+    "aggregateFunction": "avg",
+    "field": "temperature",
+    "groupByInterval": "1h"
+}
+
+###
+
+### Aggregate Query - Sum by Device
+POST {{Query.API_HostAddress}}/api/timeseries/telemetry/aggregate
+Content-Type: application/json
+
+{
+    "startTime": "2024-01-01T00:00:00Z",
+    "endTime": "2024-01-31T23:59:59Z",
+    "aggregateFunction": "sum",
+    "field": "value",
+    "groupByFields": ["deviceId"]
+}
+
+###
+
+### Aggregate Query - Min/Max Values per Day
+POST {{Query.API_HostAddress}}/api/timeseries/telemetry/aggregate
+Content-Type: application/json
+
+{
+    "startTime": "2024-01-01T00:00:00Z",
+    "endTime": "2024-01-31T23:59:59Z",
+    "aggregateFunction": "max",
+    "field": "temperature",
+    "groupByInterval": "1d",
+    "groupByFields": ["deviceId"]
+}
+
+###
+
+### Get Latest Data Point for a Device
+GET {{Query.API_HostAddress}}/api/timeseries/telemetry/device/device-001/latest
+Accept: application/json
+
+###
+
+### Get Latest Data Points for Multiple Devices
+POST {{Query.API_HostAddress}}/api/timeseries/telemetry/devices/latest
+Content-Type: application/json
+
+["device-001", "device-002", "device-003"]
 
 ###
