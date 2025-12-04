@@ -14,7 +14,7 @@ This file contains:
 ---
 
 ## Project Overview
-This is a cloud-agnostic industrial IoT platform built with C# .NET 8 microservices architecture.
+This is a cloud-agnostic industrial IoT platform built with C# .NET 8 microservices architecture and a modern React/Next.js frontend.
 
 ## Architecture Style
 - Microservices architecture
@@ -24,7 +24,9 @@ This is a cloud-agnostic industrial IoT platform built with C# .NET 8 microservi
 - Stateless services with stateful storage
 
 ## Technology Stack
-- .NET 8
+
+### Backend
+- .NET 8 (C# 12)
 - ASP.NET Core Web API
 - Kafka/NATS for messaging
 - TimescaleDB/PostgreSQL for storage
@@ -33,11 +35,94 @@ This is a cloud-agnostic industrial IoT platform built with C# .NET 8 microservi
 - Docker & Kubernetes
 - Helm & Terraform for deployment
 
+### Frontend
+- Next.js 16 with App Router
+- React 19
+- TypeScript 5
+- Tailwind CSS 4
+- shadcn/ui components (Radix UI primitives)
+- Vitest + React Testing Library for testing
+- ESLint for linting
+
 ## Project Structure
-- **src/Services**: Microservices (Edge.Gateway, Ingestion, Device.API, etc.)
-- **src/Shared**: Shared libraries (Core, Messaging, Storage, AI, Schemas)
-- **infrastructure**: Docker Compose, Helm charts, Terraform modules
-- **tests**: Unit and integration tests
+```
+src/
+├── Web/                   # Frontend Applications
+│   └── sensormine-web/    # Main web app (Next.js + React)
+│       ├── src/
+│       │   ├── app/       # Next.js App Router pages
+│       │   ├── components/ # UI components (shadcn/ui)
+│       │   └── lib/       # Utilities, API client, auth
+│       └── __tests__/     # Vitest unit tests
+│
+├── Services/              # Backend Microservices
+│   ├── ApiGateway/        # Entry point, rate limiting, auth
+│   ├── Edge.Gateway/      # MQTT broker, device connectivity
+│   ├── Ingestion.Service/ # Data ingestion pipeline
+│   ├── Device.API/        # Device management CRUD
+│   ├── SchemaRegistry.API/# Schema versioning and validation
+│   ├── Query.API/         # Time-series data queries
+│   ├── Alerts.API/        # Alert rules and notifications
+│   ├── DigitalTwin.API/   # Digital twin state management
+│   ├── VideoMetadata.API/ # Video processing metadata
+│   ├── StreamProcessing.Service/ # Real-time stream processing
+│   └── Billing.API/       # Billing, metering, Stripe integration
+│
+└── Shared/                # Shared Libraries
+    ├── Sensormine.Core/   # Domain models, interfaces, utilities
+    ├── Sensormine.Messaging/ # Kafka/NATS abstractions
+    ├── Sensormine.Storage/   # Repository patterns, DB abstractions
+    ├── Sensormine.AI/        # ML pipelines, anomaly detection
+    ├── Sensormine.Schemas/   # Avro/JSON schema definitions
+    └── Sensormine.Billing/   # Billing models, Stripe SDK wrappers
+```
+
+## Build & Test Commands
+
+### Backend (.NET)
+```bash
+# Restore dependencies
+dotnet restore Sensormine.sln
+
+# Build entire solution
+dotnet build Sensormine.sln
+
+# Run all tests
+dotnet test Sensormine.sln
+
+# Run specific service
+cd src/Services/Device.API && dotnet run
+```
+
+### Frontend (Next.js)
+```bash
+# Navigate to frontend project
+cd src/Web/sensormine-web
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Run linter
+npm run lint
+
+# Run tests
+npx vitest
+```
+
+### Infrastructure
+```bash
+# Start local development stack (PostgreSQL, Kafka, Redis, MQTT)
+docker-compose up -d
+
+# Stop infrastructure
+docker-compose down
+```
 
 ## Development Guidelines
 - Follow clean architecture principles
@@ -50,12 +135,21 @@ This is a cloud-agnostic industrial IoT platform built with C# .NET 8 microservi
 - Implement proper error handling and logging
 
 ## Coding Standards
+
+### Backend (C#)
 - Use C# 12 features
 - Follow Microsoft naming conventions
 - Use nullable reference types
 - Implement IDisposable/IAsyncDisposable when needed
 - Add XML documentation for public APIs
-- Write unit tests for business logic
+- Write unit tests for business logic (xUnit)
+
+### Frontend (TypeScript/React)
+- Use TypeScript strict mode
+- Follow React best practices (hooks, functional components)
+- Use shadcn/ui components for UI consistency
+- Write tests with Vitest + React Testing Library
+- Follow ESLint rules configured in the project
 
 ## AI-Driven Development Workflow
 - **Always read** `.agent/current-state.md` at session start
