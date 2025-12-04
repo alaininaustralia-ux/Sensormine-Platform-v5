@@ -1,6 +1,8 @@
 # Development Guide
 
-> **See also**: [`technology-stack.md`](technology-stack.md) for complete technology choices and architecture decisions.
+> **See also**: 
+> - [`technology-stack.md`](technology-stack.md) for complete technology choices and architecture decisions
+> - [`local-infrastructure.md`](local-infrastructure.md) for detailed container configuration and troubleshooting
 
 ## Prerequisites
 
@@ -26,9 +28,9 @@ git clone <repository-url>
 cd Orion
 ```
 
-### 2. Start Dependencies
+### 2. Start Local Infrastructure
 ```bash
-# Start all infrastructure services
+# Start all infrastructure services (Kafka, MQTT, PostgreSQL, Redis, etc.)
 docker-compose up -d
 
 # Check service status
@@ -37,6 +39,12 @@ docker-compose ps
 # View logs
 docker-compose logs -f kafka
 ```
+
+> **📚 Detailed Infrastructure Guide**: See [`local-infrastructure.md`](local-infrastructure.md) for:
+> - Complete service descriptions and ports
+> - Connection strings and credentials
+> - Troubleshooting and best practices
+> - Resource requirements and optimization
 
 ### 3. Restore & Build
 ```bash

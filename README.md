@@ -84,15 +84,18 @@ Sensormine/
    docker-compose up -d
    ```
 
-   This starts:
-   - Kafka (port 9092)
-   - MQTT Broker (port 1883)
-   - TimescaleDB (port 5432)
-   - PostgreSQL (port 5433)
-   - Redis (port 6379)
-   - MinIO (port 9000, console 9090)
-   - OpenSearch (port 9200)
-   - Jaeger (port 16686)
+   This starts 9 containers:
+   - **Kafka** (port 9092) - Event streaming
+   - **MQTT Broker** (ports 1883, 9001) - IoT device connectivity  
+   - **TimescaleDB** (port 5452) - Time-series data
+   - **PostgreSQL** (port 5433) - Metadata storage
+   - **Redis** (port 6379) - Cache & sessions
+   - **MinIO** (ports 9000, 9090) - Object storage
+   - **OpenSearch** (port 9200) - Full-text search
+   - **Jaeger** (port 16686) - Distributed tracing
+   - **Kafka UI** (port 8080) - Kafka management
+   
+   > **📚 Complete Infrastructure Guide**: See [`docs/local-infrastructure.md`](docs/local-infrastructure.md) for detailed configuration, connection strings, and troubleshooting.
 
 3. **Restore dependencies**
    ```bash
@@ -258,10 +261,12 @@ The platform supports multiple deployment scenarios:
 
 ## 📚 Additional Resources
 
-- [Architecture Documentation](docs/architecture.md)
-- [API Documentation](docs/api.md)
-- [Development Guide](docs/development.md)
-- [Deployment Guide](docs/deployment.md)
+- [Architecture Documentation](docs/architecture.md) - System design and patterns
+- [Technology Stack](docs/technology-stack.md) - Complete technology choices
+- [Development Guide](docs/development.md) - Local development workflow
+- [Local Infrastructure](docs/local-infrastructure.md) - Container configuration and troubleshooting
+- [Deployment Guide](docs/deployment.md) - Production deployment
+- [User Stories](docs/user-stories.md) - Feature requirements and planning
 
 ## 🤝 Contributing
 
