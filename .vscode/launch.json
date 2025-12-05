@@ -28,12 +28,241 @@
         "uriFormat": "http://localhost:%s",
         "action": "openExternally"
       }
+    },
+    {
+      "name": "ApiGateway",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-apigateway",
+      "program": "${workspaceFolder}/src/Services/ApiGateway/bin/Debug/net9.0/ApiGateway.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/ApiGateway",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "SchemaRegistry.API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-schemaregistry-api",
+      "program": "${workspaceFolder}/src/Services/SchemaRegistry.API/bin/Debug/net9.0/SchemaRegistry.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/SchemaRegistry.API",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Device.API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-device-api",
+      "program": "${workspaceFolder}/src/Services/Device.API/bin/Debug/net9.0/Device.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/Device.API",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Alerts.API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-alerts-api",
+      "program": "${workspaceFolder}/src/Services/Alerts.API/bin/Debug/net9.0/Alerts.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/Alerts.API",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "DigitalTwin.API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-digitaltwin-api",
+      "program": "${workspaceFolder}/src/Services/DigitalTwin.API/bin/Debug/net9.0/DigitalTwin.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/DigitalTwin.API",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Edge.Gateway",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-edge-gateway",
+      "program": "${workspaceFolder}/src/Services/Edge.Gateway/bin/Debug/net9.0/Edge.Gateway.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/Edge.Gateway",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Ingestion.Service",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-ingestion-service",
+      "program": "${workspaceFolder}/src/Services/Ingestion.Service/bin/Debug/net9.0/Ingestion.Service.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/Ingestion.Service",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Query.API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-query-api",
+      "program": "${workspaceFolder}/src/Services/Query.API/bin/Debug/net9.0/Query.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/Query.API",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "StreamProcessing.Service",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-streamprocessing-service",
+      "program": "${workspaceFolder}/src/Services/StreamProcessing.Service/bin/Debug/net9.0/StreamProcessing.Service.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/StreamProcessing.Service",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "VideoMetadata.API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-videometadata-api",
+      "program": "${workspaceFolder}/src/Services/VideoMetadata.API/bin/Debug/net9.0/VideoMetadata.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/VideoMetadata.API",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Billing.API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-billing-api",
+      "program": "${workspaceFolder}/src/Services/Billing.API/bin/Debug/net9.0/Billing.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/Billing.API",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
     }
   ],
   "compounds": [
     {
       "name": "All Web Apps",
       "configurations": ["Sensormine Web", "Device Simulator"]
+    },
+    {
+      "name": "Core APIs",
+      "configurations": [
+        "ApiGateway",
+        "SchemaRegistry.API",
+        "Device.API"
+      ]
+    },
+    {
+      "name": "All APIs",
+      "configurations": [
+        "ApiGateway",
+        "SchemaRegistry.API",
+        "Device.API",
+        "Alerts.API",
+        "DigitalTwin.API",
+        "Edge.Gateway",
+        "Ingestion.Service",
+        "Query.API",
+        "StreamProcessing.Service",
+        "VideoMetadata.API",
+        "Billing.API"
+      ]
+    },
+    {
+      "name": "Full Stack",
+      "configurations": [
+        "Sensormine Web",
+        "Device Simulator",
+        "ApiGateway",
+        "SchemaRegistry.API",
+        "Device.API",
+        "Alerts.API",
+        "DigitalTwin.API",
+        "Edge.Gateway",
+        "Ingestion.Service",
+        "Query.API",
+        "StreamProcessing.Service",
+        "VideoMetadata.API",
+        "Billing.API"
+      ]
     }
   ]
 }

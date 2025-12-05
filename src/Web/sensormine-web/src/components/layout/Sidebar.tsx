@@ -16,7 +16,9 @@ import {
   LineChart, 
   Settings,
   Menu,
-  X
+  X,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -26,12 +28,20 @@ const navigation = [
   { name: 'Devices', href: '/devices', icon: Cpu },
   { name: 'Alerts', href: '/alerts', icon: Bell },
   { name: 'Charts', href: '/charts', icon: LineChart },
-  { name: 'Settings', href: '/settings', icon: Settings },
+];
+
+const settingsNavigation = [
+  { name: 'Device Types', href: '/settings/device-types' },
+  { name: 'Schemas', href: '/settings/schemas' },
+  { name: 'Users', href: '/settings/users' },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [settingsExpanded, setSettingsExpanded] = useState(
+    pathname?.startsWith('/settings') ?? false
+  );
 
   return (
     <>
@@ -74,7 +84,7 @@ export function Sidebar() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 px-3 py-4">
+          <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
             {navigation.map((item) => {
               const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
               const Icon = item.icon;
@@ -86,7 +96,7 @@ export function Sidebar() {
                   className={cn(
                     'group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
                     isActive
-                      ? 'bg-gradient-to-r from-[#0066CC] to-[#0088FF] text-white shadow-lg shadow-blue-500/50'
+                      ? 'bg-linear-to-r from-[#0066CC] to-[#0088FF] text-white shadow-lg shadow-blue-500/50'
                       : 'text-blue-100 hover:bg-white/10 hover:text-white',
                     collapsed && 'justify-center'
                   )}
@@ -96,6 +106,55 @@ export function Sidebar() {
                 </Link>
               );
             })}
+
+            {/* Settings Section with Dropdown */}
+            <div className="space-y-1">
+              <button
+                onClick={() => setSettingsExpanded(!settingsExpanded)}
+                className={cn(
+                  'group flex w-full items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
+                  pathname?.startsWith('/settings')
+                    ? 'bg-linear-to-r from-[#0066CC] to-[#0088FF] text-white shadow-lg shadow-blue-500/50'
+                    : 'text-blue-100 hover:bg-white/10 hover:text-white',
+                  collapsed && 'justify-center'
+                )}
+              >
+                <Settings className={cn('h-5 w-5 shrink-0', !collapsed && 'mr-3')} />
+                {!collapsed && (
+                  <>
+                    <span className="flex-1 text-left">Settings</span>
+                    {settingsExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </>
+                )}
+              </button>
+
+              {/* Settings Submenu */}
+              {!collapsed && settingsExpanded && (
+                <div className="ml-4 space-y-1 border-l-2 border-white/10 pl-2">
+                  {settingsNavigation.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={cn(
+                          'block rounded-lg px-3 py-2 text-sm transition-all',
+                          isActive
+                            ? 'bg-white/10 text-white font-medium'
+                            : 'text-blue-100 hover:bg-white/5 hover:text-white'
+                        )}
+                      >
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Collapse button (desktop only) */}

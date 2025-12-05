@@ -30,4 +30,23 @@ export type {
   User,
   LoginRequest,
   LoginResponse,
+  DeviceType,
+  DeviceTypeRequest,
+  DeviceTypeListResponse,
+  SearchDeviceTypesRequest,
+  DeviceProtocol,
+  CustomFieldDefinition,
+  CustomFieldType,
+  AlertRuleTemplate,
+  AlertSeverity,
+  ProtocolConfig,
 } from './types';
+
+export {
+  createDeviceType,
+  getDeviceTypeById,
+  getAllDeviceTypes,
+  updateDeviceType,
+  deleteDeviceType,
+  searchDeviceTypes,
+} from './deviceTypes';

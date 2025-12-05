@@ -72,17 +72,17 @@ export function SchemaSelector({
         (s) =>
           s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          s.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+          (s.tags || []).some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
 
     if (deviceType) {
       // Prioritize schemas with matching device type tag
       filtered = filtered.sort((a, b) => {
-        const aHasDeviceType = a.tags.some(tag => 
+        const aHasDeviceType = (a.tags || []).some(tag => 
           tag.toLowerCase().includes(deviceType.toLowerCase().replace('_', ' '))
         );
-        const bHasDeviceType = b.tags.some(tag => 
+        const bHasDeviceType = (b.tags || []).some(tag => 
           tag.toLowerCase().includes(deviceType.toLowerCase().replace('_', ' '))
         );
         if (aHasDeviceType && !bHasDeviceType) return -1;
@@ -91,8 +91,8 @@ export function SchemaSelector({
       });
     }
 
-    // Only show active schemas
-    filtered = filtered.filter((s) => s.status === 'Active');
+    // Show active and draft schemas (exclude archived/deprecated)
+    filtered = filtered.filter((s) => !s.status || s.status === 'Active' || s.status === 'Draft');
 
     setFilteredSchemas(filtered);
   }, [searchQuery, schemas, deviceType]);
@@ -156,7 +156,7 @@ export function SchemaSelector({
                 Browse Schemas
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-[95vw]! max-h-[95vh]! w-[95vw]! h-[95vh]! overflow-y-auto p-6">
               <DialogHeader>
                 <DialogTitle>Select Data Schema</DialogTitle>
                 <DialogDescription>
@@ -234,9 +234,9 @@ export function SchemaSelector({
                             <p className="text-sm text-muted-foreground">
                               {schema.description}
                             </p>
-                            {schema.tags.length > 0 && (
+                            {(schema.tags || []).length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-2">
-                                {schema.tags.map((tag) => (
+                                {(schema.tags || []).map((tag) => (
                                   <Badge key={tag} variant="secondary" className="text-xs">
                                     {tag}
                                   </Badge>
@@ -272,9 +272,9 @@ export function SchemaSelector({
                 <p className="text-sm text-muted-foreground">
                   {selectedSchema.description}
                 </p>
-                {selectedSchema.tags.length > 0 && (
+                {(selectedSchema.tags || []).length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {selectedSchema.tags.map((tag) => (
+                    {(selectedSchema.tags || []).map((tag) => (
                       <Badge key={tag} variant="secondary" className="text-xs">
                         {tag}
                       </Badge>
@@ -283,7 +283,7 @@ export function SchemaSelector({
                 )}
               </div>
               <div className="flex gap-2">
-                <Link href={`/schemas/${selectedSchema.id}`} target="_blank">
+                <Link href={`/settings/schemas/${selectedSchema.id}`} target="_blank">
                   <Button variant="ghost" size="sm" className="gap-2">
                     <ExternalLink className="h-3 w-3" />
                   </Button>
@@ -336,7 +336,7 @@ export function SchemaSelector({
 
       {/* Create Schema Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw]! max-h-[95vh]! w-[95vw]! h-[95vh]! overflow-y-auto p-6">
           <DialogHeader>
             <DialogTitle>Create New Schema</DialogTitle>
             <DialogDescription>

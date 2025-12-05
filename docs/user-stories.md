@@ -13,26 +13,170 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 1: Device & Hardware Management
+## Epic 1: Device Type Configuration
 
-### Story 1.1: Device Registration via Mobile App
-**As a** field technician  
-**I want** to register a new Nexus device by scanning its QR code  
-**So that** I can quickly onboard devices without manual data entry
+### Story 1.1: Create Device Type
+**As a** system administrator  
+**I want** to create a Device Type that defines protocols, schemas, and custom fields  
+**So that** I can standardize device configuration across multiple devices
 
 **Acceptance Criteria:**
-- Mobile app can scan QR codes or enter serial numbers manually
-- Device registration creates entry in Device.API
-- Device metadata can be captured during registration (location, custom fields)
-- Offline registration is cached and synced when connectivity returns
-- Success/failure feedback is displayed to the user
+- Navigate to Settings → Device Types
+- Create new Device Type with name and description
+- Select primary protocol (MQTT, HTTP, WebSocket, OPC UA, Modbus, etc.)
+- Configure protocol-specific settings (endpoints, auth, sampling rate)
+- Assign data schema from Schema Registry
+- Define custom metadata fields (name, type, validation rules, help text)
+- Set field as required/optional
+- Configure default alert rule templates
+- Add tags for categorization
+- Save Device Type
+- Preview example device configuration
+- Clone existing Device Type to create similar configuration
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+### Story 1.2: Edit Device Type Configuration
+**As a** system administrator  
+**I want** to modify an existing Device Type's settings  
+**So that** I can adapt to changing requirements without creating new types
+
+**Acceptance Criteria:**
+- Select Device Type from Settings → Device Types list
+- View usage statistics (number of devices using this type)
+- Edit general settings (name, description, tags)
+- Update protocol configuration
+- Change assigned schema (with version compatibility check)
+- Add/remove/modify custom fields
+- Warning if changes affect existing devices
+- View version history of Device Type changes
+- Rollback to previous configuration version
+- Changes propagate to all devices of this type
+- Audit log captures all modifications
 
 **Priority:** High  
 **Story Points:** 5
 
 ---
 
-### Story 1.2: Azure DPS Provisioning
+### Story 1.3: Schema Assignment to Device Type
+**As a** system administrator  
+**I want** to assign a data schema to a Device Type  
+**So that** all devices of that type validate their data against the same structure
+
+**Acceptance Criteria:**
+- In Device Type editor, navigate to "Schema" section
+- Browse available schemas from Schema Registry
+- Search/filter schemas by name, device type tags
+- Preview schema structure (fields, types, validation rules)
+- Select schema version (or "Latest")
+- Map schema fields to protocol-specific data points (optional)
+- Set up field transformations if needed
+- Test schema with sample device payload
+- Save schema assignment
+- All new devices of this type automatically use assigned schema
+- Schema version upgrades require explicit admin action
+- Backwards compatibility checking when changing schema
+
+**Priority:** High  
+**Story Points:** 5
+
+---
+
+### Story 1.4: Custom Field Definition for Device Type
+**As a** system administrator  
+**I want** to define custom metadata fields for a Device Type  
+**So that** devices of that type collect consistent business context
+
+**Acceptance Criteria:**
+- In Device Type editor, navigate to "Custom Fields" section
+- Add new custom field with properties:
+  - Field name and label
+  - Field type (text, number, boolean, date, list/dropdown)
+  - Default value
+  - Validation rules (min/max, regex, required)
+  - Help text/tooltip
+  - Conditional visibility (show if another field has certain value)
+- Reorder fields (drag and drop)
+- Set field as required or optional
+- Preview field in device form
+- Delete unused fields (with warning if data exists)
+- Custom fields appear automatically in device registration form
+- Mobile app reflects custom field configuration
+- Fields are searchable and filterable in device list
+- Export custom field definitions
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+### Story 1.5: Alert Rule Templates for Device Type
+**As a** system administrator  
+**I want** to define default alert rules for a Device Type  
+**So that** new devices automatically have appropriate alerting configured
+
+**Acceptance Criteria:**
+- In Device Type editor, navigate to "Alert Templates" section
+- Create alert rule using visual rule builder:
+  - Select schema field for threshold
+  - Define comparison operator (>, <, =, between, etc.)
+  - Set threshold value
+  - Configure time window and evaluation frequency
+  - Set alert severity (info, warning, critical)
+  - Add multiple conditions with AND/OR logic
+- Reference custom fields in alert conditions
+- Configure alert delivery channels
+- Set up escalation rules
+- Test alert rule against historical data
+- Enable/disable rule template
+- New devices inherit enabled alert rules
+- Devices can override inherited rules
+- View alert rule usage across devices
+
+**Priority:** Medium  
+**Story Points:** 8
+
+---
+
+## Epic 2: Device Registration & Management
+
+### Story 2.1: Device Registration via Mobile App
+**As a** field technician  
+**I want** to register a new device by selecting its Device Type and completing the dynamic form  
+**So that** I can quickly onboard devices with correct configuration
+
+**Acceptance Criteria:**
+- Scan QR code or enter serial number to identify device
+- Select Device Type from dropdown (search/filter enabled)
+- Dynamic form loads showing custom fields defined in Device Type:
+  - Required fields marked with asterisk
+  - Field types render appropriately (text, number, date picker, dropdown, etc.)
+  - Help text/tooltips display for each field
+  - Conditional fields show/hide based on other field values
+- Real-time validation of field inputs
+- Location picker for GPS coordinates
+- Device metadata automatically captured (registration date, technician ID)
+- Preview configuration before submission
+- Submit creates device entry in Device.API with:
+  - Device Type association
+  - All custom field values
+  - Protocol configuration from Device Type
+  - Schema assignment from Device Type
+  - Inherited alert rules from Device Type
+- Offline registration cached and synced when connectivity returns
+- Success/failure feedback displayed
+- Option to register another device of same type (pre-fill Device Type)
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+### Story 2.2: Azure DPS Provisioning
 **As a** Nexus device  
 **I want** to automatically provision myself through Azure DPS  
 **So that** I can securely connect without manual configuration
@@ -49,51 +193,83 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-### Story 1.3: Nexus Probe Configuration
+### Story 2.3: Web UI Device Registration
 **As a** system administrator  
-**I want** to configure probe interfaces (RS485, RS232, OneWire, 4-20mA) and data schemas on Nexus devices  
-**So that** I can connect various industrial sensors and validate their data
+**I want** to register devices through the web interface  
+**So that** I can onboard devices from my desk
 
 **Acceptance Criteria:**
-
-**Probe Configuration:**
-- UI provides probe type selection (RS485, RS232, OneWire, 4-20mA)
-- Each probe can be assigned a name and description
-- Probe configuration includes sampling rate and data format
-- Configuration is sent to device via MQTT command
-- Device acknowledges configuration changes
-- Configuration history is maintained
-
-**Schema Configuration (New):**
-- Device configuration page includes "Data Schema" section
-- Schema selector dropdown (search/filter by name)
-- Display selected schema information:
-  - Schema name, version, description
-  - List of schema fields with types and units
-  - Expected payload structure preview (JSON example)
-- Schema field mapping to probe outputs (optional)
-- Validation rules preview for selected schema
-- Test device data against schema:
-  - Paste sample device payload
-  - Validate in real-time with error display
-  - Show validation errors with field-level details
-- Schema assignment triggers:
-  - Device configuration update via MQTT
-  - Ingestion pipeline validation enabled
-  - Dashboard widgets can bind to schema fields
-- Device detail page shows:
-  - Current schema name and version
-  - Schema validation status (passing/failing)
-  - Recent validation errors with timestamps
-- Historical data remains queryable with old schema versions
-- Schema version change warning if breaking changes detected
+- Navigate to Devices → Add New Device
+- Select Device Type from dropdown with search
+- Dynamic form renders based on Device Type custom fields
+- All field validation from Device Type applies
+- Upload device CSV for bulk registration
+- CSV template auto-generated from Device Type fields
+- Validation errors shown per-row in bulk upload
+- Review and confirm bulk registration
+- Progress indicator for bulk operations
+- Summary of successful/failed registrations
+- Option to retry failed registrations
 
 **Priority:** High  
-**Story Points:** 8 (Probe Config) + 5 (Schema Config) = 13 total
+**Story Points:** 5
 
 ---
 
-### Story 1.4: Device State Management
+### Story 2.4: Edit Device Configuration
+**As a** system administrator  
+**I want** to edit a device's custom fields and settings  
+**So that** I can update device metadata as conditions change
+
+**Acceptance Criteria:**
+- Select device from device list
+- View current Device Type and custom field values
+- Edit custom field values (respecting validation rules)
+- Option to change Device Type (with warning about schema/config changes)
+- If Device Type changes:
+  - Show diff of field changes (added/removed fields)
+  - Warn about schema compatibility
+  - Confirm alert rule changes
+  - Map old custom field values to new fields (if possible)
+- Update location and deployment metadata
+- Save changes with audit log entry
+- Changes reflect immediately in device details
+- Historical custom field values preserved
+
+**Priority:** Medium  
+**Story Points:** 5
+
+---
+
+### Story 2.5: Nexus Probe Configuration
+**As a** system administrator  
+**I want** to configure probe interfaces (RS485, RS232, OneWire, 4-20mA) on Nexus devices  
+**So that** I can connect various industrial sensors
+
+**Acceptance Criteria:**
+- Select Nexus device (Device Type must be Nexus family)
+- Navigate to "Probe Configuration" section
+- UI provides probe slot selection (1-4 or based on device model)
+- For each slot, configure:
+  - Probe type (RS485, RS232, OneWire, 4-20mA, or None)
+  - Probe name and description
+  - Sampling rate
+  - Data format/scaling
+  - Mapping to schema fields (auto-suggested based on Device Type schema)
+- Send configuration to device via MQTT command
+- Device acknowledges configuration within timeout
+- Configuration status indicator (pending, confirmed, failed)
+- Configuration history maintained per device
+- Test probe reading in real-time
+- Validate probe data against Device Type schema
+- Alert if probe data doesn't match expected schema fields
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+### Story 2.6: Device State Management
 **As a** operations manager  
 **I want** to set devices to Active, Inactive, or Maintenance mode  
 **So that** I can control data collection and alerting
@@ -1030,23 +1206,120 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 6: Alerting & Notifications
+## Epic 6: Alerting & Notifications (Settings-Based Configuration)
 
-### Story 6.1: Threshold Alerts
+### Story 6.1: Alert Rule Configuration in Settings
+**As a** system administrator  
+**I want** to configure alert rules in the Settings section  
+**So that** I can manage all alerting centrally
+
+**Acceptance Criteria:**
+- Navigate to Settings → Alert Rules
+- View list of all alert rule templates
+- Filter by Device Type, severity, status
+- Create new alert rule template:
+  - Rule name and description
+  - Associated Device Type (or "Global")
+  - Schema field selection (auto-populated from Device Type)
+  - Condition builder (threshold, comparison, custom expression)
+  - Severity level (info, warning, critical)
+  - Evaluation frequency and time windows
+  - Delivery channels (email, SMS, Teams, webhook)
+- Test alert rule against sample data
+- Enable/disable rule template
+- Clone existing rule for similar configuration
+- View rule usage (which devices have this rule)
+- Audit log of rule changes
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+### Story 6.2: Alert Delivery Channel Configuration
+**As a** system administrator  
+**I want** to configure alert delivery channels in Settings  
+**So that** alerts can be sent through various communication methods
+
+**Acceptance Criteria:**
+- Navigate to Settings → Alert Rules → Delivery Channels
+- Configure Email:
+  - SMTP server settings
+  - From address and display name
+  - Email template editor
+  - Test email delivery
+- Configure SMS:
+  - Provider selection (Twilio, AWS SNS, etc.)
+  - API credentials
+  - Default sender number
+  - Test SMS delivery
+- Configure Microsoft Teams:
+  - Webhook URL configuration
+  - Message card template editor
+  - Test Teams message
+- Configure Webhooks:
+  - Endpoint URL
+  - Authentication method (API key, OAuth, etc.)
+  - Custom headers
+  - Payload template
+  - Test webhook delivery
+- Create distribution lists:
+  - Name and description
+  - Member list (emails, phone numbers)
+  - Channel preferences per member
+- Associate distribution lists with alert rules
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 6.3: Device Type Alert Templates
+**As a** system administrator  
+**I want** to define default alert rules for each Device Type  
+**So that** new devices automatically have appropriate alerts
+
+**Acceptance Criteria:**
+- In Settings → Device Types → [Device Type] → Alert Templates
+- View alert rules inherited by this Device Type
+- Add new alert rule template specific to this type
+- Reference Device Type custom fields in conditions
+- Reference schema fields (auto-populated)
+- Multi-condition rules with AND/OR logic
+- Set default thresholds using custom field values
+- Enable/disable alert inheritance for new devices
+- Preview which devices will be affected
+- Apply alert template to existing devices (bulk operation)
+- Devices can override inherited alerts
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+### Story 6.4: Threshold Alerts
 **As a** operations manager  
 **I want** to create alerts when sensor values exceed thresholds  
 **So that** I'm notified of abnormal conditions
 
 **Acceptance Criteria:**
-- Alert rule UI with threshold configuration
-- Support for: greater than, less than, equal to, between
-- Multiple conditions with AND/OR logic
-- Configurable evaluation frequency
-- Alert severity levels (info, warning, critical)
-- Test alert before activation
+- Create alert rule in Settings (Story 6.1)
+- Visual rule builder:
+  - Select schema field from dropdown
+  - Choose comparison operator (>, <, =, !=, between, outside)
+  - Set threshold value
+  - Configure time window (e.g., "for 5 minutes")
+  - Add multiple conditions with AND/OR
+- Test rule against historical device data
+- Associate with Device Type or specific devices
+- Configure delivery channels and recipients
+- Set alert cooldown period
+- Enable rate limiting
+- Save and activate rule
+- New devices of associated Device Type inherit rule
 
 **Priority:** High  
-**Story Points:** 13
+**Story Points:** 5
 
 ---
 

@@ -1,0 +1,21 @@
+{
+  "name": "flood sensor",
+  "protocol": "MQTT",
+  "protocolConfig": {
+    "mqtt": {
+      "broker": "mqtt://localhost:1883",
+      "topic": "sensor/temp",
+      "qos": 1
+    }
+  },
+  "customFields": [
+    {
+      "name": "turkey",
+      "label": "boom",
+      "type": "Text",
+      "required": false
+    }
+  ],
+  "alertTemplates": [],
+  "tags": []
+}

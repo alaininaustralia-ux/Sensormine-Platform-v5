@@ -15,43 +15,75 @@ SensorMine is an industrial IoT and video analytics platform that ingests, model
 
 ## 2. Functional Requirements
 
-### 2.1 Device & Hardware Management
+### 2.1 Device Type Configuration & Management
 
-#### 2.1.1 Nexus Hardware Integration
+#### 2.1.1 Device Type Definition
+
+**Device Types are templates that define:**
+- Protocol configuration (MQTT, HTTP, WebSocket, OPC UA, Modbus, etc.)
+- Data schema (payload structure and validation rules)
+- Custom metadata fields specific to this device type
+- Default alert rules and thresholds
+- Visualization templates and dashboard widgets
+- Communication settings (frequency, batching, compression)
+
+**Each Device Type includes:**
+- **Name and Description**: Human-readable identification
+- **Protocol Settings**: Connection parameters, authentication, endpoints
+- **Data Schema**: JSON Schema defining telemetry payload structure
+- **Custom Fields**: Type-specific metadata fields (text, numeric, boolean, date, list)
+- **Field Validation**: Rules for custom field values
+- **Alert Templates**: Pre-configured alert rules for this device type
+- **Tags**: Categorization and filtering
+
+**Device Type UI (Settings Section):**
+- Create/Edit/Delete device types
+- Clone existing types for similar configurations
+- Import/Export device type definitions
+- Version history and change tracking
+- Usage statistics (how many devices use this type)
+
+#### 2.1.2 Nexus Hardware Integration
 
 **Support Nexus devices communicating via:**
 - MQTT
 - Azure Device Provisioning Service (DPS) for secure onboarding
 
-**Central configuration for all Nexus settings:**
-- Communication/sampling settings
-- Probe configurations
-- Firmware management
+**Nexus-specific Device Type settings:**
+- Probe configurations (RS485, RS232, OneWire, 4–20 mA)
+- Probe-to-schema field mapping
+- Firmware requirements
 - Telemetry frequency and batching
 - Video or sensor linkages
-
-**Nexus devices must support custom probe interfaces:**
-- RS485
-- RS232
-- OneWire
-- 4–20 mA
+- Orientation/tilt monitoring settings
 
 **Provide a dedicated Nexus Configuration UI, including:**
-- Probe assignment
+- Probe assignment and configuration
 - Diagnostics (battery, orientation/tilt, comms, last check-in)
 - Live telemetry
 - Command/control (reboot, sampling rate, firmware update)
 
-#### 2.1.2 Device Lifecycle Management
+#### 2.1.3 Device Lifecycle Management
 
 **Register/provision devices through:**
 - Mobile app
 - Azure DPS + MQTT
+- Web UI bulk import
 
-**Manage device metadata:**
-- Custom fields
-- Device identity and geolocation
-- Installation and operational metadata
+**Device Registration Process:**
+1. Select Device Type (required)
+2. Enter device identity (serial number, MAC address, etc.)
+3. Complete custom fields defined by Device Type
+4. Set location and deployment metadata
+5. Configure protocol-specific connection details
+6. Validate configuration and provision
+
+**Dynamic Device Form:**
+- Form fields auto-generated from Device Type custom field definitions
+- Field validation based on Device Type rules
+- Conditional fields based on other field values
+- Help text and tooltips from Device Type configuration
+- Real-time validation feedback
 
 **Device state modes:**
 - Active
@@ -60,6 +92,8 @@ SensorMine is an industrial IoT and video analytics platform that ingests, model
 
 **Additional capabilities:**
 - Ability to deprovision devices and archive or delete historical data
+- Change device type (with data migration warning)
+- Bulk operations on devices of same type
 
 #### 2.1.3 Mobile Device Support
 
@@ -94,19 +128,20 @@ SensorMine is an industrial IoT and video analytics platform that ingests, model
 - Batch ingestion
 - Stream-based ingestion
 
-#### 2.2.2 Dynamic Data Payload Definition
+#### 2.2.2 Schema Management (Integrated with Device Types)
 
-**Allow users to define:**
-- Payload schemas
-- Field names
-- Data types
-- Units
+**Schemas define data payload structure:**
+- Field names, data types, and units
+- Validation rules and constraints
 - Relationships to devices, locations, or video sources
+- Version history and compatibility
 
-**Support:**
-- Versioning
-- Deprecation
-- Backwards compatibility
+**Schema Integration with Device Types:**
+- Each Device Type references one or more schemas
+- Schemas are assigned during Device Type configuration (not during device registration)
+- Schema versioning allows updates without breaking existing devices
+- Devices inherit schema from their Device Type
+- Schema validation occurs during data ingestion
 
 **Schema management:** ✅ **Implemented**
 - Allow schema mapping and updates without downtime
@@ -114,6 +149,12 @@ SensorMine is an industrial IoT and video analytics platform that ingests, model
 - **Schema UI**: Complete CRUD interface with 3-step wizard
 - **AI Metering**: Centralized tracking of all AI API usage and costs
 - Multi-tenant usage statistics and monitoring
+
+**Schema Migration:**
+- Update Device Type schema version
+- All devices of that type automatically use new schema
+- Backwards compatibility checking
+- Data migration tools for breaking changes
 
 #### 2.2.3 Data Querying
 
@@ -245,35 +286,67 @@ SensorMine is an industrial IoT and video analytics platform that ingests, model
 
 ### 2.6 Alerting & Notifications
 
-#### 2.6.1 Alert Rules
+#### 2.6.1 Alert Configuration (Settings Section)
+
+**Alert configuration is managed in Settings UI:**
+- Create/edit alert rule templates
+- Associate alert rules with Device Types
+- Global alert rules (apply to all devices)
+- Device-specific overrides
+
+**Device Type Alert Templates:**
+- Pre-configured alert rules for device type
+- New devices automatically inherit these rules
+- Threshold values can use Device Type custom fields
+- Alert rules reference schema fields by name
+
+#### 2.6.2 Alert Rules
 
 **Must support alerts based on:**
-- Thresholds
+- Schema field thresholds (numeric comparisons)
 - Geospatial boundaries
 - Video events
 - Battery level or comms health
 - Device orientation (tilt detection)
 - Custom expressions or scripts
 - Time schedules
+- Device Type custom field values
 
-#### 2.6.2 Alert Delivery Channels
+**Alert Rule Builder:**
+- Visual rule builder UI
+- Schema field picker (auto-populated from Device Type)
+- Custom field conditions
+- Multiple conditions with AND/OR logic
+- Test alert rules against historical data
+
+#### 2.6.3 Alert Delivery Channels
 
 **Support sending alerts via:**
 - Email
 - SMS
 - Microsoft Teams
 - Webhooks/API endpoints
+- In-app notifications
 
-#### 2.6.3 Alert Management
+**Channel Configuration (Settings):**
+- Configure delivery channel credentials
+- Set up distribution lists
+- Template customization per channel
+- Escalation rules
+
+#### 2.6.4 Alert Management
 
 **Provide:**
-- Alert history
-- Acknowledgement
+- Alert history dashboard
+- Acknowledgement workflow
 - Suppression windows
-- Rule templates
+- Rule templates library
+- Alert analytics and statistics
 
 **Special handling:**
 - Maintenance mode automatically disables alerts for affected devices
+- Device Type changes preserve alert history
+- Bulk alert operations for device groups
 
 ---
 
@@ -382,14 +455,75 @@ SensorMine is an industrial IoT and video analytics platform that ingests, model
   - Dashboards
   - Data types
 
-### 5.2 Configuration Management
+### 5.2 Settings Section (Configuration Management)
 
-**Provide central configuration UI for:**
-- Video models
-- Data schemas
-- Device templates
-- Alert rules
-- Dashboard templates
+**Centralized Settings UI includes:**
+
+**Device Configuration:**
+- Device Types (create, edit, delete, clone)
+- Custom field definitions per Device Type
+- Protocol configuration templates
+- Schema assignment to Device Types
+- Firmware version management
+
+**Alert Configuration:**
+- Alert rule templates
+- Delivery channel setup (email, SMS, Teams, webhooks)
+- Distribution lists
+- Escalation rules
+- Alert thresholds per Device Type
+
+**Data Configuration:**
+- Schema Registry (create, edit, version schemas)
+- Data validation rules
+- Retention policies
+- Export formats
+
+**Integration Configuration:**
+- MQTT broker settings
+- OPC UA server connections
+- Modbus/BACnet configurations
+- Video stream sources (RTSP, HLS)
+- CCTV system integrations (Genetec, Milestone)
+- Third-party API credentials
+
+**System Configuration:**
+- User and role management
+- Tenant settings (if multi-tenant)
+- Backup and restore
+- Audit log settings
+- Performance tuning
+
+**UI Navigation:**
+```
+Settings (top-level menu)
+├── Device Types
+│   ├── List all types
+│   ├── Create new type
+│   └── Edit type
+│       ├── General settings
+│       ├── Protocol configuration
+│       ├── Schema selection
+│       ├── Custom fields
+│       └── Alert templates
+├── Alert Rules
+│   ├── Rule templates
+│   ├── Delivery channels
+│   └── Distribution lists
+├── Schemas
+│   ├── Browse schemas
+│   ├── Create schema (wizard)
+│   └── AI schema generation
+├── Integrations
+│   ├── MQTT brokers
+│   ├── Industrial protocols
+│   ├── Video sources
+│   └── Third-party APIs
+└── System
+    ├── Users & roles
+    ├── Tenants
+    └── Audit logs
+```
 
 ### 5.3 Tenant Management
 

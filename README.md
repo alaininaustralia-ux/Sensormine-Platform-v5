@@ -66,7 +66,8 @@ Sensormine/
 
 ### Prerequisites
 
-- [.NET 8+ SDK](https://dotnet.microsoft.com/download)
+- [.NET 9+ SDK](https://dotnet.microsoft.com/download)
+- [Node.js 18+](https://nodejs.org/) (for frontend development)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 - [Kubernetes](https://kubernetes.io/) (for production deployment)
 - [Terraform](https://www.terraform.io/) (for infrastructure provisioning)
@@ -113,8 +114,17 @@ Sensormine/
    dotnet run
    ```
 
-6. **Access services**
-   - Device API: http://localhost:5000/swagger
+6. **Start frontend** (optional)
+   ```bash
+   cd src/Web/sensormine-web
+   npm install
+   npm run dev
+   ```
+
+7. **Access services**
+   - Frontend Web App: http://localhost:3020
+   - Device API: http://localhost:5293/swagger
+   - Schema Registry API: http://localhost:5021/swagger
    - Kafka UI: http://localhost:8080
    - MinIO Console: http://localhost:9090 (minio/minio123)
    - Jaeger UI: http://localhost:16686

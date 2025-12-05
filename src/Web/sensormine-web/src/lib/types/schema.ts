@@ -11,14 +11,17 @@ export interface Schema {
   tenantId: string;
   name: string;
   description: string;
-  currentVersionId: string;
-  status: SchemaStatus;
-  tags: string[];
+  currentVersionId?: string;
+  status?: SchemaStatus;
+  tags?: string[]; // Optional - not always returned by backend
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
   deletedAt?: string;
   currentVersion?: SchemaVersion;
   versions?: SchemaVersion[];
+  // Backend fields
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export interface SchemaVersion {

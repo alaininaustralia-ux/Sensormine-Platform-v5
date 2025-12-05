@@ -64,8 +64,13 @@ Let the user choose:
    - Update completion counts
    - Update epic percentages
    - Clear "Active Story" or set next one
-3. Commit and push to GitHub
-4. Close GitHub issue with link to commit
+3. **Update Web Project Help** (MANDATORY):
+   - Navigate to `src/Web/sensormine-web/HELP.md`
+   - Document any new features, components, or API endpoints added
+   - Include usage examples and configuration details
+   - Update troubleshooting section if relevant
+4. Commit and push to GitHub
+5. Close GitHub issue with link to commit
 
 ### Before Starting Any Story
 1. ✅ Check `.agent/current-state.md` for blockers

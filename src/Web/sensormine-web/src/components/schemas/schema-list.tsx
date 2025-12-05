@@ -230,19 +230,19 @@ export function SchemaList() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => router.push(`/schemas/${schema.id}`)}
+                          onClick={() => router.push(`/settings/schemas/${schema.id}`)}
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => router.push(`/schemas/${schema.id}/edit`)}
+                          onClick={() => router.push(`/settings/schemas/${schema.id}/edit`)}
                         >
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Schema
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => router.push(`/schemas/${schema.id}/versions`)}
+                          onClick={() => router.push(`/settings/schemas/${schema.id}/versions`)}
                         >
                           <History className="h-4 w-4 mr-2" />
                           Version History

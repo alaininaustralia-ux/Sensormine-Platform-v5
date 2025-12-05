@@ -9,7 +9,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:3020", "http://localhost:3000")
+        policy.WithOrigins("http://localhost:3020", "http://localhost:3021", "http://localhost:3000")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -28,6 +28,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+// Disable HTTPS redirection in development to avoid CORS issues
+// app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 

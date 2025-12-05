@@ -23,7 +23,7 @@ export default function SchemasPage() {
             Define and manage data schemas for your devices and sensors
           </p>
         </div>
-        <Link href="/schemas/new">
+        <Link href="/settings/schemas/new">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Create Schema

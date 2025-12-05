@@ -17,11 +17,15 @@ public class ApplicationDbContext : DbContext
     public DbSet<Schema> Schemas { get; set; } = null!;
     public DbSet<SchemaVersion> SchemaVersions { get; set; } = null!;
 
+    // Device Type Management
+    public DbSet<DeviceType> DeviceTypes { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
         ConfigureSchemaEntities(modelBuilder);
+        ConfigureDeviceTypeEntities(modelBuilder);
     }
 
     private void ConfigureSchemaEntities(ModelBuilder modelBuilder)
@@ -147,6 +151,117 @@ public class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => e.TenantId)
                 .HasDatabaseName("ix_schema_versions_tenant");
+        });
+    }
+
+    private void ConfigureDeviceTypeEntities(ModelBuilder modelBuilder)
+    {
+        // DeviceType Configuration
+        modelBuilder.Entity<DeviceType>(entity =>
+        {
+            entity.ToTable("device_types");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedOnAdd();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .IsRequired();
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.Description)
+                .HasColumnName("description")
+                .HasColumnType("text");
+
+            entity.Property(e => e.Protocol)
+                .HasColumnName("protocol")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            // Store ProtocolConfig as JSONB
+            entity.Property(e => e.ProtocolConfig)
+                .HasColumnName("protocol_config")
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                    v => System.Text.Json.JsonSerializer.Deserialize<ProtocolConfig>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new ProtocolConfig())
+                .IsRequired();
+
+            entity.Property(e => e.SchemaId)
+                .HasColumnName("schema_id");
+
+            // Store CustomFields as JSONB array
+            entity.Property(e => e.CustomFields)
+                .HasColumnName("custom_fields")
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<CustomFieldDefinition>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<CustomFieldDefinition>());
+
+            // Store AlertTemplates as JSONB array
+            entity.Property(e => e.AlertTemplates)
+                .HasColumnName("alert_templates")
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<AlertRuleTemplate>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<AlertRuleTemplate>());
+
+            // Store Tags as PostgreSQL array
+            entity.Property(e => e.Tags)
+                .HasColumnName("tags")
+                .HasColumnType("text[]");
+
+            entity.Property(e => e.IsActive)
+                .HasColumnName("is_active")
+                .HasDefaultValue(true);
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            entity.Property(e => e.CreatedBy)
+                .HasColumnName("created_by")
+                .HasMaxLength(255);
+
+            // Indexes
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("ix_device_types_tenant");
+
+            entity.HasIndex(e => new { e.TenantId, e.Name })
+                .HasDatabaseName("ix_device_types_tenant_name")
+                .IsUnique()
+                .HasFilter("is_active = true");
+
+            entity.HasIndex(e => e.Protocol)
+                .HasDatabaseName("ix_device_types_protocol");
+
+            entity.HasIndex(e => e.Tags)
+                .HasDatabaseName("ix_device_types_tags")
+                .HasMethod("gin");
+
+            entity.HasIndex(e => e.IsActive)
+                .HasDatabaseName("ix_device_types_active");
+
+            // Foreign key to schemas
+            entity.HasOne<Schema>()
+                .WithMany()
+                .HasForeignKey(e => e.SchemaId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Query filter for soft delete (only show active by default)
+            entity.HasQueryFilter(e => e.IsActive);
         });
     }
 }

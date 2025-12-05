@@ -73,7 +73,7 @@ export function SchemaWizard() {
   };
 
   const handleCancel = () => {
-    router.push('/schemas');
+    router.push('/settings/schemas');
   };
 
   const handleSubmit = async () => {
@@ -95,7 +95,7 @@ export function SchemaWizard() {
         description: `Schema "${schema.name}" created successfully`,
       });
 
-      router.push(`/schemas/${schema.id}`);
+      router.push(`/settings/schemas/${schema.id}`);
     } catch (error) {
       toast({
         title: 'Error',

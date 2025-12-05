@@ -12,16 +12,16 @@ import { Sidebar } from './Sidebar';
 import { Footer } from './Footer';
 import { useAuth } from '@/lib/auth';
 
-// Pages that don't use the sidebar layout
-const PUBLIC_PAGES = ['/', '/login', '/register', '/forgot-password'];
+// Pages that don't use the sidebar layout (only when not authenticated)
+const PUBLIC_PAGES = ['/login', '/register', '/forgot-password'];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
   const isPublicPage = PUBLIC_PAGES.includes(pathname || '');
 
-  // Public pages - full width, no sidebar
-  if (!isAuthenticated || isPublicPage) {
+  // Public pages when not authenticated - full width, no sidebar
+  if (!isAuthenticated && (isPublicPage || pathname === '/')) {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />

@@ -98,6 +98,127 @@ export interface Alert {
   updatedAt: string;
 }
 
+// Device Type types
+export type DeviceProtocol = 'MQTT' | 'HTTP' | 'WebSocket' | 'OPC_UA' | 'Modbus_TCP' | 'Modbus_RTU' | 'BACnet' | 'EtherNetIP';
+
+export type CustomFieldType = 'Text' | 'Number' | 'Boolean' | 'Date' | 'DateTime' | 'Select' | 'MultiSelect' | 'Email' | 'URL';
+
+export type AlertSeverity = 'Info' | 'Warning' | 'Error' | 'Critical';
+
+export interface MqttConfig {
+  broker: string;
+  topic: string;
+  qos: number;
+  username?: string;
+  password?: string;
+  clientId?: string;
+}
+
+export interface HttpConfig {
+  endpoint: string;
+  method: string;
+  headers?: Record<string, string>;
+  authType?: string;
+  authToken?: string;
+}
+
+export interface WebSocketConfig {
+  url: string;
+  reconnectInterval?: number;
+  maxReconnectAttempts?: number;
+}
+
+export interface ModbusConfig {
+  host: string;
+  port: number;
+  unitId: number;
+  registers?: Array<{ address: number; length: number; type: string }>;
+}
+
+export interface OpcuaConfig {
+  endpoint: string;
+  securityMode?: string;
+  securityPolicy?: string;
+  nodeIds?: string[];
+}
+
+export interface ProtocolConfig {
+  mqtt?: MqttConfig;
+  http?: HttpConfig;
+  webSocket?: WebSocketConfig;
+  modbus?: ModbusConfig;
+  opcua?: OpcuaConfig;
+}
+
+export interface CustomFieldDefinition {
+  name: string;
+  label: string;
+  type: CustomFieldType;
+  required: boolean;
+  defaultValue?: string;
+  options?: string[];
+  validation?: string;
+  description?: string;
+}
+
+export interface AlertRuleTemplate {
+  name: string;
+  description?: string;
+  condition: string;
+  severity: AlertSeverity;
+  enabled: boolean;
+  cooldownMinutes?: number;
+  escalationRules?: Array<{
+    delayMinutes: number;
+    notificationChannels: string[];
+  }>;
+}
+
+export interface DeviceType {
+  id: string;
+  tenantId: string;
+  name: string;
+  description?: string;
+  protocol: DeviceProtocol;
+  protocolConfig: ProtocolConfig;
+  schemaId?: string;
+  customFields: CustomFieldDefinition[];
+  alertTemplates: AlertRuleTemplate[];
+  tags: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+}
+
+export interface DeviceTypeRequest {
+  name: string;
+  description?: string;
+  protocol: DeviceProtocol;
+  protocolConfig: ProtocolConfig;
+  schemaId?: string;
+  customFields: CustomFieldDefinition[];
+  alertTemplates: AlertRuleTemplate[];
+  tags: string[];
+  isActive?: boolean;
+}
+
+export interface DeviceTypeListResponse {
+  items: DeviceType[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface SearchDeviceTypesRequest {
+  searchTerm?: string;
+  tags?: string[];
+  protocol?: DeviceProtocol;
+  page?: number;
+  pageSize?: number;
+}
+
 // Auth types
 export interface User {
   id: string;
