@@ -108,8 +108,12 @@ SensorMine is an industrial IoT and video analytics platform that ingests, model
 - Deprecation
 - Backwards compatibility
 
-**Schema management:**
+**Schema management:** ✅ **Implemented**
 - Allow schema mapping and updates without downtime
+- **AI-Powered Schema Generation**: Generate schemas from sample data using Claude API
+- **Schema UI**: Complete CRUD interface with 3-step wizard
+- **AI Metering**: Centralized tracking of all AI API usage and costs
+- Multi-tenant usage statistics and monitoring
 
 #### 2.2.3 Data Querying
 
@@ -442,11 +446,11 @@ SensorMine is an industrial IoT and video analytics platform that ingests, model
 | Device Management | Device.API, Edge.Gateway | ✅ Created |
 | Data Ingestion | Ingestion.Service, Edge.Gateway | ✅ Created |
 | Video Processing | VideoMetadata.API, StreamProcessing.Service | ✅ Created |
-| Schema Management | SchemaRegistry.API | ✅ Created |
+| Schema Management | SchemaRegistry.API | ✅ Implemented (UI + API + AI) |
 | Querying | Query.API | ✅ Created |
 | Alerting | Alerts.API | ✅ Created |
 | Digital Twins | DigitalTwin.API | ✅ Created |
-| LLM Analytics | Sensormine.AI (library) | ✅ Created |
+| LLM Analytics | Sensormine.AI (library) | ✅ Implemented (AI Metering + Schema Gen) |
 | API Gateway | ApiGateway | ✅ Created |
 
 ### Implementation Priorities
@@ -454,7 +458,8 @@ SensorMine is an industrial IoT and video analytics platform that ingests, model
 #### Phase 1: Core Platform (Current)
 - ✅ Device registration and management
 - ✅ Multi-protocol data ingestion
-- ✅ Schema-driven data modeling
+- ✅ Schema-driven data modeling (UI + API + AI-powered generation)
+- ✅ Centralized AI metering and usage tracking
 - ✅ Time-series storage
 - ✅ Basic querying
 

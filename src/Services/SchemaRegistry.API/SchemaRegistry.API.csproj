@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\Sensormine.Core\Sensormine.Core.csproj" />
     <ProjectReference Include="..\..\Shared\Sensormine.Storage\Sensormine.Storage.csproj" />
+    <ProjectReference Include="..\..\Shared\Sensormine.AI\Sensormine.AI.csproj" />
   </ItemGroup>
 
 </Project>

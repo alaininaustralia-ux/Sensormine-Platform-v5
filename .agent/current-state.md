@@ -1,8 +1,8 @@
 # Sensormine Platform v5 - Current State
 
 **Last Updated**: 2025-12-05  
-**Current Sprint**: Epic 4 - Visualization & Dashboards (Frontend Foundation)  
-**Active Story**: Story 4.7 - Gauge and KPI Widgets (✅ Complete)  
+**Current Sprint**: Epic 2 - Data Ingestion & Modeling + Epic 4 - Visualization & Dashboards  
+**Active Story**: Story 2.1 - Schema Registry (✅ Complete - UI with AI Generation)  
 **Build Status**: ✅ All services building successfully
 
 ---
@@ -47,7 +47,7 @@ src/
     ├── Sensormine.Core/   # Domain models, interfaces, utilities
     ├── Sensormine.Messaging/ # Kafka/NATS abstractions
     ├── Sensormine.Storage/   # Repository patterns, TimescaleDB (✅ with time-series)
-    ├── Sensormine.AI/        # ML pipelines, anomaly detection
+    ├── Sensormine.AI/        # ✅ AI metering service, ML pipelines, anomaly detection
     ├── Sensormine.Schemas/   # Avro/JSON schema definitions
     ├── Sensormine.Billing/   # Billing models, Stripe SDK wrappers
     └── Sensormine.Connectors/ # ✅ Industrial protocol connectors (OPC UA, Modbus, BACnet, EtherNet/IP, MQTT)
@@ -63,8 +63,14 @@ src/
 
 ## Completed Work Summary
 
-### ✅ Frontend Stories (5 complete)
+### ✅ Frontend Stories (6 complete)
 - **Story 0.0**: Frontend Project Setup - Next.js 14 + React + TypeScript
+- **Story 2.1**: Schema Management UI - Complete CRUD with AI-powered generation (Claude API)
+  - Schema list page with search, filters, and pagination
+  - 3-step create wizard (Basic Info → JSON Editor → Review)
+  - AI schema generation from sample data (file upload or paste)
+  - Confidence scoring and AI suggestions
+  - TypeScript API client with 8 functions
 - **Story 4.1**: Dashboard Builder - Drag-and-drop with react-grid-layout
 - **Story 4.2**: Time-Series Charts - Recharts with zoom/pan/aggregation
 - **Story 4.6**: GIS Map Widget - Leaflet with clustering & geofences
@@ -85,7 +91,15 @@ src/
   - Quick reference for developers
 - **Documentation Updates**: Updated README.md, development.md with infrastructure references
 
-### ✅ Backend Stories (6 complete)
+### ✅ Backend Stories (7 complete)
+- **Story 2.1**: Schema Registry API - Complete CRUD with AI-powered generation
+  - SchemaRegistry.API service with full REST endpoints
+  - AI schema generation using Anthropic Claude API (Haiku 4.5)
+  - Centralized AI metering service (Sensormine.AI library)
+  - Usage tracking: tokens, costs, duration, success/failure
+  - AI usage monitoring API endpoints
+  - Multi-tenant usage statistics
+  - Documentation: `docs/ai-schema-generation.md`
 - **Story 2.7**: Time-Series Query API - Query.API with TimescaleDB
   - REST endpoints for time-series queries
   - Aggregation support (avg, sum, min, max, count)
@@ -162,11 +176,11 @@ Alternative: Story 4.9 (Real-Time Dashboard Updates) is high priority but comple
 
 ## Backend Epics Status
 
-### Epic 2: Data Ingestion & Modeling (1 of 10 stories completed - 10%)
+### Epic 2: Data Ingestion & Modeling (2 of 10 stories completed - 20%)
 
 | Story | Title | Priority | Points | Status | Notes |
 |-------|-------|----------|--------|--------|-------|
-| 2.1  | Schema Registry | High | 13 | 🔴 Not Started | Avro/JSON schema versioning |
+| 2.1  | Schema Registry | High | 13 | ✅ Complete | UI + API + AI generation + metering |
 | 2.2  | Device Metadata Model | High | 8 | 🔴 Not Started | Device properties & relationships |
 | 2.3  | Time-Series Data Model | High | 8 | 🔴 Not Started | Telemetry data structure |
 | 2.4  | Data Validation | High | 8 | 🔴 Not Started | Schema validation pipeline |

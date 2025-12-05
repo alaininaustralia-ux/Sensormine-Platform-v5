@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Sensormine.Core.DTOs;
 using Sensormine.Core.Models;
 using Sensormine.Storage.Interfaces;
+using SchemaRegistry.API.Models;
+using SchemaRegistry.API.Services;
 
 namespace SchemaRegistry.API.Controllers;
 
@@ -14,15 +16,18 @@ public class SchemasController : ControllerBase
 {
     private readonly ISchemaRepository _schemaRepository;
     private readonly ISchemaValidationService _validationService;
+    private readonly IAiSchemaGeneratorService _aiSchemaGenerator;
     private readonly ILogger<SchemasController> _logger;
 
     public SchemasController(
         ISchemaRepository schemaRepository,
         ISchemaValidationService validationService,
+        IAiSchemaGeneratorService aiSchemaGenerator,
         ILogger<SchemasController> logger)
     {
         _schemaRepository = schemaRepository;
         _validationService = validationService;
+        _aiSchemaGenerator = aiSchemaGenerator;
         _logger = logger;
     }
 
@@ -271,5 +276,73 @@ public class SchemasController : ControllerBase
                 CreatedBy = v.CreatedBy
             }).ToList() ?? new List<SchemaVersionDto>()
         };
+    }
+
+    /// <summary>
+    /// Generate a JSON Schema using AI from sample data
+    /// </summary>
+    /// <param name="request">Sample data and context information</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Generated schema with confidence score and suggestions</returns>
+    [HttpPost("generate")]
+    [ProducesResponseType(typeof(GenerateSchemaResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<GenerateSchemaResponse>> GenerateSchema(
+        [FromBody] GenerateSchemaRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Generating schema using AI for data type: {DataType}", request.DataType ?? "unknown");
+
+            if (string.IsNullOrWhiteSpace(request.Data))
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Request",
+                    Detail = "Data field is required",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            // Call AI service
+            var (success, schema, error, confidence, suggestions) = await _aiSchemaGenerator.GenerateSchemaAsync(
+                request.Data,
+                request.FileName,
+                request.DataType,
+                request.Description,
+                cancellationToken);
+
+            if (!success)
+            {
+                _logger.LogWarning("AI schema generation failed: {Error}", error);
+                return Ok(new GenerateSchemaResponse
+                {
+                    Success = false,
+                    Error = error
+                });
+            }
+
+            _logger.LogInformation("Successfully generated schema with {Confidence} confidence", confidence);
+
+            return Ok(new GenerateSchemaResponse
+            {
+                Success = true,
+                Schema = schema,
+                Confidence = confidence,
+                Suggestions = suggestions
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GenerateSchema endpoint");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+            {
+                Title = "Internal Server Error",
+                Detail = "An error occurred while generating the schema",
+                Status = StatusCodes.Status500InternalServerError
+            });
+        }
     }
 }

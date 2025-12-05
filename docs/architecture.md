@@ -93,10 +93,17 @@ Edge Gateway → Kafka Topic → Ingestion Service → Validation → Storage
 - Status monitoring
 
 #### SchemaRegistry.API
-- Schema registration
-- Schema versioning
-- Validation rules
-- Schema evolution
+- Schema registration and management (CRUD operations)
+- Schema versioning and evolution
+- Validation rules and enforcement
+- **AI-Powered Schema Generation** (Anthropic Claude API)
+  - Generate schemas from sample data (JSON/CSV/XML/TXT)
+  - Confidence scoring and suggestions
+  - File upload and text paste support
+- **Centralized AI Metering** (via Sensormine.AI)
+  - Track all AI API calls, tokens, and costs
+  - Multi-tenant usage statistics
+  - Provider-agnostic metering infrastructure
 
 #### Query.API
 - Time-series queries
@@ -129,16 +136,42 @@ Edge Gateway → Kafka Topic → Ingestion Service → Validation → Storage
 - Request routing
 
 ### 6. AI & Semantic Layer
-**Purpose**: ML inference and semantic search
+**Purpose**: ML inference, AI operations, and semantic search
 
 **Components**:
 - **Sensormine.AI Library**
+  - **AI Metering Service** (✅ Implemented)
+    - Centralized tracking of all AI API calls
+    - Token usage measurement (input + output)
+    - Cost calculation per provider/model
+    - Duration and success/failure tracking
+    - Multi-tenant usage statistics
+    - Provider-agnostic design (Anthropic, OpenAI, etc.)
   - ONNX model inference
   - Embedding generation
   - Vector similarity search
   - Semantic query processing
 
+**AI Integration Architecture**:
+```
+Service Layer (e.g., SchemaRegistry.API)
+        ↓
+AiMeteringService.CallAiAsync()
+        ├─ Start timer & log call
+        ├─ Execute AI provider API call
+        ├─ Extract token counts
+        ├─ Calculate cost
+        ├─ Store metrics (tenant, provider, model, operation)
+        └─ Return metered response
+```
+
+**AI Metering Endpoints**:
+- `GET /api/aiusage/current` - Current tenant's AI usage
+- `GET /api/aiusage/tenant/{id}` - Specific tenant's usage
+- `GET /api/aiusage/all` - All tenants' usage statistics
+
 **Capabilities**:
+- AI-powered schema generation (Claude API)
 - Anomaly detection models
 - Predictive maintenance
 - Natural language queries

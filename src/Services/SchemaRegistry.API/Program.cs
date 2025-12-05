@@ -3,6 +3,8 @@ using Sensormine.Storage.Data;
 using Sensormine.Storage.Interfaces;
 using Sensormine.Storage.Repositories;
 using Sensormine.Storage.Services;
+using Sensormine.AI.Services;
+using SchemaRegistry.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,20 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Add Repository and Services
 builder.Services.AddScoped<ISchemaRepository, SchemaRepository>();
 builder.Services.AddScoped<ISchemaValidationService, SchemaValidationService>();
+
+// Add Centralized AI Metering Service (Singleton for in-memory metrics)
+builder.Services.AddSingleton<IAiMeteringService, AiMeteringService>();
+
+// Add AI Schema Generator Service
+var anthropicConfig = new AnthropicConfig
+{
+    ApiKey = builder.Configuration["Anthropic:ApiKey"] ?? throw new InvalidOperationException("Anthropic:ApiKey not configured"),
+    Model = builder.Configuration["Anthropic:Model"] ?? "claude-haiku-4-5",
+    MaxTokens = int.Parse(builder.Configuration["Anthropic:MaxTokens"] ?? "8192"),
+    TimeoutMinutes = int.Parse(builder.Configuration["Anthropic:TimeoutMinutes"] ?? "5")
+};
+builder.Services.AddSingleton(anthropicConfig);
+builder.Services.AddHttpClient<IAiSchemaGeneratorService, AnthropicSchemaGeneratorService>();
 
 var app = builder.Build();
 

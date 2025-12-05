@@ -51,10 +51,12 @@ This document organizes user stories into epics that align with the platform's f
 
 ### Story 1.3: Nexus Probe Configuration
 **As a** system administrator  
-**I want** to configure probe interfaces (RS485, RS232, OneWire, 4-20mA) on Nexus devices  
-**So that** I can connect various industrial sensors
+**I want** to configure probe interfaces (RS485, RS232, OneWire, 4-20mA) and data schemas on Nexus devices  
+**So that** I can connect various industrial sensors and validate their data
 
 **Acceptance Criteria:**
+
+**Probe Configuration:**
 - UI provides probe type selection (RS485, RS232, OneWire, 4-20mA)
 - Each probe can be assigned a name and description
 - Probe configuration includes sampling rate and data format
@@ -62,8 +64,32 @@ This document organizes user stories into epics that align with the platform's f
 - Device acknowledges configuration changes
 - Configuration history is maintained
 
+**Schema Configuration (New):**
+- Device configuration page includes "Data Schema" section
+- Schema selector dropdown (search/filter by name)
+- Display selected schema information:
+  - Schema name, version, description
+  - List of schema fields with types and units
+  - Expected payload structure preview (JSON example)
+- Schema field mapping to probe outputs (optional)
+- Validation rules preview for selected schema
+- Test device data against schema:
+  - Paste sample device payload
+  - Validate in real-time with error display
+  - Show validation errors with field-level details
+- Schema assignment triggers:
+  - Device configuration update via MQTT
+  - Ingestion pipeline validation enabled
+  - Dashboard widgets can bind to schema fields
+- Device detail page shows:
+  - Current schema name and version
+  - Schema validation status (passing/failing)
+  - Recent validation errors with timestamps
+- Historical data remains queryable with old schema versions
+- Schema version change warning if breaking changes detected
+
 **Priority:** High  
-**Story Points:** 8
+**Story Points:** 8 (Probe Config) + 5 (Schema Config) = 13 total
 
 ---
 
@@ -241,15 +267,44 @@ This document organizes user stories into epics that align with the platform's f
 **So that** incoming data is validated and structured correctly
 
 **Acceptance Criteria:**
-- Schema Registry UI for creating/editing schemas
-- Support for JSON Schema format
-- Field definitions include: name, type, unit, description, validation rules
-- Schema versioning (major.minor.patch)
-- Schema can be associated with device types
-- Schema validation errors provide clear feedback
+
+**Backend (✅ Complete):**
+- ✅ Schema Registry API with full CRUD operations
+- ✅ Support for JSON Schema Draft 7 format
+- ✅ Field definitions include: name, type, unit, description, validation rules
+- ✅ Schema versioning (major.minor.patch semantic versioning)
+- ✅ Schema validation service using NJsonSchema
+- ✅ Repository layer with 21 passing tests
+- ✅ EF Core migration for PostgreSQL
+
+**Frontend (🔴 Not Started):**
+- Schema list view with search, filter by name/status/tags
+- Create schema wizard:
+  - Step 1: Basic info (name, description, tags)
+  - Step 2: JSON Schema editor with syntax validation
+  - Step 3: Test schema with sample JSON data
+  - Step 4: Review and create
+- Edit schema workflow:
+  - Load existing schema for editing
+  - Create new version on save (semantic versioning)
+  - Show diff between versions
+- Schema detail page:
+  - Display schema metadata and current version
+  - Show all versions with changelog
+  - Compare versions side-by-side
+  - Delete schema (soft delete with confirmation)
+- Schema testing panel:
+  - Paste sample JSON data
+  - Validate against schema
+  - Display validation errors with line numbers
+  - Show validated data structure
+- Schema can be associated with device types (dropdown selector)
+- Responsive design for mobile/tablet
+- Loading states and error handling
+- Toast notifications for CRUD operations
 
 **Priority:** High  
-**Story Points:** 8
+**Story Points:** 8 (Backend) + 13 (Frontend) = 21 total
 
 ---
 
@@ -647,15 +702,57 @@ This document organizes user stories into epics that align with the platform's f
 **So that** I can visualize data relevant to my operations
 
 **Acceptance Criteria:**
-- Drag-and-drop dashboard editor
-- Widget library: charts, tables, maps, video feeds, gauges
-- Widget configuration (data source, filters, styling)
-- Dashboard layouts: grid, free-form
-- Save and share dashboards
-- Dashboard templates for common use cases
+
+**Dashboard Core (✅ Complete):**
+- ✅ Drag-and-drop dashboard editor using react-grid-layout
+- ✅ Widget library: charts, tables, maps, video feeds, gauges
+- ✅ Dashboard layouts with responsive grid
+- ✅ Save and share dashboards
+- ✅ Dashboard toolbar with edit/view modes
+
+**Widget Data Source Configuration (🔴 Not Started):**
+- Widget configuration panel with tabs:
+  - Data Source tab
+  - Filters tab
+  - Styling tab
+- Data Source Configuration:
+  - Step 1: Select data source type (Schema, Device, Query, API)
+  - Step 2: Schema selector (if schema-based):
+    - Dropdown to select schema
+    - Display schema version and fields
+    - Filter devices by selected schema
+  - Step 3: Field mapping:
+    - Drag schema fields to widget properties
+    - Map fields to X-axis, Y-axis, series, labels, etc.
+    - Set aggregation function per field (avg, sum, min, max, count)
+    - Configure time range and grouping interval
+  - Step 4: Device/data selection:
+    - Multi-select devices using selected schema
+    - Filter by device tags, groups, location
+    - Preview live data from selected devices
+- Real-time data preview in configuration panel:
+  - Show sample data matching schema structure
+  - Update preview when changing field mappings
+  - Display validation errors if data doesn't match schema
+- Save widget configuration:
+  - Store schema ID, version, field mappings
+  - Store device filters and selections
+  - Store aggregation and time range settings
+- Widget refresh settings:
+  - Auto-refresh interval (5s, 10s, 30s, 1m, 5m, manual)
+  - Last updated timestamp display
+  - Manual refresh button
+- Schema version handling:
+  - Widget continues working if schema updated (backward compatible)
+  - Warning indicator if schema has breaking changes
+  - Option to update widget to new schema version
+
+**Dashboard Templates (🔴 Not Started):**
+- Template library for common use cases
+- Templates include pre-configured widgets with schema bindings
 
 **Priority:** High  
-**Story Points:** 21
+**Story Points:** 21 (Core Complete) + 13 (Data Source Config) = 34 total
 
 ---
 
