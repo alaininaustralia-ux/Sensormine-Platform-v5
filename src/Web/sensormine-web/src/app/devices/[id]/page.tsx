@@ -44,6 +44,8 @@ const mockDevice = {
   macAddress: 'AA:BB:CC:DD:EE:FF',
   registeredAt: '2024-01-15T10:30:00Z',
   tags: ['production', 'critical'],
+  schemaId: 'schema-123',
+  schemaName: 'Water Tank Telemetry Schema',
 };
 
 const mockSensors: Sensor[] = [
@@ -231,6 +233,19 @@ export default function DeviceDetailPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">MAC Address</span>
                   <span className="font-mono text-sm">{device.macAddress}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Data Schema</span>
+                  <span className="font-medium">
+                    {device.schemaName ? (
+                      <Link href={`/schemas/${device.schemaId}`} className="text-primary hover:underline">
+                        {device.schemaName}
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground italic">Not configured</span>
+                    )}
+                  </span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">

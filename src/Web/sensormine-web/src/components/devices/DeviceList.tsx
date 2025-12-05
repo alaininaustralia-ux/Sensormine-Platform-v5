@@ -38,6 +38,7 @@ const mockDevices = [
     signal: 92,
     location: 'Building A - Floor 1',
     sensors: 3,
+    schemaName: 'Water Tank Telemetry',
   },
   {
     id: '2',
@@ -50,6 +51,7 @@ const mockDevices = [
     signal: 88,
     location: 'Building A - Floor 2',
     sensors: 4,
+    schemaName: 'HVAC Sensor Data',
   },
   {
     id: '3',
@@ -62,6 +64,7 @@ const mockDevices = [
     signal: 95,
     location: 'Factory Floor',
     sensors: 12,
+    schemaName: 'Industrial PLC Schema',
   },
   {
     id: '4',
@@ -74,6 +77,7 @@ const mockDevices = [
     signal: 100,
     location: 'Control Room',
     sensors: 24,
+    schemaName: 'SCADA Telemetry',
   },
   {
     id: '5',
@@ -86,6 +90,7 @@ const mockDevices = [
     signal: 0,
     location: 'Storage Area',
     sensors: 2,
+    schemaName: undefined,
   },
 ];
 
@@ -185,6 +190,14 @@ export function DeviceList() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Sensors</span>
                     <span className="font-medium">{device.sensors} configured</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Schema</span>
+                    <span className="font-medium text-xs">
+                      {device.schemaName || (
+                        <span className="italic text-muted-foreground">Not set</span>
+                      )}
+                    </span>
                   </div>
                   <div className="flex items-center gap-4 border-t pt-3">
                     {device.battery !== null && (

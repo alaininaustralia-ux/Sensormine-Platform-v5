@@ -275,7 +275,7 @@ export function KPIWidget({
                   stroke="#8884d8"
                   strokeWidth={2}
                   dot={{ r: 0 }}
-                  activeDot={{ r: 4, 'data-testid': 'current-value-point' }}
+                  activeDot={{ r: 4 }}
                 />
               </LineChart>
             </ResponsiveContainer>

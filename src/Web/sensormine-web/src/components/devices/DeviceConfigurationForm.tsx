@@ -25,7 +25,10 @@ import {
   NetworkIcon,
   SettingsIcon,
   ShieldCheckIcon,
+  FileJson as FileJsonIcon,
 } from 'lucide-react';
+import { SchemaSelector } from './SchemaSelector';
+import type { Schema } from '@/lib/types/schema';
 
 export interface DeviceConfig {
   // Basic Info
@@ -35,6 +38,10 @@ export interface DeviceConfig {
   serialNumber: string;
   location: string;
   tags: string[];
+
+  // Schema
+  schemaId?: string;
+  schemaName?: string;
 
   // Network Settings
   connectionType: string;
@@ -99,6 +106,8 @@ export function DeviceConfigurationForm({
     serialNumber: initialConfig?.serialNumber || '',
     location: initialConfig?.location || '',
     tags: initialConfig?.tags || [],
+    schemaId: initialConfig?.schemaId,
+    schemaName: initialConfig?.schemaName,
     connectionType: initialConfig?.connectionType || 'TCP',
     host: initialConfig?.host || '',
     port: initialConfig?.port || 502,
@@ -116,6 +125,14 @@ export function DeviceConfigurationForm({
   });
 
   const [tagInput, setTagInput] = useState('');
+
+  const handleSchemaSelect = (schemaId: string | undefined, schema?: Schema) => {
+    setConfig((prev) => ({
+      ...prev,
+      schemaId,
+      schemaName: schema?.name,
+    }));
+  };
 
   const updateConfig = <K extends keyof DeviceConfig>(key: K, value: DeviceConfig[K]) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
@@ -150,6 +167,10 @@ export function DeviceConfigurationForm({
             <TabsTrigger value="basic">
               <CpuIcon className="mr-2 h-4 w-4" />
               Basic Info
+            </TabsTrigger>
+            <TabsTrigger value="schema">
+              <FileJsonIcon className="mr-2 h-4 w-4" />
+              Schema
             </TabsTrigger>
             <TabsTrigger value="network">
               <NetworkIcon className="mr-2 h-4 w-4" />
@@ -264,6 +285,38 @@ export function DeviceConfigurationForm({
                   ))}
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          {/* Schema Tab */}
+          <TabsContent value="schema" className="space-y-4">
+            <div className="rounded-lg border bg-muted/50 p-4 space-y-2 mb-4">
+              <h3 className="font-medium flex items-center gap-2">
+                <FileJsonIcon className="h-4 w-4" />
+                Data Schema Configuration
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Define how data from this device should be structured and validated. The schema 
+                ensures data consistency and enables proper storage and querying.
+              </p>
+            </div>
+
+            <SchemaSelector
+              selectedSchemaId={config.schemaId}
+              onSchemaSelect={handleSchemaSelect}
+              deviceType={config.deviceType}
+            />
+
+            <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900 p-4 space-y-2">
+              <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                💡 Best Practices
+              </h4>
+              <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
+                <li>Choose a schema that matches your device&apos;s data output format</li>
+                <li>Use the AI schema generator to create schemas from sample data</li>
+                <li>Schemas can be updated later if your data structure changes</li>
+                <li>Active schemas ensure data validation on ingestion</li>
+              </ul>
             </div>
           </TabsContent>
 
