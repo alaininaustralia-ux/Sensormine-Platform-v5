@@ -48,12 +48,13 @@ This is a cloud-agnostic industrial IoT platform built with C# .NET 8 microservi
 ```
 src/
 ├── Web/                   # Frontend Applications
-│   └── sensormine-web/    # Main web app (Next.js + React)
-│       ├── src/
-│       │   ├── app/       # Next.js App Router pages
-│       │   ├── components/ # UI components (shadcn/ui)
-│       │   └── lib/       # Utilities, API client, auth
-│       └── __tests__/     # Vitest unit tests
+│   ├── sensormine-web/    # Main web app (Next.js + React)
+│   │   ├── src/
+│   │   │   ├── app/       # Next.js App Router pages
+│   │   │   ├── components/ # UI components (shadcn/ui)
+│   │   │   └── lib/       # Utilities, API client, auth
+│   │   └── __tests__/     # Vitest unit tests
+│   └── device-simulator/  # Device simulator for testing (Next.js + React)
 │
 ├── Services/              # Backend Microservices
 │   ├── ApiGateway/        # Entry point, rate limiting, auth
@@ -123,6 +124,36 @@ docker-compose up -d
 # Stop infrastructure
 docker-compose down
 ```
+
+## Device Simulator
+
+A standalone React application for simulating IoT devices across multiple protocols. Located at `src/Web/device-simulator/`.
+
+### Supported Protocols
+- **MQTT**: Publish telemetry to MQTT broker
+- **HTTP/REST**: POST/PUT telemetry to REST API
+- **WebSocket**: Stream telemetry via WebSocket
+- **Modbus TCP**: Simulate Modbus register reads
+- **OPC UA**: Simulate OPC UA node data changes
+
+### Sensor Types
+Temperature, humidity, pressure, flow, level, vibration, voltage, current, power, speed, position, pH, CO2, light
+
+### Running the Simulator
+```bash
+cd src/Web/device-simulator
+npm install
+npm run dev -- -p 3021  # Runs on port 3021
+```
+
+Or use VS Code launch configuration "Device Simulator" (runs on port 3021).
+
+### Features
+- Quick device creation with pre-configured sensors
+- Custom device and sensor configuration
+- Real-time telemetry simulation with configurable intervals
+- Protocol-level logging with filtering and CSV export
+- Persistent configuration in localStorage
 
 ## Development Guidelines
 - Follow clean architecture principles
