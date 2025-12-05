@@ -481,4 +481,378 @@ public class DeviceTypeControllerTests
     }
 
     #endregion
+
+    #region GetVersionHistory Tests
+
+    [Fact]
+    public async Task GetVersionHistory_ShouldReturnOkResult_WithVersionList()
+    {
+        // Arrange
+        var deviceTypeId = Guid.NewGuid();
+        var versions = new List<DeviceTypeVersion>
+        {
+            new DeviceTypeVersion
+            {
+                Id = Guid.NewGuid(),
+                DeviceTypeId = deviceTypeId,
+                Version = 2,
+                VersionData = "{\"name\":\"Test v2\"}",
+                ChangeSummary = "Updated name",
+                CreatedAt = DateTime.UtcNow.AddHours(-1),
+                CreatedBy = "user1"
+            },
+            new DeviceTypeVersion
+            {
+                Id = Guid.NewGuid(),
+                DeviceTypeId = deviceTypeId,
+                Version = 1,
+                VersionData = "{\"name\":\"Test v1\"}",
+                ChangeSummary = "Initial version",
+                CreatedAt = DateTime.UtcNow.AddDays(-1),
+                CreatedBy = "user1"
+            }
+        };
+
+        _mockRepository
+            .Setup(r => r.GetVersionHistoryAsync(deviceTypeId, It.IsAny<Guid>()))
+            .ReturnsAsync(versions);
+
+        // Act
+        var result = await _controller.GetVersionHistory(deviceTypeId);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = result as OkObjectResult;
+        var response = okResult!.Value as List<DeviceTypeVersionResponse>;
+        response.Should().NotBeNull();
+        response!.Count.Should().Be(2);
+        response[0].Version.Should().Be(2);
+        response[1].Version.Should().Be(1);
+
+        _mockRepository.Verify(r => r.GetVersionHistoryAsync(deviceTypeId, It.IsAny<Guid>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetVersionHistory_ShouldReturnNotFound_WhenDeviceTypeDoesNotExist()
+    {
+        // Arrange
+        var deviceTypeId = Guid.NewGuid();
+
+        _mockRepository
+            .Setup(r => r.GetVersionHistoryAsync(deviceTypeId, It.IsAny<Guid>()))
+            .ThrowsAsync(new InvalidOperationException("Device Type not found"));
+
+        // Act
+        var result = await _controller.GetVersionHistory(deviceTypeId);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    #endregion
+
+    #region RollbackToVersion Tests
+
+    [Fact]
+    public async Task RollbackToVersion_ShouldReturnOkResult_WithRolledBackDeviceType()
+    {
+        // Arrange
+        var deviceTypeId = Guid.NewGuid();
+        var request = new RollbackDeviceTypeRequest { Version = 1 };
+        var rolledBackDeviceType = new DeviceType
+        {
+            Id = deviceTypeId,
+            TenantId = Guid.NewGuid(),
+            Name = "Temperature Sensor",
+            Description = "Rolled back version",
+            Protocol = DeviceProtocol.MQTT,
+            ProtocolConfig = new ProtocolConfig(),
+            CustomFields = new List<CustomFieldDefinition>(),
+            Tags = new List<string>(),
+            CreatedAt = DateTime.UtcNow.AddDays(-1),
+            UpdatedAt = DateTime.UtcNow,
+            CreatedBy = "user1"
+        };
+
+        _mockRepository
+            .Setup(r => r.RollbackToVersionAsync(deviceTypeId, request.Version, It.IsAny<Guid>(), It.IsAny<string>()))
+            .ReturnsAsync(rolledBackDeviceType);
+
+        // Act
+        var result = await _controller.RollbackToVersion(deviceTypeId, request);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = result as OkObjectResult;
+        var response = okResult!.Value as DeviceTypeResponse;
+        response.Should().NotBeNull();
+        response!.Id.Should().Be(deviceTypeId);
+
+        _mockRepository.Verify(r => r.RollbackToVersionAsync(deviceTypeId, request.Version, It.IsAny<Guid>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RollbackToVersion_ShouldReturnNotFound_WhenVersionDoesNotExist()
+    {
+        // Arrange
+        var deviceTypeId = Guid.NewGuid();
+        var request = new RollbackDeviceTypeRequest { Version = 999 };
+
+        _mockRepository
+            .Setup(r => r.RollbackToVersionAsync(deviceTypeId, request.Version, It.IsAny<Guid>(), It.IsAny<string>()))
+            .ThrowsAsync(new InvalidOperationException("Version not found"));
+
+        // Act
+        var result = await _controller.RollbackToVersion(deviceTypeId, request);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    #endregion
+
+    #region GetUsageStatistics Tests
+
+    [Fact]
+    public async Task GetUsageStatistics_ShouldReturnOkResult_WithStatistics()
+    {
+        // Arrange
+        var deviceTypeId = Guid.NewGuid();
+        var statistics = new DeviceTypeUsageStatistics
+        {
+            DeviceTypeId = deviceTypeId,
+            TotalDeviceCount = 50,
+            ActiveDeviceCount = 45,
+            InactiveDeviceCount = 5,
+            LastUsedAt = DateTime.UtcNow.AddHours(-2)
+        };
+
+        _mockRepository
+            .Setup(r => r.GetUsageStatisticsAsync(deviceTypeId, It.IsAny<Guid>()))
+            .ReturnsAsync(statistics);
+
+        // Act
+        var result = await _controller.GetUsageStatistics(deviceTypeId);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = result as OkObjectResult;
+        var response = okResult!.Value as DeviceTypeUsageStatisticsResponse;
+        response.Should().NotBeNull();
+        response!.TotalDeviceCount.Should().Be(50);
+        response.ActiveDeviceCount.Should().Be(45);
+        response.InactiveDeviceCount.Should().Be(5);
+
+        _mockRepository.Verify(r => r.GetUsageStatisticsAsync(deviceTypeId, It.IsAny<Guid>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetUsageStatistics_ShouldReturnNotFound_WhenDeviceTypeDoesNotExist()
+    {
+        // Arrange
+        var deviceTypeId = Guid.NewGuid();
+
+        _mockRepository
+            .Setup(r => r.GetUsageStatisticsAsync(deviceTypeId, It.IsAny<Guid>()))
+            .ThrowsAsync(new InvalidOperationException("Device Type not found"));
+
+        // Act
+        var result = await _controller.GetUsageStatistics(deviceTypeId);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    #endregion
+
+    #region GetAuditLogs Tests
+
+    [Fact]
+    public async Task GetAuditLogs_ShouldReturnOkResult_WithPaginatedLogs()
+    {
+        // Arrange
+        var deviceTypeId = Guid.NewGuid();
+        var auditLogs = new List<DeviceTypeAuditLog>
+        {
+            new DeviceTypeAuditLog
+            {
+                Id = Guid.NewGuid(),
+                DeviceTypeId = deviceTypeId,
+                TenantId = Guid.NewGuid(),
+                Action = "Updated",
+                OldValue = "{\"name\":\"Old Name\"}",
+                NewValue = "{\"name\":\"New Name\"}",
+                ChangeSummary = "Name updated",
+                Timestamp = DateTime.UtcNow.AddHours(-1),
+                UserId = "user1"
+            }
+        };
+
+        _mockRepository
+            .Setup(r => r.GetAuditLogsAsync(deviceTypeId, It.IsAny<Guid>(), 1, 10))
+            .ReturnsAsync((auditLogs, 1));
+
+        // Act
+        var result = await _controller.GetAuditLogs(deviceTypeId, 1, 10);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = result as OkObjectResult;
+        var response = okResult!.Value as DeviceTypeAuditLogListResponse;
+        response.Should().NotBeNull();
+        response!.Items.Count.Should().Be(1);
+        response.TotalCount.Should().Be(1);
+        response.Page.Should().Be(1);
+        response.PageSize.Should().Be(10);
+
+        _mockRepository.Verify(r => r.GetAuditLogsAsync(deviceTypeId, It.IsAny<Guid>(), 1, 10), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAuditLogs_ShouldReturnBadRequest_WhenPageIsInvalid()
+    {
+        // Arrange
+        var deviceTypeId = Guid.NewGuid();
+
+        // Act
+        var result = await _controller.GetAuditLogs(deviceTypeId, 0, 10);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        badRequestResult!.Value.Should().Be("Page must be greater than 0");
+    }
+
+    [Fact]
+    public async Task GetAuditLogs_ShouldReturnBadRequest_WhenPageSizeIsInvalid()
+    {
+        // Arrange
+        var deviceTypeId = Guid.NewGuid();
+
+        // Act
+        var result = await _controller.GetAuditLogs(deviceTypeId, 1, 0);
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        badRequestResult!.Value.Should().Be("PageSize must be between 1 and 100");
+    }
+
+    #endregion
+
+    #region ValidateUpdate Tests
+
+    [Fact]
+    public async Task ValidateUpdate_ShouldReturnOkResult_WithValidUpdate()
+    {
+        // Arrange
+        var deviceTypeId = Guid.NewGuid();
+        var request = new DeviceTypeRequest
+        {
+            Name = "Updated Temperature Sensor",
+            Description = "Updated description",
+            Protocol = DeviceProtocol.MQTT,
+            ProtocolConfig = new ProtocolConfig(),
+            CustomFields = new List<CustomFieldDefinition>(),
+            Tags = new List<string>()
+        };
+
+        var validationResult = new DeviceTypeUpdateValidationResult
+        {
+            IsValid = true,
+            BreakingChanges = new List<string>(),
+            Warnings = new List<string>(),
+            AffectedDeviceCount = 0,
+            RecommendedActions = new List<string>()
+        };
+
+        _mockRepository
+            .Setup(r => r.ValidateUpdateAsync(deviceTypeId, It.IsAny<DeviceType>(), It.IsAny<Guid>()))
+            .ReturnsAsync(validationResult);
+
+        // Act
+        var result = await _controller.ValidateUpdate(deviceTypeId, request);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = result as OkObjectResult;
+        var response = okResult!.Value as DeviceTypeUpdateValidationResponse;
+        response.Should().NotBeNull();
+        response!.IsValid.Should().BeTrue();
+        response.BreakingChanges.Should().BeEmpty();
+        response.Warnings.Should().BeEmpty();
+
+        _mockRepository.Verify(r => r.ValidateUpdateAsync(deviceTypeId, It.IsAny<DeviceType>(), It.IsAny<Guid>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ValidateUpdate_ShouldReturnOkResult_WithBreakingChanges()
+    {
+        // Arrange
+        var deviceTypeId = Guid.NewGuid();
+        var request = new DeviceTypeRequest
+        {
+            Name = "Temperature Sensor",
+            Description = "Changed protocol",
+            Protocol = DeviceProtocol.HTTP, // Changed from MQTT
+            ProtocolConfig = new ProtocolConfig(),
+            CustomFields = new List<CustomFieldDefinition>(),
+            Tags = new List<string>()
+        };
+
+        var validationResult = new DeviceTypeUpdateValidationResult
+        {
+            IsValid = false,
+            BreakingChanges = new List<string> { "Protocol changed from MQTT to HTTP" },
+            Warnings = new List<string>(),
+            AffectedDeviceCount = 10,
+            RecommendedActions = new List<string> { "Consider creating a new Device Type version" }
+        };
+
+        _mockRepository
+            .Setup(r => r.ValidateUpdateAsync(deviceTypeId, It.IsAny<DeviceType>(), It.IsAny<Guid>()))
+            .ReturnsAsync(validationResult);
+
+        // Act
+        var result = await _controller.ValidateUpdate(deviceTypeId, request);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = result as OkObjectResult;
+        var response = okResult!.Value as DeviceTypeUpdateValidationResponse;
+        response.Should().NotBeNull();
+        response!.IsValid.Should().BeFalse();
+        response.BreakingChanges.Count.Should().Be(1);
+        response.AffectedDeviceCount.Should().Be(10);
+
+        _mockRepository.Verify(r => r.ValidateUpdateAsync(deviceTypeId, It.IsAny<DeviceType>(), It.IsAny<Guid>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ValidateUpdate_ShouldReturnNotFound_WhenDeviceTypeDoesNotExist()
+    {
+        // Arrange
+        var deviceTypeId = Guid.NewGuid();
+        var request = new DeviceTypeRequest
+        {
+            Name = "Test",
+            Description = "Test",
+            Protocol = DeviceProtocol.MQTT,
+            ProtocolConfig = new ProtocolConfig(),
+            CustomFields = new List<CustomFieldDefinition>(),
+            Tags = new List<string>()
+        };
+
+        _mockRepository
+            .Setup(r => r.ValidateUpdateAsync(deviceTypeId, It.IsAny<DeviceType>(), It.IsAny<Guid>()))
+            .ThrowsAsync(new InvalidOperationException("Device Type not found"));
+
+        // Act
+        var result = await _controller.ValidateUpdate(deviceTypeId, request);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    #endregion
 }

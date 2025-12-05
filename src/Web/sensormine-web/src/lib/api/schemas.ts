@@ -5,7 +5,7 @@
  * Story 2.2 - Schema Definition Frontend
  */
 
-import { apiClient } from './client';
+import { serviceUrls } from './config';
 import type {
   Schema,
   SchemaVersion,
@@ -17,6 +17,8 @@ import type {
   ValidateDataRequest,
 } from '../types/schema';
 
+// Schema API uses its own service URL (SchemaRegistry.API on port 5021)
+const SCHEMA_BASE_URL = serviceUrls.schema;
 const BASE_PATH = '/api/schemas';
 
 /**
@@ -40,59 +42,87 @@ function buildQueryString(params: Record<string, unknown>): string {
 }
 
 /**
+ * Make a request to the Schema Registry API
+ */
+async function schemaRequest<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const url = `${SCHEMA_BASE_URL}${path}`;
+  
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Schema API error: ${response.status} - ${error}`);
+  }
+
+  return response.json();
+}
+
+/**
  * Get list of schemas with optional filtering and pagination
  */
 export async function getSchemas(params: GetSchemasParams = {}): Promise<SchemaListResponse> {
   const queryString = buildQueryString(params as Record<string, unknown>);
-  const response = await apiClient.get<SchemaListResponse>(`${BASE_PATH}${queryString}`);
-  return response.data;
+  return schemaRequest<SchemaListResponse>(`${BASE_PATH}${queryString}`);
 }
 
 /**
  * Get a single schema by ID
  */
 export async function getSchema(id: string): Promise<Schema> {
-  const response = await apiClient.get<Schema>(`${BASE_PATH}/${id}`);
-  return response.data;
+  return schemaRequest<Schema>(`${BASE_PATH}/${id}`);
 }
 
 /**
  * Create a new schema
  */
 export async function createSchema(request: CreateSchemaRequest): Promise<Schema> {
-  const response = await apiClient.post<Schema>(BASE_PATH, request);
-  return response.data;
+  return schemaRequest<Schema>(BASE_PATH, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
 }
 
 /**
  * Update an existing schema (creates a new version)
  */
 export async function updateSchema(id: string, request: UpdateSchemaRequest): Promise<Schema> {
-  const response = await apiClient.put<Schema>(`${BASE_PATH}/${id}`, request);
-  return response.data;
+  return schemaRequest<Schema>(`${BASE_PATH}/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(request),
+  });
 }
 
 /**
  * Soft delete a schema
  */
 export async function deleteSchema(id: string): Promise<void> {
-  await apiClient.delete(`${BASE_PATH}/${id}`);
+  await schemaRequest<void>(`${BASE_PATH}/${id}`, {
+    method: 'DELETE',
+  });
 }
 
 /**
  * Get all versions for a schema
  */
 export async function getSchemaVersions(schemaId: string): Promise<SchemaVersion[]> {
-  const response = await apiClient.get<SchemaVersion[]>(`${BASE_PATH}/${schemaId}/versions`);
-  return response.data;
+  return schemaRequest<SchemaVersion[]>(`${BASE_PATH}/${schemaId}/versions`);
 }
 
 /**
  * Get a specific schema version
  */
 export async function getSchemaVersion(schemaId: string, versionId: string): Promise<SchemaVersion> {
-  const response = await apiClient.get<SchemaVersion>(`${BASE_PATH}/${schemaId}/versions/${versionId}`);
-  return response.data;
+  return schemaRequest<SchemaVersion>(`${BASE_PATH}/${schemaId}/versions/${versionId}`);
 }
 
 /**
@@ -109,6 +139,8 @@ export async function validateData(
     ...(versionId && { versionId }),
   };
   
-  const response = await apiClient.post<ValidationResult>(`${BASE_PATH}/validate`, request);
-  return response.data;
+  return schemaRequest<ValidationResult>(`${BASE_PATH}/validate`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
 }

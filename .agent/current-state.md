@@ -2,7 +2,7 @@
 
 **Last Updated**: 2025-12-06  
 **Current Sprint**: Epic 1 - Device Type Configuration (NEW) + Epic 4 - Visualization & Dashboards  
-**Active Story**: Story 1.1 - Create Device Type (✅ COMPLETE)  
+**Active Story**: Story 1.2 - Edit Device Type Configuration (✅ COMPLETE)  
 **Build Status**: ✅ All services building successfully  
 **Architecture**: 🎯 Device Type-Centric Architecture Documented
 
@@ -229,21 +229,134 @@ src/
 - Device.API: http://localhost:5293
 - Frontend: http://localhost:3020
 
-**Next Step:** Story 1.2 - Edit Device Type Configuration (now unblocked)
+---
+
+### ✅ Story 1.2 - Edit Device Type Configuration (COMPLETE - Dec 6, 2025)
+
+**Achievement:** Comprehensive Device Type editing with version history, audit trails, breaking change detection, and schema assignment.
+
+**What Was Implemented:**
+
+**Backend (Device.API - 41 tests passing):**
+1. ✅ Version History System:
+   - `device_type_versions` table with complete change tracking
+   - Automatic version creation on every update
+   - Version numbering (major.minor.patch)
+   - Change summary and description
+   - Created by/at tracking
+   - Active version flagging
+2. ✅ Audit Logging:
+   - `device_type_audit_logs` table
+   - Action tracking (Created, Updated, SchemaChanged, Deleted, Rollback)
+   - Before/after state capture (JSONB)
+   - IP address and user tracking
+   - Paginated audit log retrieval
+3. ✅ Breaking Change Detection:
+   - Validate endpoint for pre-flight checks
+   - Detects schema changes, custom field removal, protocol changes
+   - Warning system for non-breaking changes
+   - Impact analysis on existing devices
+4. ✅ Rollback Functionality:
+   - Restore any previous version
+   - Automatic audit log entry
+   - Version reactivation
+5. ✅ Usage Statistics:
+   - Device count by status (Total, Active, Offline, Error)
+   - Last data received tracking
+   - Mock implementation (ready for Device entity)
+6. ✅ New API Endpoints:
+   - GET /api/DeviceType/{id}/versions - Version history
+   - POST /api/DeviceType/{id}/rollback/{versionNumber} - Rollback
+   - GET /api/DeviceType/{id}/usage - Usage statistics
+   - GET /api/DeviceType/{id}/audit-logs - Audit trail
+   - POST /api/DeviceType/{id}/validate - Pre-update validation
+7. ✅ Database Migrations:
+   - 20251206_AddDeviceTypeVersioning
+   - 20251206_AddDeviceTypeAuditLogs
+8. ✅ Unit Tests:
+   - 41 tests covering all new functionality
+   - Version history creation and retrieval
+   - Rollback operations
+   - Audit log pagination
+   - Breaking change detection
+   - Usage statistics
+
+**Frontend (Next.js + React + TypeScript):**
+1. ✅ Comprehensive Edit Page (`/settings/device-types/[id]/edit`):
+   - Tabbed interface (Configuration, Version History, Usage Statistics, Audit Logs)
+   - Real-time loading states and error handling
+   - Toast notifications for all operations
+2. ✅ DeviceTypeEditor Component:
+   - Breaking change validation before save
+   - Warning alerts for non-breaking changes
+   - Confirmation dialogs for destructive actions
+   - Version and audit log badges
+3. ✅ DeviceTypeForm Component:
+   - Name, description, tags editing
+   - **NEW: Schema selection dropdown**
+   - Displays current schema with preview
+   - Links to schema details page
+   - Loads active schemas from SchemaRegistry.API
+4. ✅ VersionHistory Component:
+   - Version list with Current/Active badges
+   - Change summary and description display
+   - Rollback buttons on historical versions
+   - Confirmation dialog for rollback
+   - Relative timestamps (date-fns)
+5. ✅ UsageStatistics Component:
+   - 4 stat cards (Total, Active, Offline, Error devices)
+   - Icon color coding
+   - Last data received timestamp
+   - Ready for real device data integration
+6. ✅ AuditLogs Component:
+   - Action badges (Created, Updated, SchemaChanged, Deleted, Rollback)
+   - User and IP address tracking
+   - Expandable before/after JSON comparison
+   - Color-coded by action type
+   - Pagination support
+7. ✅ Schema Editor Page (`/schemas/[id]`):
+   - Basic info editing (description, tags)
+   - JSON Schema editor with AI assistance
+   - Version history viewer
+   - Change log required for updates
+   - Linked from schema list
+8. ✅ API Client Extensions (deviceTypes.ts):
+   - 6 new functions for version history, rollback, usage, audit logs, validation
+   - Complete TypeScript types for all DTOs
+9. ✅ Error Fixes:
+   - All null/undefined safety checks added
+   - AI schema generator disabled (backend not implemented)
+   - date-fns installed for date formatting
+
+**Technical Highlights:**
+- Version control system for all Device Type changes
+- Complete audit trail for compliance and debugging
+- Breaking change detection prevents data loss
+- Rollback capability for quick recovery
+- Schema assignment connects Device Types to data validation
+- Responsive UI with loading states and error handling
+- Comprehensive null safety throughout
+
+**Services Running:**
+- Device.API: http://localhost:5293
+- SchemaRegistry.API: http://localhost:5021
+- Frontend: http://localhost:3020
+
+**Next Step:** Story 1.3 - Schema Assignment to Device Type (backend implementation needed)
 
 ---
 
-## Epic 1: Device Type Configuration (NEW - 1 of 5 stories completed)
+## Epic 1: Device Type Configuration (NEW - 2 of 5 stories completed)
 
 | Story | Title | Priority | Points | Status | Notes |
 |-------|-------|----------|--------|--------|-------|
 | 1.1  | Create Device Type | High | 8 | ✅ Complete | Foundation complete |
-| 1.2  | Edit Device Type Configuration | High | 5 | 🟡 Ready | Unblocked |
-| 1.3  | Schema Assignment to Device Type | High | 5 | 🟡 Ready | Unblocked |
+| 1.2  | Edit Device Type Configuration | High | 5 | ✅ Complete | Version history, audit logs, schema selection |
+| 1.3  | Schema Assignment to Device Type | High | 5 | 🟡 In Progress | Frontend ready, backend needed |
 | 1.4  | Custom Field Definition | High | 8 | 🟢 Partial | Basic implementation in 1.1 |
 | 1.5  | Alert Rule Templates | Medium | 8 | 🟢 Partial | Basic implementation in 1.1 |
 
-**Epic Total**: 34 points (8 points completed, 26 remaining)
+**Epic Total**: 34 points (13 points completed, 21 remaining)
 
 ---
 

@@ -75,4 +75,56 @@ public interface IDeviceTypeRepository
         DeviceProtocol? protocol = null,
         int page = 1,
         int pageSize = 20);
+
+    /// <summary>
+    /// Gets the version history for a device type
+    /// </summary>
+    /// <param name="deviceTypeId">Device type ID</param>
+    /// <param name="tenantId">Tenant ID for security</param>
+    /// <returns>List of versions ordered by version number descending</returns>
+    Task<List<DeviceTypeVersion>> GetVersionHistoryAsync(Guid deviceTypeId, Guid tenantId);
+
+    /// <summary>
+    /// Rolls back a device type to a previous version
+    /// </summary>
+    /// <param name="deviceTypeId">Device type ID</param>
+    /// <param name="version">Version number to rollback to</param>
+    /// <param name="tenantId">Tenant ID for security</param>
+    /// <param name="userId">User performing the rollback</param>
+    /// <returns>Updated device type</returns>
+    Task<DeviceType> RollbackToVersionAsync(Guid deviceTypeId, int version, Guid tenantId, string userId);
+
+    /// <summary>
+    /// Gets usage statistics for a device type
+    /// </summary>
+    /// <param name="deviceTypeId">Device type ID</param>
+    /// <param name="tenantId">Tenant ID for security</param>
+    /// <returns>Usage statistics</returns>
+    Task<DeviceTypeUsageStatistics> GetUsageStatisticsAsync(Guid deviceTypeId, Guid tenantId);
+
+    /// <summary>
+    /// Gets audit log entries for a device type
+    /// </summary>
+    /// <param name="deviceTypeId">Device type ID</param>
+    /// <param name="tenantId">Tenant ID for security</param>
+    /// <param name="page">Page number</param>
+    /// <param name="pageSize">Page size</param>
+    /// <returns>Paginated audit log entries</returns>
+    Task<(List<DeviceTypeAuditLog> Items, int TotalCount)> GetAuditLogsAsync(
+        Guid deviceTypeId, 
+        Guid tenantId,
+        int page = 1,
+        int pageSize = 50);
+
+    /// <summary>
+    /// Validates a device type update for breaking changes
+    /// </summary>
+    /// <param name="deviceTypeId">Device type ID</param>
+    /// <param name="proposedUpdate">Proposed device type changes</param>
+    /// <param name="tenantId">Tenant ID for security</param>
+    /// <returns>Validation result with warnings and affected device count</returns>
+    Task<DeviceTypeUpdateValidationResult> ValidateUpdateAsync(
+        Guid deviceTypeId,
+        DeviceType proposedUpdate,
+        Guid tenantId);
 }

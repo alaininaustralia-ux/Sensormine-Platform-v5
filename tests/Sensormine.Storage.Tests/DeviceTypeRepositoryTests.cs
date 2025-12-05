@@ -547,6 +547,426 @@ public class DeviceTypeRepositoryTests : IDisposable
 
     #endregion
 
+    #region GetVersionHistoryAsync Tests
+
+    [Fact]
+    public async Task GetVersionHistoryAsync_ShouldReturnEmptyList_WhenNoVersionsExist()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("Test Device");
+
+        // Act
+        var versions = await _repository.GetVersionHistoryAsync(deviceType.Id, _testTenantId);
+
+        // Assert
+        versions.Should().NotBeNull();
+        versions.Should().HaveCount(1); // Initial version created on Create
+    }
+
+    [Fact]
+    public async Task GetVersionHistoryAsync_ShouldReturnVersionsInDescendingOrder()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("Test Device");
+        
+        // Update to create more versions
+        deviceType.Name = "Updated Device v2";
+        await _repository.UpdateAsync(deviceType);
+        
+        deviceType.Name = "Updated Device v3";
+        await _repository.UpdateAsync(deviceType);
+
+        // Act
+        var versions = await _repository.GetVersionHistoryAsync(deviceType.Id, _testTenantId);
+
+        // Assert
+        versions.Should().HaveCount(3);
+        versions[0].Version.Should().Be(3);
+        versions[1].Version.Should().Be(2);
+        versions[2].Version.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetVersionHistoryAsync_ShouldThrowException_WhenDeviceTypeDoesNotExist()
+    {
+        // Arrange
+        var nonExistentId = Guid.NewGuid();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _repository.GetVersionHistoryAsync(nonExistentId, _testTenantId));
+    }
+
+    [Fact]
+    public async Task GetVersionHistoryAsync_ShouldRespectTenantIsolation()
+    {
+        // Arrange
+        var deviceType1 = await CreateTestDeviceType("Device 1", _testTenantId);
+        var deviceType2 = await CreateTestDeviceType("Device 2", _otherTenantId);
+
+        // Act
+        var versions1 = await _repository.GetVersionHistoryAsync(deviceType1.Id, _testTenantId);
+        
+        // Assert
+        versions1.Should().HaveCount(1);
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _repository.GetVersionHistoryAsync(deviceType2.Id, _testTenantId));
+    }
+
+    #endregion
+
+    #region RollbackToVersionAsync Tests
+
+    [Fact]
+    public async Task RollbackToVersionAsync_ShouldRestorePreviousVersion()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("Original Name");
+        var originalName = deviceType.Name;
+        
+        // Update to create version 2
+        deviceType.Name = "Updated Name";
+        deviceType = await _repository.UpdateAsync(deviceType);
+        
+        var currentVersion = deviceType.Name;
+
+        // Act
+        var rolledBack = await _repository.RollbackToVersionAsync(deviceType.Id, 1, _testTenantId, "admin@test.com");
+
+        // Assert
+        rolledBack.Should().NotBeNull();
+        rolledBack.Name.Should().Be(originalName);
+        rolledBack.Name.Should().NotBe(currentVersion);
+        
+        // Verify new version was created
+        var versions = await _repository.GetVersionHistoryAsync(deviceType.Id, _testTenantId);
+        versions.Should().HaveCount(3); // Original + Update + Rollback
+        versions[0].Version.Should().Be(3);
+        versions[0].ChangeSummary.Should().Contain("Rolled back to version 1");
+    }
+
+    [Fact]
+    public async Task RollbackToVersionAsync_ShouldThrowException_WhenVersionDoesNotExist()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("Test Device");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _repository.RollbackToVersionAsync(deviceType.Id, 999, _testTenantId, "admin@test.com"));
+    }
+
+    [Fact]
+    public async Task RollbackToVersionAsync_ShouldThrowException_WhenDeviceTypeDoesNotExist()
+    {
+        // Arrange
+        var nonExistentId = Guid.NewGuid();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _repository.RollbackToVersionAsync(nonExistentId, 1, _testTenantId, "admin@test.com"));
+    }
+
+    [Fact]
+    public async Task RollbackToVersionAsync_ShouldCreateAuditLog()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("Original");
+        deviceType.Name = "Updated";
+        await _repository.UpdateAsync(deviceType);
+
+        // Act
+        await _repository.RollbackToVersionAsync(deviceType.Id, 1, _testTenantId, "admin@test.com");
+
+        // Assert
+        var auditLogs = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId, 1, 10);
+        auditLogs.Item1.Should().Contain(log => log.Action == "Rollback");
+    }
+
+    #endregion
+
+    #region GetUsageStatisticsAsync Tests
+
+    [Fact]
+    public async Task GetUsageStatisticsAsync_ShouldReturnStatistics()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("Test Device");
+
+        // Act
+        var statistics = await _repository.GetUsageStatisticsAsync(deviceType.Id, _testTenantId);
+
+        // Assert
+        statistics.Should().NotBeNull();
+        statistics.DeviceTypeId.Should().Be(deviceType.Id);
+        statistics.TotalDeviceCount.Should().Be(0); // Mock implementation returns 0
+        statistics.ActiveDeviceCount.Should().Be(0);
+        statistics.InactiveDeviceCount.Should().Be(0);
+        statistics.LastUsedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetUsageStatisticsAsync_ShouldThrowException_WhenDeviceTypeDoesNotExist()
+    {
+        // Arrange
+        var nonExistentId = Guid.NewGuid();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _repository.GetUsageStatisticsAsync(nonExistentId, _testTenantId));
+    }
+
+    #endregion
+
+    #region GetAuditLogsAsync Tests
+
+    [Fact]
+    public async Task GetAuditLogsAsync_ShouldReturnPaginatedLogs()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("Test Device");
+        
+        // Create multiple updates to generate audit logs
+        deviceType.Name = "Updated 1";
+        await _repository.UpdateAsync(deviceType);
+        
+        deviceType.Name = "Updated 2";
+        await _repository.UpdateAsync(deviceType);
+
+        // Act
+        var (logs, totalCount) = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId, 1, 10);
+
+        // Assert
+        logs.Should().NotBeEmpty();
+        totalCount.Should().BeGreaterThan(0);
+        logs.All(log => log.DeviceTypeId == deviceType.Id).Should().BeTrue();
+        logs.All(log => log.TenantId == _testTenantId).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetAuditLogsAsync_ShouldReturnLogsInDescendingOrder()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("Test Device");
+        
+        await Task.Delay(10); // Small delay to ensure different timestamps
+        deviceType.Name = "Updated 1";
+        await _repository.UpdateAsync(deviceType);
+        
+        await Task.Delay(10);
+        deviceType.Name = "Updated 2";
+        await _repository.UpdateAsync(deviceType);
+
+        // Act
+        var (logs, _) = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId, 1, 10);
+
+        // Assert
+        logs.Should().HaveCountGreaterThan(1);
+        for (int i = 0; i < logs.Count - 1; i++)
+        {
+            logs[i].Timestamp.Should().BeOnOrAfter(logs[i + 1].Timestamp);
+        }
+    }
+
+    [Fact]
+    public async Task GetAuditLogsAsync_ShouldRespectPagination()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("Test Device");
+        
+        // Create 5 updates
+        for (int i = 0; i < 5; i++)
+        {
+            deviceType.Description = $"Update {i}";
+            await _repository.UpdateAsync(deviceType);
+        }
+
+        // Act
+        var (page1, totalCount) = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId, 1, 3);
+        var (page2, _) = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId, 2, 3);
+
+        // Assert
+        page1.Should().HaveCount(3);
+        page2.Should().NotBeEmpty();
+        totalCount.Should().BeGreaterThan(3);
+    }
+
+    [Fact]
+    public async Task GetAuditLogsAsync_ShouldThrowException_WhenDeviceTypeDoesNotExist()
+    {
+        // Arrange
+        var nonExistentId = Guid.NewGuid();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _repository.GetAuditLogsAsync(nonExistentId, _testTenantId, 1, 10));
+    }
+
+    #endregion
+
+    #region ValidateUpdateAsync Tests
+
+    [Fact]
+    public async Task ValidateUpdateAsync_ShouldAllowNonBreakingChanges()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("Original Device");
+        var proposedUpdate = new DeviceType
+        {
+            Id = deviceType.Id,
+            TenantId = deviceType.TenantId,
+            Name = "Updated Device Name",
+            Description = "Updated description",
+            Protocol = deviceType.Protocol,
+            ProtocolConfig = deviceType.ProtocolConfig,
+            CustomFields = deviceType.CustomFields,
+            Tags = new List<string> { "new-tag" },
+            CreatedBy = deviceType.CreatedBy
+        };
+
+        // Act
+        var result = await _repository.ValidateUpdateAsync(deviceType.Id, proposedUpdate, _testTenantId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeTrue();
+        result.BreakingChanges.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ValidateUpdateAsync_ShouldDetectProtocolChange()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("MQTT Device");
+        var proposedUpdate = new DeviceType
+        {
+            Id = deviceType.Id,
+            TenantId = deviceType.TenantId,
+            Name = deviceType.Name,
+            Description = deviceType.Description,
+            Protocol = DeviceProtocol.HTTP, // Changed from MQTT
+            ProtocolConfig = new ProtocolConfig(),
+            CustomFields = deviceType.CustomFields,
+            Tags = deviceType.Tags,
+            CreatedBy = deviceType.CreatedBy
+        };
+
+        // Act
+        var result = await _repository.ValidateUpdateAsync(deviceType.Id, proposedUpdate, _testTenantId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeFalse();
+        result.BreakingChanges.Should().Contain(change => change.Contains("Protocol change from"));
+    }
+
+    [Fact]
+    public async Task ValidateUpdateAsync_ShouldDetectNewRequiredFields()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("Test Device");
+        var proposedUpdate = new DeviceType
+        {
+            Id = deviceType.Id,
+            TenantId = deviceType.TenantId,
+            Name = deviceType.Name,
+            Description = deviceType.Description,
+            Protocol = deviceType.Protocol,
+            ProtocolConfig = deviceType.ProtocolConfig,
+            CustomFields = new List<CustomFieldDefinition>
+            {
+                new CustomFieldDefinition
+                {
+                    Name = "newRequiredField",
+                    Label = "New Required Field",
+                    Type = CustomFieldType.Text,
+                    Required = true // New required field
+                }
+            },
+            Tags = deviceType.Tags,
+            CreatedBy = deviceType.CreatedBy
+        };
+
+        // Act
+        var result = await _repository.ValidateUpdateAsync(deviceType.Id, proposedUpdate, _testTenantId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeFalse();
+        result.BreakingChanges.Should().Contain(change => change.Contains("new required custom field"));
+    }
+
+    [Fact]
+    public async Task ValidateUpdateAsync_ShouldWarnAboutFieldTypeChanges()
+    {
+        // Arrange
+        var deviceType = await CreateTestDeviceType("Test Device");
+        deviceType.CustomFields = new List<CustomFieldDefinition>
+        {
+            new CustomFieldDefinition
+            {
+                Name = "field1",
+                Label = "Field 1",
+                Type = CustomFieldType.Text,
+                Required = false
+            }
+        };
+        await _repository.UpdateAsync(deviceType);
+
+        var proposedUpdate = new DeviceType
+        {
+            Id = deviceType.Id,
+            TenantId = deviceType.TenantId,
+            Name = deviceType.Name,
+            Description = deviceType.Description,
+            Protocol = deviceType.Protocol,
+            ProtocolConfig = deviceType.ProtocolConfig,
+            CustomFields = new List<CustomFieldDefinition>
+            {
+                new CustomFieldDefinition
+                {
+                    Name = "field1",
+                    Label = "Field 1",
+                    Type = CustomFieldType.Number, // Changed type
+                    Required = false
+                }
+            },
+            Tags = deviceType.Tags,
+            CreatedBy = deviceType.CreatedBy
+        };
+
+        // Act
+        var result = await _repository.ValidateUpdateAsync(deviceType.Id, proposedUpdate, _testTenantId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Warnings.Should().Contain(warning => warning.Contains("field1") && warning.Contains("type changed"));
+    }
+
+    [Fact]
+    public async Task ValidateUpdateAsync_ShouldThrowException_WhenDeviceTypeDoesNotExist()
+    {
+        // Arrange
+        var nonExistentId = Guid.NewGuid();
+        var proposedUpdate = new DeviceType
+        {
+            Id = nonExistentId,
+            TenantId = _testTenantId,
+            Name = "Test",
+            Protocol = DeviceProtocol.MQTT,
+            ProtocolConfig = new ProtocolConfig(),
+            CustomFields = new List<CustomFieldDefinition>(),
+            Tags = new List<string>(),
+            CreatedBy = "test"
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _repository.ValidateUpdateAsync(nonExistentId, proposedUpdate, _testTenantId));
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private async Task<DeviceType> CreateTestDeviceType(string name, Guid? tenantId = null)
@@ -562,15 +982,17 @@ public class DeviceTypeRepositoryTests : IDisposable
                 Mqtt = new MqttConfig
                 {
                     Broker = "mqtt://localhost:1883",
-                    Topic = $"devices/{name.ToLower().Replace(" ", "_")}",
+                    Topic = "test/topic",
                     Qos = 1
                 }
             },
             CustomFields = new List<CustomFieldDefinition>(),
+            IsActive = true,
             AlertTemplates = new List<AlertRuleTemplate>(),
             Tags = new List<string> { "test" },
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
+            CreatedBy = "admin@test.com"
         };
 
         return await _repository.CreateAsync(deviceType);

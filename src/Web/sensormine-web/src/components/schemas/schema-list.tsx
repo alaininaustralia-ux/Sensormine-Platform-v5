@@ -206,14 +206,14 @@ export function SchemaList() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1 flex-wrap max-w-[200px]">
-                      {schema.tags.slice(0, 2).map((tag) => (
+                      {(schema.tags || []).slice(0, 2).map((tag) => (
                         <Badge key={tag} variant="outline" className="text-xs">
                           {tag}
                         </Badge>
                       ))}
-                      {schema.tags.length > 2 && (
+                      {(schema.tags?.length || 0) > 2 && (
                         <Badge variant="outline" className="text-xs">
-                          +{schema.tags.length - 2}
+                          +{(schema.tags?.length || 0) - 2}
                         </Badge>
                       )}
                     </div>
@@ -230,13 +230,13 @@ export function SchemaList() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => router.push(`/settings/schemas/${schema.id}`)}
+                          onClick={() => router.push(`/schemas/${schema.id}`)}
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => router.push(`/settings/schemas/${schema.id}/edit`)}
+                          onClick={() => router.push(`/schemas/${schema.id}`)}
                         >
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Schema

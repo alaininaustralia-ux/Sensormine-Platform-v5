@@ -2,6 +2,7 @@
  * API Configuration
  * 
  * Centralized configuration for API client
+ * Supports microservices architecture with service-specific URLs
  */
 
 export const apiConfig = {
@@ -9,6 +10,17 @@ export const apiConfig = {
   timeout: parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '30000', 10),
   retryAttempts: 3,
   retryDelay: 1000,
+} as const;
+
+/**
+ * Service-specific base URLs for microservices architecture
+ * Each service can have its own URL in local development
+ */
+export const serviceUrls = {
+  device: process.env.NEXT_PUBLIC_DEVICE_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5293',
+  schema: process.env.NEXT_PUBLIC_SCHEMA_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5021',
+  query: process.env.NEXT_PUBLIC_QUERY_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5297',
+  alerts: process.env.NEXT_PUBLIC_ALERTS_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5295',
 } as const;
 
 export const endpoints = {

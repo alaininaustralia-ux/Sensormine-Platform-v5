@@ -239,4 +239,173 @@ public class DeviceTypeController : ControllerBase
 
         return Ok(response);
     }
+
+    /// <summary>
+    /// Get version history for a Device Type
+    /// </summary>
+    /// <param name="id">Device Type ID</param>
+    /// <returns>List of versions</returns>
+    [HttpGet("{id}/versions")]
+    [ProducesResponseType(typeof(List<DeviceTypeVersionResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetVersionHistory(Guid id)
+    {
+        _logger.LogDebug("Getting version history for device type: {Id}", id);
+
+        try
+        {
+            var versions = await _repository.GetVersionHistoryAsync(id, TenantId);
+            var response = versions.Select(DeviceTypeVersionResponse.FromEntity).ToList();
+            return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Device type not found: {Id}", id);
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Rollback a Device Type to a previous version
+    /// </summary>
+    /// <param name="id">Device Type ID</param>
+    /// <param name="request">Rollback request containing version number</param>
+    /// <returns>Device Type after rollback</returns>
+    [HttpPost("{id}/rollback")]
+    [ProducesResponseType(typeof(DeviceTypeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RollbackToVersion(Guid id, [FromBody] RollbackDeviceTypeRequest request)
+    {
+        _logger.LogInformation("Rolling back device type {Id} to version {Version}", id, request.Version);
+
+        try
+        {
+            var deviceType = await _repository.RollbackToVersionAsync(id, request.Version, TenantId, UserId);
+            var response = DeviceTypeResponse.FromEntity(deviceType);
+            return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Rollback failed for device type: {Id}", id);
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Get usage statistics for a Device Type
+    /// </summary>
+    /// <param name="id">Device Type ID</param>
+    /// <returns>Usage statistics</returns>
+    [HttpGet("{id}/usage")]
+    [ProducesResponseType(typeof(DeviceTypeUsageStatisticsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetUsageStatistics(Guid id)
+    {
+        _logger.LogDebug("Getting usage statistics for device type: {Id}", id);
+
+        try
+        {
+            var stats = await _repository.GetUsageStatisticsAsync(id, TenantId);
+            var response = DeviceTypeUsageStatisticsResponse.FromEntity(stats);
+            return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Device type not found: {Id}", id);
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Get audit logs for a Device Type
+    /// </summary>
+    /// <param name="id">Device Type ID</param>
+    /// <param name="page">Page number</param>
+    /// <param name="pageSize">Page size</param>
+    /// <returns>Paginated audit logs</returns>
+    [HttpGet("{id}/audit-logs")]
+    [ProducesResponseType(typeof(DeviceTypeAuditLogListResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAuditLogs(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        _logger.LogDebug("Getting audit logs for device type: {Id}, page: {Page}", id, page);
+
+        // Validate pagination
+        if (page < 1)
+        {
+            return BadRequest("Page must be greater than 0");
+        }
+
+        if (pageSize < 1 || pageSize > 100)
+        {
+            return BadRequest("PageSize must be between 1 and 100");
+        }
+
+        try
+        {
+            var (logs, totalCount) = await _repository.GetAuditLogsAsync(id, TenantId, page, pageSize);
+            
+            var response = new DeviceTypeAuditLogListResponse
+            {
+                Items = logs.Select(DeviceTypeAuditLogResponse.FromEntity).ToList(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+
+            return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Device type not found: {Id}", id);
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Validate a Device Type update for breaking changes
+    /// </summary>
+    /// <param name="id">Device Type ID</param>
+    /// <param name="request">Proposed Device Type changes</param>
+    /// <returns>Validation result with warnings</returns>
+    [HttpPost("{id}/validate-update")]
+    [ProducesResponseType(typeof(DeviceTypeUpdateValidationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ValidateUpdate(Guid id, [FromBody] DeviceTypeRequest request)
+    {
+        _logger.LogDebug("Validating update for device type: {Id}", id);
+
+        // Map request to domain entity
+        var proposedUpdate = new Sensormine.Core.Models.DeviceType
+        {
+            Id = id,
+            TenantId = TenantId,
+            Name = request.Name,
+            Description = request.Description,
+            Protocol = request.Protocol,
+            ProtocolConfig = request.ProtocolConfig,
+            SchemaId = request.SchemaId,
+            CustomFields = request.CustomFields ?? new List<Sensormine.Core.Models.CustomFieldDefinition>(),
+            AlertTemplates = request.AlertTemplates ?? new List<Sensormine.Core.Models.AlertRuleTemplate>(),
+            Tags = request.Tags ?? new List<string>(),
+            IsActive = request.IsActive
+        };
+
+        try
+        {
+            var result = await _repository.ValidateUpdateAsync(id, proposedUpdate, TenantId);
+            var response = DeviceTypeUpdateValidationResponse.FromEntity(result);
+            return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Device type not found: {Id}", id);
+            return NotFound(new { message = ex.Message });
+        }
+    }
 }

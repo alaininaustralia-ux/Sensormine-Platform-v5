@@ -19,6 +19,8 @@ public class ApplicationDbContext : DbContext
 
     // Device Type Management
     public DbSet<DeviceType> DeviceTypes { get; set; } = null!;
+    public DbSet<DeviceTypeVersion> DeviceTypeVersions { get; set; } = null!;
+    public DbSet<DeviceTypeAuditLog> DeviceTypeAuditLogs { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,6 +28,7 @@ public class ApplicationDbContext : DbContext
 
         ConfigureSchemaEntities(modelBuilder);
         ConfigureDeviceTypeEntities(modelBuilder);
+        ConfigureDeviceTypeVersioningEntities(modelBuilder);
     }
 
     private void ConfigureSchemaEntities(ModelBuilder modelBuilder)
@@ -262,6 +265,127 @@ public class ApplicationDbContext : DbContext
 
             // Query filter for soft delete (only show active by default)
             entity.HasQueryFilter(e => e.IsActive);
+        });
+    }
+
+    private void ConfigureDeviceTypeVersioningEntities(ModelBuilder modelBuilder)
+    {
+        // DeviceTypeVersion Configuration
+        modelBuilder.Entity<DeviceTypeVersion>(entity =>
+        {
+            entity.ToTable("device_type_versions");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedNever();
+
+            entity.Property(e => e.DeviceTypeId)
+                .HasColumnName("device_type_id")
+                .IsRequired();
+
+            entity.Property(e => e.Version)
+                .HasColumnName("version")
+                .IsRequired();
+
+            entity.Property(e => e.VersionData)
+                .HasColumnName("version_data")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.ChangeSummary)
+                .HasColumnName("change_summary")
+                .HasColumnType("text");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.CreatedBy)
+                .HasColumnName("created_by")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            // Indexes
+            entity.HasIndex(e => e.DeviceTypeId)
+                .HasDatabaseName("ix_device_type_versions_device_type");
+
+            entity.HasIndex(e => new { e.DeviceTypeId, e.Version })
+                .HasDatabaseName("ix_device_type_versions_device_type_version")
+                .IsUnique();
+
+            // Foreign key
+            entity.HasOne<DeviceType>()
+                .WithMany()
+                .HasForeignKey(e => e.DeviceTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // DeviceTypeAuditLog Configuration
+        modelBuilder.Entity<DeviceTypeAuditLog>(entity =>
+        {
+            entity.ToTable("device_type_audit_logs");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedNever();
+
+            entity.Property(e => e.DeviceTypeId)
+                .HasColumnName("device_type_id")
+                .IsRequired();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .IsRequired();
+
+            entity.Property(e => e.Action)
+                .HasColumnName("action")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.OldValue)
+                .HasColumnName("old_value")
+                .HasColumnType("jsonb");
+
+            entity.Property(e => e.NewValue)
+                .HasColumnName("new_value")
+                .HasColumnType("jsonb");
+
+            entity.Property(e => e.ChangeSummary)
+                .HasColumnName("change_summary")
+                .HasColumnType("text");
+
+            entity.Property(e => e.Timestamp)
+                .HasColumnName("timestamp")
+                .IsRequired();
+
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            // Indexes
+            entity.HasIndex(e => e.DeviceTypeId)
+                .HasDatabaseName("ix_device_type_audit_logs_device_type");
+
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("ix_device_type_audit_logs_tenant");
+
+            entity.HasIndex(e => e.Timestamp)
+                .HasDatabaseName("ix_device_type_audit_logs_timestamp")
+                .IsDescending();
+
+            entity.HasIndex(e => e.Action)
+                .HasDatabaseName("ix_device_type_audit_logs_action");
+
+            // Foreign key
+            entity.HasOne<DeviceType>()
+                .WithMany()
+                .HasForeignKey(e => e.DeviceTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
