@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Sensormine.Storage.Data;
 using Sensormine.Storage.Interfaces;
 using Sensormine.Storage.Repositories;
@@ -13,9 +14,25 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add Database Context
+// Add CORS for development
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:3020", "http://localhost:3021", "http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
+// Add Database Context with JSON support
+var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
+dataSourceBuilder.EnableDynamicJson(); // Required for JSONB columns with List<string> etc.
+var dataSource = dataSourceBuilder.Build();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(dataSource));
 
 // Add Repository and Services
 builder.Services.AddScoped<ISchemaRepository, SchemaRepository>();
@@ -37,6 +54,22 @@ builder.Services.AddHttpClient<IAiSchemaGeneratorService, AnthropicSchemaGenerat
 
 var app = builder.Build();
 
+// Apply database migrations
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    try
+    {
+        dbContext.Database.Migrate();
+        app.Logger.LogInformation("Database migrations applied successfully");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Error applying database migrations");
+        throw; // Re-throw to prevent startup if DB is not available
+    }
+}
+
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
@@ -44,7 +77,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseCors();
+// Disable HTTPS redirection in development to avoid CORS issues
+// app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 

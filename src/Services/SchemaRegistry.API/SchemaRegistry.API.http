@@ -1,6 +1,137 @@
-@SchemaRegistry.API_HostAddress = http://localhost:5001
+@SchemaRegistry.API_HostAddress = http://localhost:5021
 
-GET {{SchemaRegistry.API_HostAddress}}/weatherforecast/
+### Get all schemas
+GET {{SchemaRegistry.API_HostAddress}}/api/schemas
+Accept: application/json
+
+###
+
+### Get all active schemas with pagination
+GET {{SchemaRegistry.API_HostAddress}}/api/schemas?status=Active&pageSize=100&sortBy=name&sortOrder=asc
+Accept: application/json
+
+###
+
+### Get schema by ID
+GET {{SchemaRegistry.API_HostAddress}}/api/schemas/1
+Accept: application/json
+
+###
+
+### Create new schema
+POST {{SchemaRegistry.API_HostAddress}}/api/schemas
+Content-Type: application/json
+
+{
+  "name": "Temperature Sensor Schema",
+  "description": "Schema for temperature monitoring devices",
+  "deviceType": "TemperatureSensor",
+  "tags": ["temperature", "sensor", "iot"],
+  "jsonSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "temperature": {
+        "type": "number",
+        "description": "Temperature reading in Celsius",
+        "minimum": -50,
+        "maximum": 150
+      },
+      "unit": {
+        "type": "string",
+        "enum": ["celsius", "fahrenheit"],
+        "default": "celsius"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Time of measurement"
+      },
+      "sensorId": {
+        "type": "string",
+        "description": "Unique sensor identifier"
+      }
+    },
+    "required": ["temperature", "timestamp", "sensorId"]
+  }
+}
+
+###
+
+### AI Generate Schema
+POST {{SchemaRegistry.API_HostAddress}}/api/schemas/generate
+Content-Type: application/json
+
+{
+  "name": "Pressure Sensor Schema",
+  "description": "Industrial pressure sensor for monitoring hydraulic systems",
+  "deviceType": "PressureSensor",
+  "sampleData": "{\"pressure\": 150.5, \"unit\": \"psi\", \"timestamp\": \"2024-01-15T10:30:00Z\"}"
+}
+
+###
+
+### Update schema
+PUT {{SchemaRegistry.API_HostAddress}}/api/schemas/1
+Content-Type: application/json
+
+{
+  "name": "Temperature Sensor Schema (Updated)",
+  "description": "Updated schema for temperature monitoring devices with humidity",
+  "deviceType": "TemperatureSensor",
+  "tags": ["temperature", "humidity", "sensor", "iot"],
+  "jsonSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "temperature": {
+        "type": "number",
+        "description": "Temperature reading in Celsius",
+        "minimum": -50,
+        "maximum": 150
+      },
+      "humidity": {
+        "type": "number",
+        "description": "Relative humidity percentage",
+        "minimum": 0,
+        "maximum": 100
+      },
+      "unit": {
+        "type": "string",
+        "enum": ["celsius", "fahrenheit"],
+        "default": "celsius"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Time of measurement"
+      },
+      "sensorId": {
+        "type": "string",
+        "description": "Unique sensor identifier"
+      }
+    },
+    "required": ["temperature", "humidity", "timestamp", "sensorId"]
+  }
+}
+
+###
+
+### Validate data against schema
+POST {{SchemaRegistry.API_HostAddress}}/api/schemas/1/validate
+Content-Type: application/json
+
+{
+  "temperature": 25.5,
+  "unit": "celsius",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "sensorId": "TEMP-001"
+}
+
+###
+
+### Get AI usage stats
+GET {{SchemaRegistry.API_HostAddress}}/api/ai-usage
 Accept: application/json
 
 ###
