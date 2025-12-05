@@ -47,11 +47,13 @@ cd src/Web/device-simulator
 # Install dependencies
 npm install
 
-# Start development server
-npm run dev
+# Start development server (runs on port 3021 to avoid conflicts)
+npm run dev -- -p 3021
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3021](http://localhost:3021) in your browser.
+
+Alternatively, use VS Code's launch configuration "Device Simulator" to start the app.
 
 ### Building for Production
 

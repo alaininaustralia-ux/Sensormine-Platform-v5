@@ -1,0 +1,39 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Device Simulator",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "-p", "3021"],
+      "cwd": "${workspaceFolder}/src/Web/device-simulator",
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "- Local:.+http://localhost:([0-9]+)",
+        "uriFormat": "http://localhost:%s",
+        "action": "openExternally"
+      }
+    },
+    {
+      "name": "Sensormine Web",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}/src/Web/sensormine-web",
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "- Local:.+http://localhost:([0-9]+)",
+        "uriFormat": "http://localhost:%s",
+        "action": "openExternally"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "All Web Apps",
+      "configurations": ["Sensormine Web", "Device Simulator"]
+    }
+  ]
+}
