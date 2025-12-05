@@ -352,18 +352,31 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 - **Authentication** - JWT/OAuth implementation (Epic 8 subset)
 - **ApiGateway** - CORS, routing, rate limiting
 
-### Technology Decision Required
-**Option A: React + Next.js** (Recommended)
-- ✅ Large ecosystem, excellent tooling
-- ✅ TypeScript support
-- ✅ Rich component libraries (shadcn/ui, MUI)
-- ✅ Strong data visualization options
-- ❌ Separate codebase from backend
+### Recent Completed Work (Dec 5, 2025)
+**Story 2.1 - Schema Registry: Complete Implementation**
+- ✅ Frontend UI with 3-step wizard
+- ✅ AI-powered schema generation (Claude API)
+- ✅ Backend API with full CRUD operations
+- ✅ Centralized AI metering service (Sensormine.AI)
+- ✅ Usage tracking and cost monitoring
+- ✅ Comprehensive documentation
+- **Commit**: c59c204 - Pushed to master
+- **45 files changed, 5,975 insertions**
 
-**Option B: Blazor WebAssembly**
-- ✅ Share C# models with backend
-- ✅ .NET ecosystem consistency
-- ✅ Strong typing across stack
+### Technology Stack (DECIDED ✅)
+**Frontend: React + Next.js 14**
+- ✅ TypeScript with strict mode
+- ✅ shadcn/ui component library
+- ✅ Tailwind CSS for styling
+- ✅ Vitest + React Testing Library
+- ✅ Next.js App Router
+
+**Backend: .NET 9 + C# 12**
+- ✅ ASP.NET Core Web API
+- ✅ PostgreSQL + TimescaleDB
+- ✅ Redis for caching
+- ✅ Kafka/NATS for messaging
+- ✅ xUnit for testing
 - ❌ Smaller ecosystem
 - ❌ Less mature visualization libraries
 
