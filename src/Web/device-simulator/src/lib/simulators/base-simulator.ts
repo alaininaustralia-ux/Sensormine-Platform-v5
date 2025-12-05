@@ -68,6 +68,8 @@ export abstract class BaseProtocolSimulator {
       this.intervalId = null;
     }
     this.isRunning = false;
+    // Reset stored previous values so the next simulation start begins with fresh random values
+    // instead of continuing from where the previous simulation left off
     resetDeviceValues(this.device.id, this.device.sensors);
   }
 

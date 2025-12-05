@@ -50,17 +50,20 @@ export function DeviceEditor({ device, onClose }: DeviceEditorProps) {
     }
   );
 
+  // Temporary placeholder ID used for protocol config before the device is created
+  const TEMP_DEVICE_ID = 'pending-device';
+
   const [protocolConfigState, setProtocolConfigState] = useState<ProtocolConfig>(() => {
     if (device) {
       return getProtocolConfig(device.id) || getDefaultProtocolConfig(device.protocol, device.id);
     }
-    return getDefaultProtocolConfig('mqtt', 'temp');
+    return getDefaultProtocolConfig('mqtt', TEMP_DEVICE_ID);
   });
 
   // Update protocol config when protocol changes
   useEffect(() => {
     if (!device) {
-      setProtocolConfigState(getDefaultProtocolConfig(formData.protocol, 'temp'));
+      setProtocolConfigState(getDefaultProtocolConfig(formData.protocol, TEMP_DEVICE_ID));
     }
   }, [formData.protocol, device]);
 
