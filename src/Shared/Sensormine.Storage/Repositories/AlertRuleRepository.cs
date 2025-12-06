@@ -30,12 +30,13 @@ public class AlertRuleRepository : IAlertRuleRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(AlertRule entity, CancellationToken cancellationToken = default)
+    public async Task<AlertRule> AddAsync(AlertRule entity, CancellationToken cancellationToken = default)
     {
         entity.CreatedAt = DateTimeOffset.UtcNow;
         entity.UpdatedAt = DateTimeOffset.UtcNow;
         await _context.AlertRules.AddAsync(entity, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
+        return entity;
     }
 
     public async Task UpdateAsync(AlertRule entity, CancellationToken cancellationToken = default)

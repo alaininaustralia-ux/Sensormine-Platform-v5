@@ -8,14 +8,60 @@ namespace Sensormine.Storage.Repositories;
 /// <summary>
 /// Repository for alert instance operations
 /// </summary>
-public class AlertInstanceRepository : Repository<AlertInstance>, IAlertInstanceRepository
+public class AlertInstanceRepository : IAlertInstanceRepository
 {
-    public AlertInstanceRepository(ApplicationDbContext context) : base(context)
+    private readonly ApplicationDbContext _context;
+
+    public AlertInstanceRepository(ApplicationDbContext context)
     {
+        _context = context;
+    }
+
+    public async Task<AlertInstance?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.AlertInstances
+            .Include(i => i.AlertRule)
+            .Include(i => i.Device)
+            .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
+    }
+
+    public async Task<IEnumerable<AlertInstance>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.AlertInstances
+            .Include(i => i.AlertRule)
+            .Include(i => i.Device)
+            .OrderByDescending(i => i.TriggeredAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<AlertInstance> AddAsync(AlertInstance entity, CancellationToken cancellationToken = default)
+    {
+        entity.CreatedAt = DateTimeOffset.UtcNow;
+        entity.UpdatedAt = DateTimeOffset.UtcNow;
+        await _context.AlertInstances.AddAsync(entity, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        return entity;
+    }
+
+    public async Task UpdateAsync(AlertInstance entity, CancellationToken cancellationToken = default)
+    {
+        entity.UpdatedAt = DateTimeOffset.UtcNow;
+        _context.AlertInstances.Update(entity);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entity = await _context.AlertInstances.FindAsync(new object[] { id }, cancellationToken);
+        if (entity != null)
+        {
+            _context.AlertInstances.Remove(entity);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 
     public async Task<(List<AlertInstance> Instances, int TotalCount)> GetAllAsync(
-        Guid tenantId,
+        string tenantId,
         int page,
         int pageSize,
         AlertStatus? status = null,
@@ -54,7 +100,7 @@ public class AlertInstanceRepository : Repository<AlertInstance>, IAlertInstance
         return (instances, totalCount);
     }
 
-    public async Task<List<AlertInstance>> GetActiveByDeviceIdAsync(Guid tenantId, Guid deviceId)
+    public async Task<List<AlertInstance>> GetActiveByDeviceIdAsync(string tenantId, Guid deviceId)
     {
         return await _context.AlertInstances
             .Include(i => i.AlertRule)
@@ -65,7 +111,7 @@ public class AlertInstanceRepository : Repository<AlertInstance>, IAlertInstance
             .ToListAsync();
     }
 
-    public async Task<List<AlertInstance>> GetByAlertRuleIdAsync(Guid tenantId, Guid alertRuleId, int limit = 100)
+    public async Task<List<AlertInstance>> GetByAlertRuleIdAsync(string tenantId, Guid alertRuleId, int limit = 100)
     {
         return await _context.AlertInstances
             .Include(i => i.Device)
@@ -75,7 +121,7 @@ public class AlertInstanceRepository : Repository<AlertInstance>, IAlertInstance
             .ToListAsync();
     }
 
-    public async Task<AlertInstanceStatistics> GetStatisticsAsync(Guid tenantId)
+    public async Task<AlertInstanceStatistics> GetStatisticsAsync(string tenantId)
     {
         var stats = await _context.AlertInstances
             .Where(i => i.TenantId == tenantId)
@@ -94,7 +140,7 @@ public class AlertInstanceRepository : Repository<AlertInstance>, IAlertInstance
         return stats ?? new AlertInstanceStatistics();
     }
 
-    public async Task<bool> AcknowledgeAsync(Guid id, Guid tenantId, string acknowledgedBy, string? notes)
+    public async Task<bool> AcknowledgeAsync(Guid id, string tenantId, string acknowledgedBy, string? notes)
     {
         var instance = await _context.AlertInstances
             .FirstOrDefaultAsync(i => i.Id == id && i.TenantId == tenantId);
@@ -114,7 +160,7 @@ public class AlertInstanceRepository : Repository<AlertInstance>, IAlertInstance
         return true;
     }
 
-    public async Task<bool> ResolveAsync(Guid id, Guid tenantId, string? resolutionNotes)
+    public async Task<bool> ResolveAsync(Guid id, string tenantId, string? resolutionNotes)
     {
         var instance = await _context.AlertInstances
             .FirstOrDefaultAsync(i => i.Id == id && i.TenantId == tenantId);

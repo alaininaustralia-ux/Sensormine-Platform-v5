@@ -11,7 +11,7 @@ public interface IAlertInstanceRepository : IRepository<AlertInstance>
     /// Get all alert instances for a tenant with pagination and filtering
     /// </summary>
     Task<(List<AlertInstance> Instances, int TotalCount)> GetAllAsync(
-        Guid tenantId,
+        string tenantId,
         int page,
         int pageSize,
         AlertStatus? status = null,
@@ -21,27 +21,27 @@ public interface IAlertInstanceRepository : IRepository<AlertInstance>
     /// <summary>
     /// Get active (unacknowledged) alerts for a device
     /// </summary>
-    Task<List<AlertInstance>> GetActiveByDeviceIdAsync(Guid tenantId, Guid deviceId);
+    Task<List<AlertInstance>> GetActiveByDeviceIdAsync(string tenantId, Guid deviceId);
 
     /// <summary>
     /// Get alert instances by rule ID
     /// </summary>
-    Task<List<AlertInstance>> GetByAlertRuleIdAsync(Guid tenantId, Guid alertRuleId, int limit = 100);
+    Task<List<AlertInstance>> GetByAlertRuleIdAsync(string tenantId, Guid alertRuleId, int limit = 100);
 
     /// <summary>
     /// Get alert instance statistics
     /// </summary>
-    Task<AlertInstanceStatistics> GetStatisticsAsync(Guid tenantId);
+    Task<AlertInstanceStatistics> GetStatisticsAsync(string tenantId);
 
     /// <summary>
     /// Acknowledge an alert
     /// </summary>
-    Task<bool> AcknowledgeAsync(Guid id, Guid tenantId, string acknowledgedBy, string? notes);
+    Task<bool> AcknowledgeAsync(Guid id, string tenantId, string acknowledgedBy, string? notes);
 
     /// <summary>
     /// Resolve an alert
     /// </summary>
-    Task<bool> ResolveAsync(Guid id, Guid tenantId, string? resolutionNotes);
+    Task<bool> ResolveAsync(Guid id, string tenantId, string? resolutionNotes);
 }
 
 /// <summary>
