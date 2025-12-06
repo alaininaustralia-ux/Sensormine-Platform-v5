@@ -25,6 +25,13 @@ public class ApplicationDbContext : DbContext
     // Device Management
     public DbSet<Device> Devices { get; set; } = null!;
 
+    // User Preferences & Site Configuration
+    public DbSet<UserPreference> UserPreferences { get; set; } = null!;
+    public DbSet<SiteConfiguration> SiteConfigurations { get; set; } = null!;
+
+    // Dashboard Management
+    public DbSet<Dashboard> Dashboards { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -33,6 +40,9 @@ public class ApplicationDbContext : DbContext
         ConfigureDeviceTypeEntities(modelBuilder);
         ConfigureDeviceTypeVersioningEntities(modelBuilder);
         ConfigureDeviceEntities(modelBuilder);
+        ConfigureUserPreferenceEntities(modelBuilder);
+        ConfigureSiteConfigurationEntities(modelBuilder);
+        ConfigureDashboardEntities(modelBuilder);
     }
 
     private void ConfigureSchemaEntities(ModelBuilder modelBuilder)
@@ -482,6 +492,228 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.DeviceTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private void ConfigureUserPreferenceEntities(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<UserPreference>(entity =>
+        {
+            entity.ToTable("user_preferences");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedNever();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.DisplayPreferences)
+                .HasColumnName("display_preferences")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.NotificationPreferences)
+                .HasColumnName("notification_preferences")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.DashboardPreferences)
+                .HasColumnName("dashboard_preferences")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.DataPreferences)
+                .HasColumnName("data_preferences")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.Favorites)
+                .HasColumnName("favorites")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.RecentlyViewed)
+                .HasColumnName("recently_viewed")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            // Unique index on tenant_id + user_id
+            entity.HasIndex(e => new { e.TenantId, e.UserId })
+                .IsUnique()
+                .HasDatabaseName("ix_user_preferences_tenant_user");
+
+            entity.HasIndex(e => e.UserId)
+                .HasDatabaseName("ix_user_preferences_user");
+        });
+    }
+
+    private void ConfigureSiteConfigurationEntities(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<SiteConfiguration>(entity =>
+        {
+            entity.ToTable("site_configurations");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedNever();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.ConfigKey)
+                .HasColumnName("config_key")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.SiteSettings)
+                .HasColumnName("site_settings")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.Features)
+                .HasColumnName("features")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.Limits)
+                .HasColumnName("limits")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.Defaults)
+                .HasColumnName("defaults")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.Integrations)
+                .HasColumnName("integrations")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedBy)
+                .HasColumnName("updated_by")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            // Unique index on tenant_id + config_key
+            entity.HasIndex(e => new { e.TenantId, e.ConfigKey })
+                .IsUnique()
+                .HasDatabaseName("ix_site_configurations_tenant_key");
+        });
+    }
+
+    private void ConfigureDashboardEntities(ModelBuilder modelBuilder)
+    {
+        // Dashboard Configuration
+        modelBuilder.Entity<Dashboard>(entity =>
+        {
+            entity.ToTable("dashboards");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedOnAdd();
+
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.Description)
+                .HasColumnName("description")
+                .HasMaxLength(1000);
+
+            entity.Property(e => e.Layout)
+                .HasColumnName("layout")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.Widgets)
+                .HasColumnName("widgets")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.IsTemplate)
+                .HasColumnName("is_template")
+                .IsRequired();
+
+            entity.Property(e => e.TemplateCategory)
+                .HasColumnName("template_category")
+                .HasMaxLength(50);
+
+            entity.Property(e => e.SharedWith)
+                .HasColumnName("shared_with")
+                .HasColumnType("jsonb");
+
+            entity.Property(e => e.Tags)
+                .HasColumnName("tags")
+                .HasColumnType("jsonb");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            entity.Property(e => e.IsDeleted)
+                .HasColumnName("is_deleted")
+                .IsRequired();
+
+            // Indexes for performance
+            entity.HasIndex(e => new { e.TenantId, e.UserId })
+                .HasDatabaseName("ix_dashboards_tenant_user");
+
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("ix_dashboards_tenant");
+
+            entity.HasIndex(e => e.UserId)
+                .HasDatabaseName("ix_dashboards_user");
+
+            entity.HasIndex(e => e.IsTemplate)
+                .HasDatabaseName("ix_dashboards_is_template");
         });
     }
 }

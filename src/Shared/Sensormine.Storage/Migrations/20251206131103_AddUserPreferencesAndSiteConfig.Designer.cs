@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Sensormine.Core.Models;
@@ -13,9 +14,11 @@ using Sensormine.Storage.Data;
 namespace Sensormine.Storage.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251206131103_AddUserPreferencesAndSiteConfig")]
+    partial class AddUserPreferencesAndSiteConfig
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -23,92 +26,6 @@ namespace Sensormine.Storage.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("Sensormine.Core.Models.Dashboard", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("description");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_deleted");
-
-                    b.Property<bool>("IsTemplate")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_template");
-
-                    b.Property<string>("Layout")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("layout");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("name");
-
-                    b.Property<string>("SharedWith")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("shared_with");
-
-                    b.Property<string>("Tags")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("tags");
-
-                    b.Property<string>("TemplateCategory")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("template_category");
-
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("user_id");
-
-                    b.Property<string>("Widgets")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("widgets");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IsTemplate")
-                        .HasDatabaseName("ix_dashboards_is_template");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("ix_dashboards_tenant");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_dashboards_user");
-
-                    b.HasIndex("TenantId", "UserId")
-                        .HasDatabaseName("ix_dashboards_tenant_user");
-
-                    b.ToTable("dashboards", (string)null);
-                });
 
             modelBuilder.Entity("Sensormine.Core.Models.Device", b =>
                 {

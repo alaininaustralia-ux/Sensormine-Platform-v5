@@ -218,8 +218,13 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
 
     private void EnsureConnectionOpen()
     {
-        if (_connection.State != ConnectionState.Open)
+        if (_connection.State == ConnectionState.Closed)
         {
+            _connection.Open();
+        }
+        else if (_connection.State == ConnectionState.Broken)
+        {
+            _connection.Close();
             _connection.Open();
         }
     }
@@ -367,7 +372,12 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
 
         if (disposing)
         {
-            _connection?.Dispose();
+            // Don't dispose the connection - it's managed by the DI container
+            // Just ensure it's closed if we opened it
+            if (_connection?.State == ConnectionState.Open)
+            {
+                _connection.Close();
+            }
         }
 
         _disposed = true;

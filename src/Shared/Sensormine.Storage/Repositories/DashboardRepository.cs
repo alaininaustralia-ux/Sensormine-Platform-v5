@@ -1,0 +1,106 @@
+using Microsoft.EntityFrameworkCore;
+using Sensormine.Core.Models;
+using Sensormine.Core.Repositories;
+using Sensormine.Storage.Data;
+
+namespace Sensormine.Storage.Repositories;
+
+/// <summary>
+/// Repository implementation for Dashboard entity
+/// </summary>
+public class DashboardRepository : IDashboardRepository
+{
+    private readonly ApplicationDbContext _context;
+
+    public DashboardRepository(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<Dashboard?> GetByIdAsync(Guid id, string tenantId)
+    {
+        return await _context.Dashboards
+            .Where(d => d.Id == id && d.TenantId == tenantId && !d.IsDeleted)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<IEnumerable<Dashboard>> GetByUserIdAsync(string userId, string tenantId)
+    {
+        return await _context.Dashboards
+            .Where(d => d.UserId == userId && d.TenantId == tenantId && !d.IsDeleted)
+            .OrderByDescending(d => d.UpdatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Dashboard>> GetByTenantAsync(string tenantId, int skip = 0, int take = 50)
+    {
+        return await _context.Dashboards
+            .Where(d => d.TenantId == tenantId && !d.IsDeleted)
+            .OrderByDescending(d => d.UpdatedAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync();
+    }
+
+    public async Task<Dashboard> CreateAsync(Dashboard dashboard)
+    {
+        dashboard.CreatedAt = DateTimeOffset.UtcNow;
+        dashboard.UpdatedAt = DateTimeOffset.UtcNow;
+        
+        _context.Dashboards.Add(dashboard);
+        await _context.SaveChangesAsync();
+        
+        return dashboard;
+    }
+
+    public async Task<Dashboard> UpdateAsync(Dashboard dashboard)
+    {
+        dashboard.UpdatedAt = DateTimeOffset.UtcNow;
+        
+        _context.Dashboards.Update(dashboard);
+        await _context.SaveChangesAsync();
+        
+        return dashboard;
+    }
+
+    public async Task<bool> DeleteAsync(Guid id, string tenantId)
+    {
+        var dashboard = await GetByIdAsync(id, tenantId);
+        if (dashboard == null)
+            return false;
+
+        dashboard.IsDeleted = true;
+        dashboard.UpdatedAt = DateTimeOffset.UtcNow;
+        
+        await _context.SaveChangesAsync();
+        
+        return true;
+    }
+
+    public async Task<IEnumerable<Dashboard>> SearchAsync(string tenantId, string? searchTerm = null, string[]? tags = null)
+    {
+        var query = _context.Dashboards
+            .Where(d => d.TenantId == tenantId && !d.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var lowerSearch = searchTerm.ToLower();
+            query = query.Where(d => 
+                d.Name.ToLower().Contains(lowerSearch) || 
+                (d.Description != null && d.Description.ToLower().Contains(lowerSearch)));
+        }
+
+        if (tags != null && tags.Length > 0)
+        {
+            // Note: This is a simple contains check. For production, consider using PostgreSQL's JSONB operators
+            foreach (var tag in tags)
+            {
+                query = query.Where(d => d.Tags != null && d.Tags.Contains(tag));
+            }
+        }
+
+        return await query
+            .OrderByDescending(d => d.UpdatedAt)
+            .ToListAsync();
+    }
+}
