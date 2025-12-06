@@ -1096,6 +1096,83 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
+### Story 4.11: Dashboard Components for Device Types and Devices
+**As a** system administrator or operations manager  
+**I want** to associate dashboard widgets/components with Device Types or specific Devices  
+**So that** I can automatically display relevant visualizations when viewing a device or device type
+
+**Acceptance Criteria:**
+
+**Device Type Dashboard Components:**
+- In Device Type configuration (Settings → Device Types), add "Dashboard Components" section
+- Define default dashboard widgets for all devices of this type:
+  - Select from widget library (charts, gauges, tables, maps)
+  - Configure widget data bindings to Device Type schema fields
+  - Set default time ranges and refresh intervals
+  - Define widget layout/positioning
+  - Preview widgets with sample data
+- Save component configuration as part of Device Type
+- All devices of this type inherit these dashboard components
+- Device Type components appear in:
+  - Device Type detail view
+  - Device list view (summary widgets)
+  - Device detail view (as default dashboard)
+
+**Device-Specific Dashboard Components:**
+- In individual Device detail view, add "Custom Dashboard" section
+- Option to use Device Type defaults or create custom layout
+- Add/remove/configure widgets specific to this device:
+  - Override inherited widgets from Device Type
+  - Add device-specific widgets
+  - Rearrange widget layout
+  - Configure device-specific thresholds/alerts
+- Device-level customizations take precedence over Device Type defaults
+- Show indicator if using Device Type defaults vs. custom layout
+
+**Widget Data Binding:**
+- Widgets automatically bind to schema fields from Device Type
+- Support for:
+  - Real-time data display (latest values)
+  - Historical data visualization (time-series charts)
+  - Aggregations (avg, min, max, sum)
+  - Multiple fields per widget (multi-series charts)
+- Automatic field mapping when schema changes (with validation)
+- Warning if schema field removed that widget depends on
+
+**Component Library Integration:**
+- Pre-built component templates for common sensor types:
+  - Temperature sensors → line chart + gauge
+  - Flow sensors → area chart + totalizer
+  - Pressure sensors → gauge + threshold indicators
+  - GPS/location → map widget
+  - Video cameras → live stream + event timeline
+- Component templates automatically suggested based on Device Type protocol and schema
+- One-click apply templates to Device Type or Device
+
+**Navigation & Discovery:**
+- Device list view shows mini-widgets (sparklines, gauges) from Device Type config
+- Click device to see full dashboard with all components
+- Device Type page shows aggregated view across all devices of that type
+- Quick filter to show only devices with custom dashboards
+- Search/filter devices by dashboard metrics
+
+**Permissions & Sharing:**
+- Dashboard component configurations respect user roles
+- Admin can lock Device Type dashboard components (prevent device-level overrides)
+- Share dashboard component configurations between Device Types
+- Export/import dashboard configurations
+
+**Performance:**
+- Lazy load dashboard components (only fetch data when visible)
+- Cache component configurations
+- Optimize queries for multiple devices displaying same widget
+- Paginate device list with many widgets
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
 ## Epic 5: LLM Interaction & Analytics
 
 ### Story 5.1: Natural Language Query

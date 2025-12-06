@@ -118,11 +118,12 @@ export function DeviceCard({ device, onEdit }: DeviceCardProps) {
           )}
 
           {/* Last reading */}
-          {simulation?.lastMessage && (
+          {simulation?.lastMessage && 'sensors' in simulation.lastMessage && (
             <div className="mt-2 p-2 bg-blue-50 rounded-lg">
               <p className="text-xs text-gray-500 mb-1">Last Reading</p>
               <div className="space-y-1">
-                {simulation.lastMessage.sensors.slice(0, 3).map((sensor) => (
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {(simulation.lastMessage.sensors as any[]).slice(0, 3).map((sensor: any) => (
                   <div key={sensor.sensorId} className="flex justify-between text-sm">
                     <span className="text-gray-600">{sensor.name}</span>
                     <span className="font-mono font-medium">
@@ -130,9 +131,11 @@ export function DeviceCard({ device, onEdit }: DeviceCardProps) {
                     </span>
                   </div>
                 ))}
-                {simulation.lastMessage.sensors.length > 3 && (
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {(simulation.lastMessage.sensors as any[]).length > 3 && (
                   <p className="text-xs text-gray-400">
-                    +{simulation.lastMessage.sensors.length - 3} more sensors
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    +{(simulation.lastMessage.sensors as any[]).length - 3} more sensors
                   </p>
                 )}
               </div>

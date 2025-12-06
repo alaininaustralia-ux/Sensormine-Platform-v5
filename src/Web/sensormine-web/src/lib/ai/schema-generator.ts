@@ -3,6 +3,8 @@
  * Derives JSON Schema from uploaded files or pasted text
  */
 
+import { generateSchema } from '../api/schemas';
+
 interface SchemaGenerationResult {
   success: boolean;
   schema?: Record<string, unknown>;
@@ -23,26 +25,13 @@ export async function generateSchemaFromData(
   }
 ): Promise<SchemaGenerationResult> {
   try {
-    // Call backend API instead of Claude directly
-    const response = await fetch('/api/schemas/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        data,
-        fileName: context?.fileName,
-        dataType: context?.dataType,
-        description: context?.description,
-      }),
+    // Call backend API via the schemas API client
+    const result = await generateSchema({
+      data,
+      fileName: context?.fileName,
+      dataType: context?.dataType,
+      description: context?.description,
     });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`API error: ${response.status} - ${error}`);
-    }
-
-    const result = await response.json();
     
     return {
       success: result.success,

@@ -50,3 +50,24 @@ export {
   deleteDeviceType,
   searchDeviceTypes,
 } from './deviceTypes';
+
+export {
+  getDevices,
+  getDeviceById,
+  getDeviceByDeviceId,
+  registerDevice,
+  updateDevice,
+  deleteDevice,
+  bulkRegisterDevices,
+  getDevicesByType,
+  getDeviceSchema,
+} from './devices';
+
+export type {
+  Device as ApiDevice,
+  DeviceListResponse,
+  CreateDeviceRequest,
+  UpdateDeviceRequest,
+  BulkDeviceRegistrationRequest,
+  BulkDeviceRegistrationResult,
+} from './devices';

@@ -42,6 +42,11 @@ public class DeviceType
     public Guid? SchemaId { get; set; }
 
     /// <summary>
+    /// Navigation property to the Schema
+    /// </summary>
+    public Schema? Schema { get; set; }
+
+    /// <summary>
     /// Custom metadata field definitions for this device type
     /// </summary>
     public List<CustomFieldDefinition> CustomFields { get; set; } = new();

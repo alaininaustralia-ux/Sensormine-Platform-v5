@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Temperature Sensor Telemetry",
+  "type": "object",
+  "required": ["deviceId", "timestamp", "temperature", "humidity"],
+  "properties": {
+    "deviceId": {
+      "type": "string",
+      "description": "Unique device identifier"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of the reading"
+    },
+    "temperature": {
+      "type": "number",
+      "minimum": -40,
+      "maximum": 85,
+      "description": "Temperature in Celsius",
+      "default": 22.5
+    },
+    "humidity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Relative humidity percentage",
+      "default": 50
+    },
+    "pressure": {
+      "type": "number",
+      "minimum": 300,
+      "maximum": 1100,
+      "description": "Atmospheric pressure in hPa",
+      "default": 1013.25
+    },
+    "status": {
+      "type": "string",
+      "enum": ["online", "warning", "offline"],
+      "description": "Device status",
+      "default": "online"
+    },
+    "batteryLevel": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Battery level percentage"
+    }
+  }
+}

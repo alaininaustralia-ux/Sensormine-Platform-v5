@@ -20,11 +20,18 @@ builder.Services.AddOpenApi();
 // Add Database Context
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? "Host=localhost;Database=sensormine;Username=postgres;Password=postgres";
+
+// Configure Npgsql for dynamic JSON serialization
+var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
+dataSourceBuilder.EnableDynamicJson();
+var dataSource = dataSourceBuilder.Build();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(dataSource));
 
 // Add Repositories
 builder.Services.AddScoped<IDeviceTypeRepository, DeviceTypeRepository>();
+builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
 
 // Add CORS for development
 builder.Services.AddCors(options =>

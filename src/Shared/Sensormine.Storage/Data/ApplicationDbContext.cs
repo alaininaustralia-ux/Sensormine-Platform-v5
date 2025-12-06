@@ -22,6 +22,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<DeviceTypeVersion> DeviceTypeVersions { get; set; } = null!;
     public DbSet<DeviceTypeAuditLog> DeviceTypeAuditLogs { get; set; } = null!;
 
+    // Device Management
+    public DbSet<Device> Devices { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -29,6 +32,7 @@ public class ApplicationDbContext : DbContext
         ConfigureSchemaEntities(modelBuilder);
         ConfigureDeviceTypeEntities(modelBuilder);
         ConfigureDeviceTypeVersioningEntities(modelBuilder);
+        ConfigureDeviceEntities(modelBuilder);
     }
 
     private void ConfigureSchemaEntities(ModelBuilder modelBuilder)
@@ -386,6 +390,99 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.DeviceTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private void ConfigureDeviceEntities(ModelBuilder modelBuilder)
+    {
+        // Device Configuration
+        modelBuilder.Entity<Device>(entity =>
+        {
+            entity.ToTable("devices");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedNever();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .IsRequired();
+
+            entity.Property(e => e.DeviceId)
+                .HasColumnName("device_id")
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.DeviceTypeId)
+                .HasColumnName("device_type_id")
+                .IsRequired();
+
+            entity.Property(e => e.SerialNumber)
+                .HasColumnName("serial_number")
+                .HasMaxLength(100);
+
+            entity.Property(e => e.CustomFieldValues)
+                .HasColumnName("custom_field_values")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.Location)
+                .HasColumnName("location")
+                .HasColumnType("jsonb");
+
+            entity.Property(e => e.Metadata)
+                .HasColumnName("metadata")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.Status)
+                .HasColumnName("status")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.LastSeenAt)
+                .HasColumnName("last_seen_at");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            // Indexes
+            entity.HasIndex(e => e.DeviceId)
+                .HasDatabaseName("ix_devices_device_id")
+                .IsUnique();
+
+            entity.HasIndex(e => e.DeviceTypeId)
+                .HasDatabaseName("ix_devices_device_type_id");
+
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("ix_devices_tenant_id");
+
+            entity.HasIndex(e => e.SerialNumber)
+                .HasDatabaseName("ix_devices_serial_number");
+
+            entity.HasIndex(e => e.Status)
+                .HasDatabaseName("ix_devices_status");
+
+            entity.HasIndex(e => e.LastSeenAt)
+                .HasDatabaseName("ix_devices_last_seen_at");
+
+            // Foreign key to DeviceType
+            entity.HasOne(e => e.DeviceType)
+                .WithMany()
+                .HasForeignKey(e => e.DeviceTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

@@ -1,10 +1,10 @@
 # Sensormine Platform v5 - Current State
 
-**Last Updated**: 2025-12-06  
-**Current Sprint**: Epic 1 - Device Type Configuration (NEW) + Epic 4 - Visualization & Dashboards  
-**Active Story**: Story 1.2 - Edit Device Type Configuration (✅ COMPLETE)  
+**Last Updated**: 2025-12-06 (Evening)  
+**Current Sprint**: Epic 2 - Device Registration & Management  
+**Active Story**: Story 2.1 - Device Registration (✅ COMPLETE)  
 **Build Status**: ✅ All services building successfully  
-**Architecture**: 🎯 Device Type-Centric Architecture Documented
+**Architecture**: 🎯 Device Type-Centric Architecture + Device Registration Complete
 
 ---
 
@@ -342,7 +342,306 @@ src/
 - SchemaRegistry.API: http://localhost:5021
 - Frontend: http://localhost:3020
 
-**Next Step:** Story 1.3 - Schema Assignment to Device Type (backend implementation needed)
+**Next Step:** Story 1.3 - Schema Assignment to Device Type OR Story 2.3 - Time-Series Query API (testing needed)
+
+---
+
+### ✅ Story 2.1: MQTT Data Ingestion - FULLY ENHANCED (COMPLETE - Dec 6, 2025)
+
+**Achievement:** Full MQTT data ingestion pipeline from devices to TimescaleDB database.
+
+**What Was Implemented:**
+
+**Edge.Gateway Service (NEW):**
+1. ✅ MQTT Server on port 1883
+   - Accepts connections from IoT devices
+   - Subscribes to device topics: `sensormine/devices/+/telemetry`
+   - MQTTnet v4.3.7 integration
+2. ✅ Kafka Producer Integration
+   - Forwards MQTT messages to Kafka topic: `telemetry.raw`
+   - Extracts device ID from topic pattern
+   - Adds metadata headers (timestamp, mqtt-topic)
+3. ✅ Background Service
+   - Runs as hosted service in ASP.NET Core
+   - Graceful shutdown handling
+   - Health check endpoint: `/health`
+4. ✅ Configuration
+   - appsettings.json with Kafka and MQTT settings
+   - Logging for all operations
+
+**Ingestion.Service (NEW):**
+1. ✅ Kafka Consumer
+   - Subscribes to `telemetry.raw` topic
+   - Consumer group: `ingestion-service`
+   - Manual offset commit for reliability
+2. ✅ TimescaleDB Writer
+   - Writes to TimescaleDB `telemetry` hypertable
+   - Uses `TimescaleDbRepository` from Sensormine.Storage
+   - Scoped service provider for thread-safe DB access
+3. ✅ Data Processing
+   - JSON payload parsing
+   - Timestamp extraction with fallback to UTC now
+   - Value type conversion (handles JsonElement)
+   - Tenant ID mapping (default: "default")
+4. ✅ Background Service
+   - Runs as hosted service
+   - Graceful shutdown with cancellation token
+   - Health check endpoint: `/health`
+5. ✅ Configuration
+   - TimescaleDB connection string
+   - Kafka broker and topic settings
+
+**Data Flow:**
+```
+Device/Simulator → MQTT (1883) → Edge.Gateway 
+  → Kafka (telemetry.raw) → Ingestion.Service 
+  → TimescaleDB → Query.API
+```
+
+**NuGet Packages Added:**
+- Edge.Gateway:
+  - MQTTnet 4.3.7.1207
+  - MQTTnet.Extensions.ManagedClient 4.3.7.1207
+  - Confluent.Kafka 2.3.0
+- Ingestion.Service:
+  - Confluent.Kafka 2.3.0
+  - Npgsql 9.0.2
+
+**Testing:**
+- Test script: `test-mqtt-ingestion.ps1`
+- Checks infrastructure readiness
+- Starts both services
+- Provides MQTT publish instructions
+- Device Simulator ready to use (port 3021)
+
+**Services Running:**
+- Edge.Gateway: http://localhost:5000 (MQTT on 1883)
+- Ingestion.Service: http://localhost:5001
+- MQTT Broker: localhost:1883
+- Kafka: localhost:9092
+- TimescaleDB: localhost:5452
+
+**ALL ENHANCEMENTS COMPLETED:**
+
+**Schema Validation Integration:**
+- ✅ SchemaRegistryClient HTTP service in Ingestion.Service
+- ✅ Validates all telemetry against device schemas before persistence
+- ✅ Automatic schema lookup by device ID/type
+- ✅ Detailed validation error reporting
+
+**Dead Letter Queue (DLQ):**
+- ✅ DeadLetterQueueService with Kafka producer
+- ✅ Topic: `telemetry.dlq`
+- ✅ Failed messages include: original payload, error reason, timestamp, metadata
+- ✅ Automatic routing of validation failures and processing errors
+
+**Rate Limiting:**
+- ✅ RateLimiterService with sliding window algorithm
+- ✅ Per-device limits: 100 messages per 60-second window (configurable)
+- ✅ Graceful message dropping with warning logs
+- ✅ Can be enabled/disabled via configuration
+
+**Batch Message Support:**
+- ✅ Parses JSON arrays as batch messages
+- ✅ Each item processed and forwarded separately
+- ✅ Maintains single message fallback
+
+**Device Authentication:**
+- ✅ DeviceApiClient HTTP service in Edge.Gateway
+- ✅ MQTTnet ValidatingConnectionAsync event handler
+- ✅ Credential validation against Device.API
+- ✅ Can be enabled/disabled via configuration (default: disabled)
+
+**Enhanced Configuration:**
+- Edge.Gateway appsettings.json:
+  ```json
+  "Authentication": { "Enabled": false },
+  "RateLimiting": { "Enabled": true, "MaxMessagesPerWindow": 100, "WindowSeconds": 60 },
+  "DeviceApi": { "BaseUrl": "http://localhost:5293" }
+  ```
+- Ingestion.Service appsettings.json:
+  ```json
+  "Kafka": { "DeadLetterTopic": "telemetry.dlq" },
+  "SchemaRegistry": { "BaseUrl": "http://localhost:5021" }
+  ```
+
+**New Test Script:**
+- File: `test-mqtt-enhanced.ps1`
+- Tests: Valid messages, batch messages, invalid messages (DLQ), rate limiting
+- Monitoring commands for DLQ and TimescaleDB queries
+
+---
+
+### ✅ AI Schema Generation Backend (COMPLETE - Dec 6, 2025)
+
+**Achievement:** Fully functional AI-powered schema generation integrated into the Schema Editor UI.
+
+**What Was Implemented:**
+
+**Backend (Already Complete):**
+1. ✅ SchemaRegistry.API AI endpoint: `POST /api/schemas/generate`
+2. ✅ Anthropic Claude Haiku 4.5 integration via AiSchemaGeneratorService
+3. ✅ Centralized AI metering service for usage tracking
+4. ✅ Token counting and cost calculation
+5. ✅ Confidence scoring (high/medium/low)
+6. ✅ AI suggestions for schema improvements
+7. ✅ Support for JSON, CSV, XML, and text data formats
+
+**Frontend Integration (NEW - Dec 6):**
+1. ✅ **Fixed API Client**: Added `generateSchema()` function to schemas.ts
+   - Uses service URL: `http://localhost:5021`
+   - Proper TypeScript types: `GenerateSchemaRequest`, `GenerateSchemaResponse`
+2. ✅ **Updated schema-generator.ts**: Now uses schemas API client instead of direct fetch
+   - Removed hardcoded `/api/schemas/generate` path
+   - Uses proper service configuration from config.ts
+3. ✅ **Enabled AI Generator Tab**: Removed disabled prop from UI
+   - Users can now access AI schema generation
+   - Tab is fully functional and ready to use
+4. ✅ **File Upload Support**: JSON, CSV, XML, TXT files (max 10MB)
+5. ✅ **Text Input Support**: Paste sample data directly
+6. ✅ **Real-time Processing**: Loading states and error handling
+7. ✅ **Confidence Display**: Badges showing AI confidence level
+8. ✅ **Schema Validation**: Client-side validation before saving
+
+**Technical Highlights:**
+- Backend-first architecture: API keys never exposed to frontend
+- Centralized metering tracks all AI usage
+- File parsing handled client-side for efficiency
+- Generated schemas automatically validated
+- Switches to Manual Editor tab to show results
+- Change log automatically updated with AI generation metadata
+
+**Services Configured:**
+- SchemaRegistry.API: http://localhost:5021
+- Anthropic API Key: Configured in appsettings.Development.json
+- AI Model: claude-haiku-4-5 (fast, cost-effective)
+- Max Tokens: 8,192
+- Timeout: 5 minutes
+
+**User Workflow:**
+1. Navigate to Settings → Schemas → Create New
+2. Fill basic info (Step 1)
+3. Click "AI Generator" tab (Step 2)
+4. Upload file OR paste sample data
+5. Click "Generate Schema"
+6. Review generated schema in Manual Editor
+7. Refine if needed
+8. Continue to Review step
+
+**Documentation:**
+- Complete guide: `docs/ai-schema-generation.md`
+- Sample data examples (JSON, CSV)
+- Configuration instructions
+- Security best practices
+
+---
+
+### ✅ Story 2.1 - Device Registration (COMPLETE - Dec 6, 2025)
+
+**Achievement:** End-to-end device registration working from frontend to database.
+
+**What Was Implemented:**
+
+**Backend (Device.API):**
+1. ✅ DeviceController with full CRUD operations:
+   - POST `/api/Device` - Single device registration
+   - POST `/api/Device/bulk` - Bulk device upload
+   - GET `/api/Device` - List devices with pagination
+   - GET `/api/Device/{id}` - Get device by ID
+   - GET `/api/Device/by-device-id/{deviceId}` - Get by hardware ID
+   - GET `/api/Device/by-device-id/{deviceId}/schema` - Get device schema
+   - PUT `/api/Device/{id}` - Update device
+   - DELETE `/api/Device/{id}` - Delete device
+2. ✅ DeviceRepository with Entity Framework Core 9.0
+3. ✅ PostgreSQL `devices` table with:
+   - Basic fields (deviceId, name, serialNumber, status)
+   - Device Type foreign key
+   - CustomFieldValues JSONB column
+   - Metadata JSONB column  
+   - Location type (latitude, longitude, altitude)
+   - Timestamps (createdAt, updatedAt, lastSeenAt)
+4. ✅ Custom field validation against Device Type definitions
+5. ✅ Bulk upload with individual success/failure tracking
+6. ✅ Tenant ID support (currently hardcoded GUID)
+
+**Frontend (DeviceRegistrationForm):**
+1. ✅ Two-tab interface: Single Device | Bulk Upload
+2. ✅ Single Device Tab:
+   - Basic info: deviceId, name, device type selector, serial number, status
+   - Device Type dropdown loads from API
+   - Dynamic custom fields based on selected Device Type
+   - Location fields (latitude, longitude, altitude)
+   - Metadata key-value pairs (add/remove dynamically)
+   - Form validation
+   - Success message and redirect to devices list
+3. ✅ Bulk Upload Tab:
+   - Device Type selector
+   - CSV textarea input
+   - Format: DeviceId, Name, SerialNumber, Status, Latitude, Longitude
+   - CSV parsing with header detection
+   - Detailed results: success/failure counts
+   - Per-device error reporting
+4. ✅ DeviceList page shows registered devices:
+   - Real-time data from Device.API
+   - Device cards with type, status, last seen
+   - Search and filters
+   - Refresh button
+
+**Frontend API Client (devices.ts):**
+1. ✅ Complete API client with 9 functions:
+   - getDevices, getDeviceById, getDeviceByDeviceId
+   - registerDevice, bulkRegisterDevices
+   - updateDevice, deleteDevice
+   - getDevicesByType, getDeviceSchema
+2. ✅ All endpoints use `/api` prefix
+3. ✅ TypeScript interfaces for all DTOs
+
+**Critical Fixes Applied:**
+1. ✅ **Tenant ID Format**: Changed from `"default"` to valid GUID `"00000000-0000-0000-0000-000000000001"`
+   - DeviceController.GetTenantId() now returns proper GUID format
+   - Fixes Guid.Parse() crash when validating Device Types
+2. ✅ **Dynamic JSON Serialization**: Enabled Npgsql.EnableDynamicJson()
+   - Program.cs: NpgsqlDataSourceBuilder with EnableDynamicJson()
+   - Required for `Dictionary<string, object>` in CustomFieldValues
+   - Fixes DbUpdateException with JSONB parameters
+3. ✅ **API Endpoint Paths**: Added `/api` prefix to all Device.API calls
+   - Fixed 404 errors from frontend
+   - All 9 functions in devices.ts now use correct paths
+
+**Testing Completed:**
+1. ✅ API Endpoint Tests (curl):
+   - GET /api/Device - Returns empty array with pagination
+   - POST /api/Device - Successfully creates device with custom fields
+   - Device appears in database with all fields
+2. ✅ Browser Integration Tests (Playwright):
+   - Navigate to /devices/new
+   - Select Device Type from dropdown (loads from API)
+   - Fill form fields including custom field
+   - Submit registration
+   - Success: Redirects to /devices list
+   - Device shows in list with correct data
+3. ✅ End-to-End Flow:
+   - Device Type: flood sensor (with custom field "turkey")
+   - Created 2 test devices: TEST-DEVICE-002, TEST-DEVICE-003
+   - Both visible in devices list
+   - All fields persist correctly
+
+**Known Issues Resolved:**
+- ✅ Select component empty value validation error - Fixed with placeholder values
+- ✅ 404 errors on device registration - Fixed with /api prefix
+- ✅ GUID parse errors - Fixed with proper tenant ID format
+- ✅ JSON serialization errors - Fixed with EnableDynamicJson()
+
+**Services Running:**
+- Device.API: http://localhost:5293
+- Frontend: http://localhost:3020
+- PostgreSQL: localhost:5432
+
+**Next Steps:**
+- Story 2.2: Azure DPS Provisioning
+- Story 2.3: Bulk device import via CSV file upload
+- Story 2.4: Device detail view with edit/delete
+- Update Ingestion.Service to use Device.API for schema lookup
 
 ---
 
@@ -360,9 +659,28 @@ src/
 
 ---
 
-## Current Epic: Visualization & Dashboards (Frontend Foundation)
+## Epic 2: Device Registration & Management
 
-### Epic Status: 🟢 Gauge and KPI Widgets Complete (5 of 11 stories completed)
+### Epic Status: 🟢 Device Registration Complete (1 of 8 stories completed)
+
+| Story | Title | Priority | Points | Status | Notes |
+|-------|-------|----------|--------|--------|-------|
+| 2.1  | Device Registration via Web/Mobile | High | 8 | ✅ Complete | Full CRUD + bulk upload |
+| 2.2  | Azure DPS Provisioning | High | 8 | 🔴 Not Started | Auto-provisioning |
+| 2.3  | Web UI Device Registration | High | 8 | ✅ Complete | Included in 2.1 |
+| 2.4  | Device Detail View | High | 5 | 🔴 Not Started | View/edit individual devices |
+| 2.5  | Device List & Search | High | 5 | ✅ Complete | Included in 2.1 |
+| 2.6  | Device Status Management | Medium | 5 | 🔴 Not Started | Lifecycle management |
+| 2.7  | Device Group Management | Medium | 8 | 🔴 Not Started | Organize devices |
+| 2.8  | Device Metadata Editor | Medium | 5 | ✅ Complete | Included in 2.1 |
+
+**Epic Total**: 52 points (21 points completed, 31 remaining)
+
+---
+
+## Epic 4: Visualization & Dashboards (Frontend Foundation)
+
+### Epic Status: 🟢 Gauge and KPI Widgets Complete (5 of 12 stories completed)
 
 | Story | Title | Priority | Points | Status | Notes |
 |-------|-------|----------|--------|--------|-------|
@@ -377,6 +695,9 @@ src/
 | 4.8  | Dashboard Templates | Low | 8 | 🔴 Not Started | User onboarding |
 | 4.9  | Real-Time Dashboard Updates | High | 13 | 🔴 Not Started | WebSocket/SignalR |
 | 4.10 | Dashboard Annotations | Low | 8 | 🔴 Not Started | Collaboration feature |
+| 4.11 | Dashboard Components for Device Types/Devices | High | 13 | 🔴 Not Started | **NEW** - Associate widgets with Device Types |
+
+**Epic Total**: 165 points (68 points completed, 97 remaining)
 
 ### Frontend Technology Stack
 **Selected Stack** (See `docs/technology-stack.md` for full details):

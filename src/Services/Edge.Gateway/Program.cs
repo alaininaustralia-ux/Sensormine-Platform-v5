@@ -1,41 +1,48 @@
+using Edge.Gateway.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// Add services
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "Edge Gateway API", Version = "v1" });
+});
+
+// Add Device API Client
+builder.Services.AddHttpClient<IDeviceApiClient, DeviceApiClient>();
+
+// Add Rate Limiter Service
+builder.Services.AddSingleton<IRateLimiterService, RateLimiterService>();
+
+// Add MQTT background service
+builder.Services.AddHostedService<MqttService>();
+
+// Add health checks
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure middleware
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Edge Gateway API v1"));
 }
 
 app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+app.MapHealthChecks("/health");
 
-var summaries = new[]
+// Status endpoint
+app.MapGet("/", () => new
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    service = "Edge Gateway",
+    version = "1.0.0",
+    status = "running",
+    mqtt = new { port = 1883, status = "listening" }
+});
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

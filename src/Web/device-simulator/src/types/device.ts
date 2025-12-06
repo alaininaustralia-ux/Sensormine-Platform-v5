@@ -101,7 +101,7 @@ export interface SimulationInstance {
   startedAt: Date;
   messageCount: number;
   errorCount: number;
-  lastMessage?: TelemetryMessage;
+  lastMessage?: TelemetryMessage | Record<string, unknown>;
   lastError?: string;
 }
 

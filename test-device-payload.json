@@ -1,0 +1,7 @@
+{
+  "deviceId": "test-device-001",
+  "name": "Test Device 001",
+  "deviceTypeId": "0b8baf60-66e5-4dbb-8a98-90f366d61ecd",
+  "serialNumber": "SN-001",
+  "status": "Active"
+}

@@ -126,6 +126,55 @@ When recommending next story, prioritize:
 
 ---
 
+## ⭐ Production-Grade Quality Standards
+
+**CRITICAL: This is a production-grade product. Never take shortcuts.**
+
+### Code Quality Requirements
+✅ **Error Handling**: All services must have comprehensive error handling with proper logging  
+✅ **Validation**: Input validation on all API endpoints with meaningful error messages  
+✅ **Security**: Authentication, authorization, input sanitization on all endpoints  
+✅ **Logging**: Structured logging with correlation IDs for distributed tracing  
+✅ **Resilience**: Retry policies, circuit breakers, timeout configurations  
+✅ **Testing**: Unit tests, integration tests, and end-to-end tests  
+✅ **Documentation**: XML comments, API documentation, README files  
+✅ **Performance**: Proper indexing, caching strategies, pagination  
+✅ **Monitoring**: Health checks, metrics, application insights  
+✅ **Configuration**: Environment-based configuration, secrets management  
+
+### Never Skip These Steps
+1. **Proper dependency injection** - Use interfaces, register services correctly
+2. **Database migrations** - Version controlled, reversible, tested
+3. **API versioning** - Plan for future changes
+4. **Proper status codes** - HTTP semantics matter (200, 201, 400, 404, 500, etc.)
+5. **Transaction management** - Proper use of database transactions
+6. **Null checks** - Defensive programming everywhere
+7. **Async/await properly** - No blocking calls, ConfigureAwait when appropriate
+8. **Resource disposal** - Proper using statements, IDisposable/IAsyncDisposable
+9. **Configuration validation** - Validate settings on startup
+10. **API contracts** - DTOs for requests/responses, never expose entities directly
+
+### Architecture Principles
+- **SOLID principles** - Follow single responsibility, dependency inversion, etc.
+- **Clean Architecture** - Separate concerns, depend on abstractions
+- **Microservices patterns** - Service discovery, API gateway, circuit breakers
+- **Domain-Driven Design** - Rich domain models, ubiquitous language
+- **Event-Driven Architecture** - Publish/subscribe for decoupling
+- **CQRS where appropriate** - Separate read and write models when beneficial
+
+### DevOps & Operations
+- **Infrastructure as Code** - Terraform, Helm charts
+- **CI/CD Pipelines** - Automated builds, tests, deployments
+- **Monitoring & Alerting** - Prometheus, Grafana, Application Insights
+- **Logging aggregation** - Centralized logging (ELK, Seq)
+- **Secrets management** - Azure Key Vault, HashiCorp Vault
+- **Disaster recovery** - Backup strategies, restore procedures
+- **Security scanning** - Dependency scanning, SAST, DAST
+
+**When implementing any feature, ask: "Is this production-ready?" If not, make it so.**
+
+---
+
 ## 📁 Essential File Locations
 
 - **Project State**: `.agent/current-state.md` (READ FIRST!)

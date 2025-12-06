@@ -185,6 +185,7 @@ class ApiClient {
    */
   async get<T>(path: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
     const url = this.buildUrl(path);
+    console.log('[API Client] GET request to:', url);
     return this.makeRequest<T>(url, {
       ...options,
       method: 'GET',

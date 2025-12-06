@@ -16,14 +16,24 @@ public class Device : BaseEntity
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Device type (e.g., "MQTT_SENSOR", "OPC_UA", "NEXUS_PROBE")
+    /// Device Type ID (foreign key to DeviceType)
     /// </summary>
-    public string DeviceType { get; set; } = string.Empty;
+    public Guid DeviceTypeId { get; set; }
 
     /// <summary>
-    /// Schema identifier for data validation
+    /// Navigation property to Device Type
     /// </summary>
-    public string SchemaId { get; set; } = string.Empty;
+    public DeviceType? DeviceType { get; set; }
+
+    /// <summary>
+    /// Serial number or hardware identifier
+    /// </summary>
+    public string? SerialNumber { get; set; }
+
+    /// <summary>
+    /// Custom field values specific to this device (based on Device Type custom fields)
+    /// </summary>
+    public Dictionary<string, object> CustomFieldValues { get; set; } = new();
 
     /// <summary>
     /// Device location coordinates
@@ -51,7 +61,18 @@ public class Device : BaseEntity
 /// </summary>
 public class Location
 {
+    /// <summary>
+    /// Latitude coordinate
+    /// </summary>
     public double Latitude { get; set; }
+
+    /// <summary>
+    /// Longitude coordinate
+    /// </summary>
     public double Longitude { get; set; }
+
+    /// <summary>
+    /// Altitude in meters (optional)
+    /// </summary>
     public double? Altitude { get; set; }
 }

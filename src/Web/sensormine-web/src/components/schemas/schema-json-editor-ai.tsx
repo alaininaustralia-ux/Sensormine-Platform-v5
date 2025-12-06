@@ -226,7 +226,7 @@ export function SchemaJsonEditorAI({
             <FileJson className="h-4 w-4" />
             Manual Editor
           </TabsTrigger>
-          <TabsTrigger value="ai" className="gap-2" disabled title="AI Generator (Coming Soon)">
+          <TabsTrigger value="ai" className="gap-2">
             <Sparkles className="h-4 w-4" />
             AI Generator
           </TabsTrigger>

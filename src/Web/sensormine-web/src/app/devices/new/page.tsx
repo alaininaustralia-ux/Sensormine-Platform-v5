@@ -4,28 +4,14 @@
 
 'use client';
 
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { DeviceConfigurationForm, DeviceConfig } from '@/components/devices/DeviceConfigurationForm';
+import { DeviceRegistrationForm } from '@/components/devices/DeviceRegistrationForm';
 import { ArrowLeftIcon } from 'lucide-react';
 
 export default function NewDevicePage() {
-  const router = useRouter();
-
-  const handleSave = (config: DeviceConfig) => {
-    console.log('Creating device:', config);
-    // In production, this would call the API
-    alert('Device created successfully!');
-    router.push('/devices');
-  };
-
-  const handleCancel = () => {
-    router.push('/devices');
-  };
-
   return (
-    <div className="container py-8">
+    <div className="container py-8 max-w-4xl">
       <div className="mb-6 flex items-center gap-4">
         <Link href="/devices">
           <Button variant="ghost" size="icon">
@@ -33,14 +19,14 @@ export default function NewDevicePage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Add New Device</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Register New Device</h1>
           <p className="text-muted-foreground">
-            Register a new device and configure its connection settings
+            Register a new device instance to start collecting telemetry data
           </p>
         </div>
       </div>
 
-      <DeviceConfigurationForm onSave={handleSave} onCancel={handleCancel} />
+      <DeviceRegistrationForm />
     </div>
   );
 }

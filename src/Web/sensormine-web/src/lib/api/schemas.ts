@@ -144,3 +144,30 @@ export async function validateData(
     body: JSON.stringify(request),
   });
 }
+
+/**
+ * Generate a JSON Schema using AI from sample data
+ */
+export interface GenerateSchemaRequest {
+  data: string;
+  fileName?: string;
+  dataType?: 'json' | 'csv' | 'xml' | 'text';
+  description?: string;
+}
+
+export interface GenerateSchemaResponse {
+  success: boolean;
+  schema?: Record<string, unknown>;
+  error?: string;
+  confidence?: 'high' | 'medium' | 'low';
+  suggestions?: string[];
+}
+
+export async function generateSchema(
+  request: GenerateSchemaRequest
+): Promise<GenerateSchemaResponse> {
+  return schemaRequest<GenerateSchemaResponse>(`${BASE_PATH}/generate`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}

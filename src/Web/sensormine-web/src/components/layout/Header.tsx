@@ -18,9 +18,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/lib/auth';
-import { Bell, Search } from 'lucide-react';
+import { Bell, Search, HelpCircle } from 'lucide-react';
 
-export function Header() {
+interface HeaderProps {
+  onHelpClick?: () => void;
+}
+
+export function Header({ onHelpClick }: HeaderProps) {
   const { user, isAuthenticated, logout } = useAuth();
 
   const handleLogout = async () => {
@@ -66,6 +70,17 @@ export function Header() {
           {/* Search */}
           <Button variant="ghost" size="icon" className="relative">
             <Search className="h-5 w-5" />
+          </Button>
+
+          {/* Help */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative"
+            onClick={() => onHelpClick?.()}
+            title="Help & Documentation"
+          >
+            <HelpCircle className="h-5 w-5" />
           </Button>
 
           {/* Notifications */}

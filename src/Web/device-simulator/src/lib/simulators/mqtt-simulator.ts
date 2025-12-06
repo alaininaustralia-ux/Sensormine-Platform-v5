@@ -1,14 +1,19 @@
 import { DeviceConfig, MqttConfig } from '@/types';
 import { BaseProtocolSimulator, LogCallback, StatusCallback } from './base-simulator';
+import { generateFromSchema, generateContinuousValue, extractSensorsFromSchema, JsonSchema } from '../schema-generator';
 
 /**
  * MQTT Protocol Simulator
  * Publishes telemetry data to MQTT broker
+ * Supports both sensor-based and JSON Schema-based generation
  * Note: In browser environment, this simulates MQTT behavior
  */
 export class MqttSimulator extends BaseProtocolSimulator {
   private mqttConfig: MqttConfig;
   private connected = false;
+  private schema?: JsonSchema;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private schemaSensors?: any[];
 
   constructor(
     device: DeviceConfig,
@@ -18,6 +23,17 @@ export class MqttSimulator extends BaseProtocolSimulator {
   ) {
     super(device, config, onLog, onStatus);
     this.mqttConfig = config;
+    
+    // Check if this is a schema-based device
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((config as any).schema) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.schema = (config as any).schema;
+      if (this.schema) {
+        this.schemaSensors = extractSensorsFromSchema(this.schema);
+        this.log('info', 'Schema-based device detected');
+      }
+    }
   }
 
   async start(): Promise<void> {
@@ -82,7 +98,8 @@ export class MqttSimulator extends BaseProtocolSimulator {
       return;
     }
 
-    const message = this.generateMessage();
+    // Use schema-based generation if available, otherwise use sensor-based
+    const message = this.schema ? this.generateSchemaMessage() : this.generateMessage();
     const payload = JSON.stringify(message);
     const topic = this.mqttConfig.topic.replace('{deviceId}', this.device.id);
     
@@ -106,6 +123,36 @@ export class MqttSimulator extends BaseProtocolSimulator {
         this.onStatus('running', message);
       }
     }, latencyMs);
+  }
+
+  /**
+   * Generate message from JSON Schema with continuous values
+   */
+  private generateSchemaMessage(): Record<string, unknown> {
+    if (!this.schema) {
+      return this.generateMessage() as unknown as Record<string, unknown>;
+    }
+
+    const baseMessage = generateFromSchema(this.schema) as Record<string, unknown>;
+
+    // Override with continuous values for simulatable sensors
+    if (this.schemaSensors && this.schemaSensors.length > 0) {
+      for (const sensor of this.schemaSensors) {
+        if (baseMessage[sensor.path] !== undefined) {
+          baseMessage[sensor.path] = generateContinuousValue(sensor, this.device.id);
+        }
+      }
+    }
+
+    // Ensure deviceId and timestamp are set correctly
+    if (baseMessage.deviceId === undefined) {
+      baseMessage.deviceId = this.device.id;
+    }
+    if (baseMessage.timestamp === undefined || this.schema.properties?.timestamp?.format === 'date-time') {
+      baseMessage.timestamp = new Date().toISOString();
+    }
+
+    return baseMessage;
   }
 }
 

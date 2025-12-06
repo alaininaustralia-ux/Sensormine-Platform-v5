@@ -2,7 +2,7 @@ import { DeviceConfig, SimulationLog, TelemetryMessage, DeviceStatus } from '@/t
 import { generateTelemetryMessage, resetDeviceValues, generateId } from '../data-generator';
 
 export type LogCallback = (log: SimulationLog) => void;
-export type StatusCallback = (status: DeviceStatus, message?: TelemetryMessage, error?: string) => void;
+export type StatusCallback = (status: DeviceStatus, message?: TelemetryMessage | Record<string, unknown>, error?: string) => void;
 
 /**
  * Abstract base class for protocol simulators

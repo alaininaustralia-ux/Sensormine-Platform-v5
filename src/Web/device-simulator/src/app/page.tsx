@@ -10,13 +10,15 @@ import {
   Server,
   Globe,
   Network,
-  Radio
+  Radio,
+  FileJson
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DeviceCard } from '@/components/device-card';
 import { DeviceEditor } from '@/components/device-editor';
+import { SchemaDeviceCreator } from '@/components/schema-device-creator';
 import { LogViewer } from '@/components/log-viewer';
 import { useSimulatorStore } from '@/lib/store';
 import { DeviceConfig, ProtocolType, PROTOCOL_DISPLAY_NAMES } from '@/types';
@@ -58,6 +60,8 @@ export default function Home() {
     setEditingDevice(undefined);
     setShowEditor(false);
   };
+
+  const [showSchemaCreator, setShowSchemaCreator] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -114,22 +118,35 @@ export default function Home() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Quick Create</CardTitle>
                 <CardDescription>
-                  Create a sample device with pre-configured sensors
+                  Create a sample device with pre-configured sensors or from JSON Schema
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {(Object.keys(PROTOCOL_DISPLAY_NAMES) as ProtocolType[]).map((protocol) => (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {(Object.keys(PROTOCOL_DISPLAY_NAMES) as ProtocolType[]).map((protocol) => (
+                      <Button
+                        key={protocol}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => createSampleDevice(protocol)}
+                      >
+                        {PROTOCOL_ICONS[protocol]}
+                        <span className="ml-1">{PROTOCOL_DISPLAY_NAMES[protocol]}</span>
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="pt-2 border-t">
                     <Button
-                      key={protocol}
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
-                      onClick={() => createSampleDevice(protocol)}
+                      onClick={() => setShowSchemaCreator(true)}
+                      className="w-full"
                     >
-                      {PROTOCOL_ICONS[protocol]}
-                      <span className="ml-1">{PROTOCOL_DISPLAY_NAMES[protocol]}</span>
+                      <FileJson className="h-4 w-4 mr-2" />
+                      Create from JSON Schema
                     </Button>
-                  ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -188,16 +205,22 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between text-sm text-gray-500">
             <p>Sensormine Platform v5 - Device Simulator</p>
-            <p>Supports: MQTT, HTTP/REST, WebSocket, Modbus TCP, OPC UA</p>
+            <p>Supports: MQTT, HTTP/REST, WebSocket, Modbus TCP, OPC UA + JSON Schema</p>
           </div>
         </div>
       </footer>
 
-      {/* Device Editor Modal */}
+      {/* Editors */}
       {showEditor && (
         <DeviceEditor
           device={editingDevice}
           onClose={handleCloseEditor}
+        />
+      )}
+
+      {showSchemaCreator && (
+        <SchemaDeviceCreator
+          onClose={() => setShowSchemaCreator(false)}
         />
       )}
     </div>
