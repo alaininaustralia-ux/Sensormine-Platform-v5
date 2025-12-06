@@ -165,7 +165,7 @@ namespace Sensormine.Storage.Migrations
                 name: "ix_alert_instances_triggered_at",
                 table: "alert_instances",
                 column: "triggered_at",
-                descending: true);
+                descending: new[] { true });
 
             // Create indexes for alert_delivery_channels
             migrationBuilder.CreateIndex(
