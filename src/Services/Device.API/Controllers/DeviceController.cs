@@ -599,7 +599,8 @@ public class DeviceController : ControllerBase
             CreatedAt = device.CreatedAt,
             UpdatedAt = device.UpdatedAt ?? device.CreatedAt,
             SchemaId = device.DeviceType?.SchemaId,
-            SchemaName = device.DeviceType?.Schema?.Name
+            // SchemaName must be fetched from SchemaRegistry.API in microservices architecture
+            SchemaName = null
         };
     }
 

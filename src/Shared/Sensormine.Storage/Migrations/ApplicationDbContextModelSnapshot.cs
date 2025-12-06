@@ -169,9 +169,6 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("schema_id");
 
-                    b.Property<Guid?>("SchemaId1")
-                        .HasColumnType("uuid");
-
                     b.PrimitiveCollection<List<string>>("Tags")
                         .IsRequired()
                         .HasColumnType("text[]")
@@ -192,10 +189,6 @@ namespace Sensormine.Storage.Migrations
 
                     b.HasIndex("Protocol")
                         .HasDatabaseName("ix_device_types_protocol");
-
-                    b.HasIndex("SchemaId");
-
-                    b.HasIndex("SchemaId1");
 
                     b.HasIndex("Tags")
                         .HasDatabaseName("ix_device_types_tags");
@@ -467,20 +460,6 @@ namespace Sensormine.Storage.Migrations
                         .IsRequired();
 
                     b.Navigation("DeviceType");
-                });
-
-            modelBuilder.Entity("Sensormine.Core.Models.DeviceType", b =>
-                {
-                    b.HasOne("Sensormine.Core.Models.Schema", null)
-                        .WithMany()
-                        .HasForeignKey("SchemaId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Sensormine.Core.Models.Schema", "Schema")
-                        .WithMany()
-                        .HasForeignKey("SchemaId1");
-
-                    b.Navigation("Schema");
                 });
 
             modelBuilder.Entity("Sensormine.Core.Models.DeviceTypeAuditLog", b =>

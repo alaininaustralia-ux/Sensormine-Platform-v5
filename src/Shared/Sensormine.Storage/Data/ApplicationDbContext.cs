@@ -261,11 +261,10 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.IsActive)
                 .HasDatabaseName("ix_device_types_active");
 
-            // Foreign key to schemas
-            entity.HasOne<Schema>()
-                .WithMany()
-                .HasForeignKey(e => e.SchemaId)
-                .OnDelete(DeleteBehavior.SetNull);
+            // SchemaId is a logical reference only - no FK constraint (microservices pattern)
+            // Schema validation happens at application level via SchemaRegistry.API
+            entity.Property(e => e.SchemaId)
+                .IsRequired(false);
 
             // Query filter for soft delete (only show active by default)
             entity.HasQueryFilter(e => e.IsActive);

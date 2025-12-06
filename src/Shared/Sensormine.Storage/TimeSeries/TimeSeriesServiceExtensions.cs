@@ -32,11 +32,23 @@ public static class TimeSeriesServiceExtensions
         this IServiceCollection services, 
         string connectionString)
     {
+        // Ensure connection pooling is enabled in the connection string
+        var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString)
+        {
+            Pooling = true,
+            MinPoolSize = 5,
+            MaxPoolSize = 100,
+            ConnectionIdleLifetime = 300, // 5 minutes
+            ConnectionPruningInterval = 10
+        };
+        
+        var pooledConnectionString = builder.ToString();
+        
         services.AddScoped<ITimeSeriesRepository>(sp =>
         {
             var tenantProvider = sp.GetService<Core.Interfaces.ITenantProvider>();
             var tenantId = tenantProvider?.GetTenantId() ?? "default";
-            var connection = new Npgsql.NpgsqlConnection(connectionString);
+            var connection = new Npgsql.NpgsqlConnection(pooledConnectionString);
             return new TimescaleDbRepository(connection, tenantId);
         });
         

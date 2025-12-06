@@ -10,10 +10,8 @@ import {
 } from '@/types';
 import { generateId, generateSerialNumber } from './data-generator';
 import { 
-  createSimulator, 
   getDefaultProtocolConfig, 
-  ProtocolConfig, 
-  BaseProtocolSimulator 
+  ProtocolConfig 
 } from './simulators';
 
 const MAX_LOGS = 500;
@@ -23,7 +21,6 @@ interface SimulatorStore {
   devices: DeviceConfig[];
   protocolConfigs: Map<string, ProtocolConfig>;
   simulations: Map<string, SimulationInstance>;
-  simulators: Map<string, BaseProtocolSimulator>;
   logs: SimulationLog[];
   
   // Device actions
@@ -42,8 +39,7 @@ interface SimulatorStore {
   getProtocolConfig: (deviceId: string) => ProtocolConfig | undefined;
   
   // Simulation actions
-  startSimulation: (deviceId: string) => Promise<void>;
-  stopSimulation: (deviceId: string) => Promise<void>;
+  setSimulationStatus: (deviceId: string, status: 'idle' | 'connecting' | 'running' | 'error') => void;
   startAllSimulations: () => Promise<void>;
   stopAllSimulations: () => Promise<void>;
   
@@ -93,7 +89,6 @@ export const useSimulatorStore = create<SimulatorStore>()(
       devices: [],
       protocolConfigs: new Map(),
       simulations: new Map(),
-      simulators: new Map(),
       logs: [],
 
       // Device actions
@@ -126,7 +121,7 @@ export const useSimulatorStore = create<SimulatorStore>()(
         // Stop simulation if running
         const simulation = get().simulations.get(id);
         if (simulation && simulation.status === 'running') {
-          get().stopSimulation(id);
+          get().setSimulationStatus(id, 'idle');
         }
         
         set(state => {
@@ -221,94 +216,80 @@ export const useSimulatorStore = create<SimulatorStore>()(
         return get().protocolConfigs.get(deviceId);
       },
 
-      // Simulation actions
-      startSimulation: async (deviceId) => {
-        const device = get().devices.find(d => d.id === deviceId);
-        if (!device) throw new Error(`Device ${deviceId} not found`);
-        
-        const config = get().protocolConfigs.get(deviceId);
-        if (!config) throw new Error(`No protocol config for device ${deviceId}`);
-        
-        // Create simulation instance
-        const simulation: SimulationInstance = {
-          deviceId,
-          status: 'connecting',
-          startedAt: new Date(),
-          messageCount: 0,
-          errorCount: 0,
-        };
-        
+      // Simulation actions (now handled by Simulation API backend)
+      setSimulationStatus: (deviceId, status) => {
         set(state => {
           const newSimulations = new Map(state.simulations);
-          newSimulations.set(deviceId, simulation);
-          return { simulations: newSimulations };
-        });
-        
-        // Create simulator
-        const simulator = createSimulator(
-          device,
-          config,
-          (log) => get().addLog(log),
-          (status, message, error) => {
-            set(state => {
-              const newSimulations = new Map(state.simulations);
-              const sim = newSimulations.get(deviceId);
-              if (sim) {
-                const updated: SimulationInstance = {
-                  ...sim,
-                  status,
-                  lastMessage: message || sim.lastMessage,
-                  lastError: error,
-                  messageCount: message ? sim.messageCount + 1 : sim.messageCount,
-                  errorCount: error ? sim.errorCount + 1 : sim.errorCount,
-                };
-                newSimulations.set(deviceId, updated);
-              }
-              return { simulations: newSimulations };
+          const existing = newSimulations.get(deviceId);
+          
+          if (existing) {
+            newSimulations.set(deviceId, { ...existing, status });
+          } else {
+            newSimulations.set(deviceId, {
+              deviceId,
+              status,
+              startedAt: new Date(),
+              messageCount: 0,
+              errorCount: 0,
             });
           }
-        );
-        
-        // Store simulator instance (non-persistent)
-        const simulators = get().simulators;
-        simulators.set(deviceId, simulator);
-        
-        // Start simulation
-        await simulator.start();
-      },
-
-      stopSimulation: async (deviceId) => {
-        const simulator = get().simulators.get(deviceId);
-        if (simulator) {
-          await simulator.stop();
-          get().simulators.delete(deviceId);
-        }
-        
-        set(state => {
-          const newSimulations = new Map(state.simulations);
-          const sim = newSimulations.get(deviceId);
-          if (sim) {
-            newSimulations.set(deviceId, { ...sim, status: 'idle' });
-          }
+          
           return { simulations: newSimulations };
         });
       },
 
       startAllSimulations: async () => {
-        const devices = get().devices.filter(d => d.enabled);
+        const { devices, getProtocolConfig } = get();
+        
         for (const device of devices) {
-          const simulation = get().simulations.get(device.id);
-          if (!simulation || simulation.status === 'idle') {
-            await get().startSimulation(device.id);
+          if (!device.enabled) continue;
+          
+          try {
+            get().setSimulationStatus(device.id, 'connecting');
+            
+            const protocolConfig = getProtocolConfig(device.id);
+            const mqttTopic = protocolConfig && 'topic' in protocolConfig 
+              ? (protocolConfig as { topic: string }).topic 
+              : `devices/${device.id}/telemetry`;
+            
+            const { simulationApi } = await import('./simulation-api');
+            await simulationApi.startDevice({
+              deviceId: device.id,
+              name: device.name,
+              protocol: device.protocol,
+              interval: device.intervalMs,
+              topic: mqttTopic,
+              sensors: device.sensors.map(s => ({
+                name: s.name,
+                sensorType: s.type,
+                minValue: s.minValue,
+                maxValue: s.maxValue,
+                unit: s.unit,
+              })),
+            });
+            
+            get().setSimulationStatus(device.id, 'running');
+          } catch (error) {
+            get().setSimulationStatus(device.id, 'error');
+            console.error(`Failed to start ${device.name}:`, error);
           }
         }
       },
 
       stopAllSimulations: async () => {
-        const simulators = get().simulators;
-        const deviceIds = Array.from(simulators.keys());
-        for (const deviceId of deviceIds) {
-          await get().stopSimulation(deviceId);
+        const { devices } = get();
+        const { simulationApi } = await import('./simulation-api');
+        
+        for (const device of devices) {
+          const simulation = get().simulations.get(device.id);
+          if (simulation?.status === 'running') {
+            try {
+              await simulationApi.stopDevice(device.id);
+              get().setSimulationStatus(device.id, 'idle');
+            } catch (error) {
+              console.error(`Failed to stop ${device.name}:`, error);
+            }
+          }
         }
       },
 

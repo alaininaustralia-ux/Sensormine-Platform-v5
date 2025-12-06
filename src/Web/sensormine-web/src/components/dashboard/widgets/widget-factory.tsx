@@ -34,6 +34,7 @@ const mockDataGenerators = {
     value: Math.floor(Math.random() * 1000),
     previousValue: Math.floor(Math.random() * 900),
     unit: 'devices',
+    onRefresh: async () => {},
   }),
   gauge: () => ({
     value: Math.floor(Math.random() * 100),
@@ -42,6 +43,7 @@ const mockDataGenerators = {
     unit: '%',
     warningThreshold: 70,
     criticalThreshold: 90,
+    onRefresh: async () => {},
   }),
   table: () => ({
     columns: [
@@ -54,12 +56,28 @@ const mockDataGenerators = {
       status: i % 2 === 0 ? 'Online' : 'Offline',
       value: Math.floor(Math.random() * 100),
     })),
+    onRefresh: async () => {},
   }),
   chart: () => ({
-    chartType: 'line' as const,
+    config: {
+      title: 'Sample Chart',
+      chartType: 'line' as const,
+      series: [{
+        seriesName: 'Sample Data',
+        data: Array.from({ length: 10 }, (_, i) => ({
+          timestamp: Date.now() - (9 - i) * 3600000,
+          value: Math.floor(Math.random() * 100)
+        }))
+      }]
+    },
+    onRefresh: async () => {},
   }),
-  map: () => ({}),
-  video: () => ({}),
+  map: () => ({
+    onRefresh: async () => {},
+  }),
+  video: () => ({
+    onRefresh: async () => {},
+  }),
 };
 
 export function WidgetFactory({

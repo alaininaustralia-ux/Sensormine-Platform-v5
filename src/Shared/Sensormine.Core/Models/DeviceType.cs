@@ -37,14 +37,11 @@ public class DeviceType
     public ProtocolConfig ProtocolConfig { get; set; } = new();
 
     /// <summary>
-    /// Optional reference to a data schema in the Schema Registry
+    /// Optional reference to a data schema in the Schema Registry.
+    /// This is a logical reference only (no FK constraint in microservices architecture).
+    /// Validation happens at application level via SchemaRegistry.API.
     /// </summary>
     public Guid? SchemaId { get; set; }
-
-    /// <summary>
-    /// Navigation property to the Schema
-    /// </summary>
-    public Schema? Schema { get; set; }
 
     /// <summary>
     /// Custom metadata field definitions for this device type

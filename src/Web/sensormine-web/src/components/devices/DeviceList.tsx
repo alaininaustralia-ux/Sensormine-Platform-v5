@@ -30,10 +30,17 @@ import { getDevices, type ApiDevice } from '@/lib/api';
 import { formatDistanceToNow } from 'date-fns';
 
 // Extended device type for UI display
-interface DeviceDisplay extends ApiDevice {
+interface DeviceDisplay extends Partial<ApiDevice> {
+  id: string;
+  deviceId: string;
+  name: string;
+  type?: string; // Device type name for display
+  status: string;
+  lastSeen?: string; // Formatted "X minutes ago" - overrides lastSeenAt for display
   battery?: number | null;
   signal?: number | null;
   sensors?: number;
+  schemaName?: string;
 }
 
 // Mock data for demonstration (fallback)
@@ -47,7 +54,7 @@ const mockDevices: DeviceDisplay[] = [
     lastSeen: '2 minutes ago',
     battery: 85,
     signal: 92,
-    location: 'Building A - Floor 1',
+    location: { latitude: 40.7128, longitude: -74.0060 },
     sensors: 3,
     schemaName: 'Water Tank Telemetry',
   },
@@ -60,7 +67,7 @@ const mockDevices: DeviceDisplay[] = [
     lastSeen: '5 minutes ago',
     battery: 72,
     signal: 88,
-    location: 'Building A - Floor 2',
+    location: { latitude: 40.7150, longitude: -74.0070 },
     sensors: 4,
     schemaName: 'HVAC Sensor Data',
   },
@@ -73,7 +80,7 @@ const mockDevices: DeviceDisplay[] = [
     lastSeen: '1 hour ago',
     battery: null,
     signal: 95,
-    location: 'Factory Floor',
+    location: { latitude: 40.7200, longitude: -74.0100 },
     sensors: 12,
     schemaName: 'Industrial PLC Schema',
   },
@@ -86,7 +93,7 @@ const mockDevices: DeviceDisplay[] = [
     lastSeen: '30 seconds ago',
     battery: null,
     signal: 100,
-    location: 'Control Room',
+    location: { latitude: 40.7180, longitude: -74.0090 },
     sensors: 24,
     schemaName: 'SCADA Telemetry',
   },
@@ -99,7 +106,7 @@ const mockDevices: DeviceDisplay[] = [
     lastSeen: '3 days ago',
     battery: 12,
     signal: 0,
-    location: 'Storage Area',
+    location: { latitude: 40.7160, longitude: -74.0050 },
     sensors: 2,
     schemaName: undefined,
   },
@@ -329,7 +336,7 @@ export function DeviceList() {
                         </div>
                       )}
                       <div className="ml-auto text-xs text-muted-foreground">
-                        {formatLastSeen(device.lastSeenAt)}
+                        {device.lastSeen || (device.lastSeenAt ? formatLastSeen(device.lastSeenAt) : 'Never')}
                       </div>
                     </div>
                   </div>

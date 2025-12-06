@@ -86,9 +86,12 @@ export function SchemaWizardEmbedded({ onSuccess, onCancel }: SchemaWizardEmbedd
       const request: CreateSchemaRequest = {
         name: wizardData.name,
         description: wizardData.description,
-        jsonSchema: wizardData.jsonSchema,
-        changeLog: wizardData.changeLog,
-        tags: wizardData.tags,
+        initialVersion: {
+          version: '1.0.0', // Default first version
+          jsonSchema: wizardData.jsonSchema,
+          deviceTypes: [],
+          setAsDefault: true,
+        },
       };
 
       const schema = await createSchema(request);

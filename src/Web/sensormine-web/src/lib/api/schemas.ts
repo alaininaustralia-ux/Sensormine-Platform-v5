@@ -17,6 +17,9 @@ import type {
   ValidateDataRequest,
 } from '../types/schema';
 
+// Re-export types for convenience
+export type { Schema, SchemaVersion, CreateSchemaRequest, UpdateSchemaRequest };
+
 // Schema API uses its own service URL (SchemaRegistry.API on port 5021)
 const SCHEMA_BASE_URL = serviceUrls.schema;
 const BASE_PATH = '/api/schemas';

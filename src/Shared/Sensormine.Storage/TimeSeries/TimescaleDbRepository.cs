@@ -8,11 +8,12 @@ using Sensormine.Storage.Interfaces;
 /// <summary>
 /// TimescaleDB implementation of the time-series repository
 /// </summary>
-public class TimescaleDbRepository : ITimeSeriesRepository
+public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
 {
     private readonly IDbConnection _connection;
     private readonly string _tenantId;
     private readonly JsonSerializerOptions _jsonOptions;
+    private bool _disposed;
 
     /// <summary>
     /// Default table name for time-series data
@@ -78,7 +79,7 @@ public class TimescaleDbRepository : ITimeSeriesRepository
             var item = new TimeSeriesData
             {
                 DeviceId = reader.GetString(reader.GetOrdinal("DeviceId")),
-                TenantId = reader.GetString(reader.GetOrdinal("TenantId")),
+                TenantId = reader.GetGuid(reader.GetOrdinal("TenantId")).ToString(),
                 Timestamp = reader.GetDateTime(reader.GetOrdinal("Timestamp")),
                 Values = DeserializeJson<Dictionary<string, object>>(reader, "Values") ?? new(),
                 Quality = DeserializeJson<Dictionary<string, string>>(reader, "Quality"),
@@ -174,18 +175,38 @@ public class TimescaleDbRepository : ITimeSeriesRepository
         var tableName = GetTableName(measurement);
         var sql = TimeSeriesQueryBuilder.BuildInsertQuery(tableName);
 
-        using var command = _connection.CreateCommand();
-        command.CommandText = sql;
-
-        AddParameter(command, "@deviceId", data.DeviceId);
-        AddParameter(command, "@tenantId", _tenantId);
-        AddParameter(command, "@timestamp", data.Timestamp.UtcDateTime);
-        AddParameter(command, "@values", JsonSerializer.Serialize(data.Values, _jsonOptions));
-        AddParameter(command, "@quality", data.Quality != null ? JsonSerializer.Serialize(data.Quality, _jsonOptions) : null);
-        AddParameter(command, "@tags", data.Tags != null ? JsonSerializer.Serialize(data.Tags, _jsonOptions) : null);
-
         EnsureConnectionOpen();
-        await ExecuteNonQueryAsync(command, cancellationToken);
+
+        // Write one row per metric
+        foreach (var kvp in data.Values)
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText = sql;
+
+            AddParameter(command, "@timestamp", data.Timestamp.UtcDateTime);
+            AddParameter(command, "@deviceId", data.DeviceId);
+            AddParameter(command, "@tenantId", _tenantId);
+            AddParameter(command, "@metricName", kvp.Key);
+            
+            // Convert value to double
+            double value = kvp.Value switch
+            {
+                double d => d,
+                float f => f,
+                int i => i,
+                long l => l,
+                decimal dec => (double)dec,
+                string s when double.TryParse(s, out var parsed) => parsed,
+                _ => 0.0
+            };
+            
+            AddParameter(command, "@value", value);
+            AddParameter(command, "@unit", null);  // TODO: Extract unit from schema
+            AddParameter(command, "@tags", data.Tags != null ? JsonSerializer.Serialize(data.Tags, _jsonOptions) : null);
+            AddParameter(command, "@metadata", data.Quality != null ? JsonSerializer.Serialize(data.Quality, _jsonOptions) : null);
+
+            await ExecuteNonQueryAsync(command, cancellationToken);
+        }
     }
 
     private static string GetTableName(string measurement)
@@ -326,6 +347,30 @@ public class TimescaleDbRepository : ITimeSeriesRepository
     {
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(reader.Read());
+    }
+
+    /// <summary>
+    /// Dispose of resources
+    /// </summary>
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Dispose pattern implementation
+    /// </summary>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+
+        if (disposing)
+        {
+            _connection?.Dispose();
+        }
+
+        _disposed = true;
     }
 }
 

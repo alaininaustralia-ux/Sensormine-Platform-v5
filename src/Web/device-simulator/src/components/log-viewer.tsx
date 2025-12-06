@@ -1,26 +1,67 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Trash2, Filter, Download } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Trash2, Filter, Download, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SimulationLog, PROTOCOL_DISPLAY_NAMES } from '@/types';
 import { useSimulatorStore } from '@/lib/store';
+import { simulationApi, SimulationLogEntry } from '@/lib/simulation-api';
 
 export function LogViewer() {
-  const { logs, devices, clearLogs } = useSimulatorStore();
+  const { logs: localLogs, devices, clearLogs } = useSimulatorStore();
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [deviceFilter, setDeviceFilter] = useState<string>('all');
+  const [apiLogs, setApiLogs] = useState<SimulationLogEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchLogs = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const logs = await simulationApi.getLogs(deviceFilter !== 'all' ? deviceFilter : undefined, 100);
+      setApiLogs(logs);
+    } catch (err) {
+      console.error('Failed to fetch simulation logs:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch logs');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [deviceFilter]);
+
+  useEffect(() => {
+    fetchLogs();
+    const interval = setInterval(fetchLogs, 5000); // Auto-refresh every 5 seconds
+    return () => clearInterval(interval);
+  }, [fetchLogs]);
+
+  // Combine API logs with local logs for display
+  const combinedLogs = useMemo(() => {
+    // Convert API logs to SimulationLog format
+    const converted: SimulationLog[] = apiLogs.map((log, idx) => ({
+      id: `api-${idx}`,
+      timestamp: new Date(log.timestamp),
+      level: log.status === 'success' ? 'info' : 'error',
+      protocol: 'mqtt',
+      deviceId: log.deviceId,
+      message: `Published to ${log.topic}`,
+      data: JSON.parse(log.payload),
+    }));
+
+    // Merge with local logs and sort by timestamp
+    return [...converted, ...localLogs].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }, [apiLogs, localLogs]);
 
   const filteredLogs = useMemo(() => {
-    return logs.filter(log => {
+    return combinedLogs.filter(log => {
       if (levelFilter !== 'all' && log.level !== levelFilter) return false;
       if (deviceFilter !== 'all' && log.deviceId !== deviceFilter) return false;
       return true;
     });
-  }, [logs, levelFilter, deviceFilter]);
+  }, [combinedLogs, levelFilter, deviceFilter]);
 
   const getLevelBadge = (level: SimulationLog['level']) => {
     const variants: Record<SimulationLog['level'], 'default' | 'success' | 'warning' | 'destructive' | 'secondary'> = {
@@ -57,15 +98,31 @@ export function LogViewer() {
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Simulation Logs</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg">Simulation Logs</CardTitle>
+            {error && (
+              <Badge variant="destructive" className="text-xs">
+                {error}
+              </Badge>
+            )}
+          </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleExport} disabled={logs.length === 0}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchLogs} 
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExport} disabled={filteredLogs.length === 0}>
               <Download className="h-4 w-4 mr-1" />
               Export
             </Button>
-            <Button variant="outline" size="sm" onClick={clearLogs} disabled={logs.length === 0}>
+            <Button variant="outline" size="sm" onClick={clearLogs} disabled={localLogs.length === 0}>
               <Trash2 className="h-4 w-4 mr-1" />
-              Clear
+              Clear Local
             </Button>
           </div>
         </div>

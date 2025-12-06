@@ -213,9 +213,23 @@ public class MqttService : BackgroundService
 
     private string ExtractDeviceId(string topic)
     {
-        // Extract device ID from topic pattern: sensormine/devices/{deviceId}/telemetry
+        // Extract device ID from Azure-style topic pattern: devices/{deviceId}/telemetry
+        // Also supports legacy pattern: sensormine/devices/{deviceId}/telemetry
         var parts = topic.Split('/');
-        return parts.Length >= 3 ? parts[2] : "unknown";
+        
+        // Check for Azure-style: devices/{deviceId}/telemetry (deviceId at index 1)
+        if (parts.Length >= 3 && parts[0] == "devices")
+        {
+            return parts[1];
+        }
+        
+        // Check for legacy: sensormine/devices/{deviceId}/telemetry (deviceId at index 2)
+        if (parts.Length >= 4 && parts[1] == "devices")
+        {
+            return parts[2];
+        }
+        
+        return "unknown";
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)

@@ -12,6 +12,9 @@ import type {
   SearchDeviceTypesRequest,
 } from './types';
 
+// Re-export types for convenience
+export type { DeviceType, DeviceTypeRequest, DeviceTypeListResponse, SearchDeviceTypesRequest };
+
 const BASE_PATH = '/api/DeviceType';
 
 /**

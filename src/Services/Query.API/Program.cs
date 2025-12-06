@@ -8,6 +8,17 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
+// Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3020", "http://localhost:3000")
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 // OpenAPI/Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -67,7 +78,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// Disable HTTPS redirection in development to avoid CORS preflight issues
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
@@ -98,7 +115,7 @@ app.Run();
 /// </summary>
 public class DefaultTenantProvider : ITenantProvider
 {
-    private string _tenantId = "default";
+    private string _tenantId = "00000000-0000-0000-0000-000000000000";
 
     public string GetTenantId() => _tenantId;
 

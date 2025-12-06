@@ -14,15 +14,27 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "Ingestion Service API", Version = "v1" });
 });
 
-// Add TimescaleDB repository
+// Add TimescaleDB repository with connection pooling
 var connectionString = builder.Configuration.GetConnectionString("TimescaleDb") 
     ?? "Host=localhost;Port=5452;Database=sensormine_timeseries;Username=sensormine;Password=sensormine123";
 
-builder.Services.AddScoped<IDbConnection>(sp => new NpgsqlConnection(connectionString));
+// Configure connection pooling
+var pooledConnectionString = new NpgsqlConnectionStringBuilder(connectionString)
+{
+    Pooling = true,
+    MinPoolSize = 5,
+    MaxPoolSize = 100,
+    ConnectionIdleLifetime = 300, // 5 minutes
+    ConnectionPruningInterval = 10
+}.ToString();
+
+builder.Services.AddScoped<IDbConnection>(sp => new NpgsqlConnection(pooledConnectionString));
 builder.Services.AddScoped<ITimeSeriesRepository>(sp =>
 {
     var connection = sp.GetRequiredService<IDbConnection>();
-    return new TimescaleDbRepository(connection, "default");
+    // TODO: Implement proper tenant context resolution
+    // For now, use empty GUID until multi-tenant authentication is implemented
+    return new TimescaleDbRepository(connection, "00000000-0000-0000-0000-000000000000");
 });
 
 // Add Schema Registry Client

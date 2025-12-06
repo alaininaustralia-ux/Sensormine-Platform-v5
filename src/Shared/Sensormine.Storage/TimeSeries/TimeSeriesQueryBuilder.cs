@@ -13,11 +13,11 @@ public partial class TimeSeriesQueryBuilder
     /// </summary>
     private static readonly HashSet<string> AllowedOrderByColumns = new(StringComparer.OrdinalIgnoreCase)
     {
-        "timestamp", "device_id", "tenant_id"
+        "time", "device_id", "tenant_id"
     };
 
     /// <summary>
-    /// Builds a SELECT query for time-series data with filters
+    /// Builds a SELECT query for time-series data with filters (narrow to wide format pivot)
     /// </summary>
     public static string BuildSelectQuery(
         string tableName,
@@ -32,18 +32,19 @@ public partial class TimeSeriesQueryBuilder
             ["@endTime"] = query.EndTime
         };
 
+        // Pivot narrow format (metric_name, value) to wide format (values JSONB)
         var sql = $@"
 SELECT 
     device_id AS DeviceId,
     tenant_id AS TenantId,
-    timestamp AS Timestamp,
-    values AS Values,
-    quality AS Quality,
-    tags AS Tags
+    time AS Timestamp,
+    jsonb_object_agg(metric_name, value) AS Values,
+    jsonb_object_agg(metric_name, 'Good') AS Quality,
+    (array_agg(tags))[1] AS Tags
 FROM {tableName}
-WHERE tenant_id = @tenantId
-    AND timestamp >= @startTime
-    AND timestamp <= @endTime";
+WHERE tenant_id = @tenantId::uuid
+    AND time >= @startTime
+    AND time <= @endTime";
 
         // Add filters
         if (query.Filters != null && query.Filters.Count > 0)
@@ -65,8 +66,8 @@ WHERE tenant_id = @tenantId
                 }
                 else
                 {
-                    var fieldKey = SanitizeIdentifier(filter.Key);
-                    sql += $"\n    AND values ->> '{fieldKey}' = {paramName}";
+                    // Filter by metric name for narrow format
+                    sql += $"\n    AND metric_name = {paramName}";
                 }
                 
                 parameters[paramName] = filter.Value;
@@ -74,11 +75,14 @@ WHERE tenant_id = @tenantId
             }
         }
 
+        // Add GROUP BY for pivot aggregation
+        sql += $"\nGROUP BY device_id, tenant_id, time";
+
         // Add ordering - only allow whitelisted columns
-        var orderBy = string.IsNullOrEmpty(query.OrderBy) ? "timestamp" : query.OrderBy;
+        var orderBy = string.IsNullOrEmpty(query.OrderBy) ? "time" : query.OrderBy;
         if (!AllowedOrderByColumns.Contains(orderBy))
         {
-            orderBy = "timestamp"; // Default to safe column
+            orderBy = "time"; // Default to safe column
         }
         sql += $"\nORDER BY {orderBy} DESC";
 
@@ -105,12 +109,13 @@ WHERE tenant_id = @tenantId
         {
             ["@tenantId"] = tenantId,
             ["@startTime"] = query.StartTime,
-            ["@endTime"] = query.EndTime
+            ["@endTime"] = query.EndTime,
+            ["@metricName"] = valueField
         };
 
         var aggregateFunction = GetSqlAggregateFunction(query.AggregateFunction);
-        var sanitizedValueField = SanitizeIdentifier(valueField);
-        var valueExpression = $"(values ->> '{sanitizedValueField}')::numeric";
+        // For narrow format, value is directly in the value column
+        var valueExpression = "value";
 
         var selectClause = new List<string>();
         var groupByClause = new List<string>();
@@ -119,8 +124,8 @@ WHERE tenant_id = @tenantId
         if (query.GroupByInterval.HasValue)
         {
             var interval = FormatInterval(query.GroupByInterval.Value);
-            selectClause.Add($"time_bucket('{interval}', timestamp) AS bucket");
-            groupByClause.Add("time_bucket('" + interval + "', timestamp)");
+            selectClause.Add($"time_bucket('{interval}', time) AS bucket");
+            groupByClause.Add("time_bucket('" + interval + "', time)");
         }
 
         // Additional group by fields
@@ -150,9 +155,10 @@ WHERE tenant_id = @tenantId
 SELECT 
     {string.Join(",\n    ", selectClause)}
 FROM {tableName}
-WHERE tenant_id = @tenantId
-    AND timestamp >= @startTime
-    AND timestamp <= @endTime";
+WHERE tenant_id = @tenantId::uuid
+    AND time >= @startTime
+    AND time <= @endTime
+    AND metric_name = @metricName";
 
         // Add filters
         if (query.Filters != null && query.Filters.Count > 0)
@@ -171,11 +177,7 @@ WHERE tenant_id = @tenantId
                     var tagKey = SanitizeIdentifier(filter.Key[4..]);
                     sql += $"\n    AND tags ->> '{tagKey}' = {paramName}";
                 }
-                else
-                {
-                    var fieldKey = SanitizeIdentifier(filter.Key);
-                    sql += $"\n    AND values ->> '{fieldKey}' = {paramName}";
-                }
+                // For narrow format, metric filtering is already handled by @metricName parameter
                 
                 parameters[paramName] = filter.Value;
                 filterIndex++;
@@ -209,8 +211,8 @@ WHERE tenant_id = @tenantId
     public static string BuildInsertQuery(string tableName)
     {
         return $@"
-INSERT INTO {tableName} (device_id, tenant_id, timestamp, values, quality, tags)
-VALUES (@deviceId, @tenantId, @timestamp, @values::jsonb, @quality::jsonb, @tags::jsonb)";
+INSERT INTO {tableName} (time, device_id, tenant_id, metric_name, value, unit, tags, metadata)
+VALUES (@timestamp, @deviceId, @tenantId::uuid, @metricName, @value, @unit, @tags::jsonb, @metadata::jsonb)";
     }
 
     private static string GetSqlAggregateFunction(string function)

@@ -38,9 +38,12 @@ export interface SchemaVersion {
 export interface CreateSchemaRequest {
   name: string;
   description: string;
-  jsonSchema: string;
-  changeLog: string;
-  tags: string[];
+  initialVersion: {
+    version: string;
+    jsonSchema: string;
+    deviceTypes?: string[];
+    setAsDefault?: boolean;
+  };
 }
 
 export interface UpdateSchemaRequest {

@@ -46,6 +46,16 @@ services:
       - POSTGRES_USER=sensormine
       - POSTGRES_PASSWORD=sensormine123
       - POSTGRES_DB=sensormine_timeseries
+    command: 
+      - "postgres"
+      - "-c"
+      - "max_connections=500"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=1GB"
+      - "-c"
+      - "work_mem=16MB"
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
     networks:
@@ -57,9 +67,9 @@ services:
     ports:
       - "5433:5432"
     environment:
-      - POSTGRES_USER=sensormine
-      - POSTGRES_PASSWORD=sensormine123
-      - POSTGRES_DB=sensormine_metadata
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=sensormine
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:

@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DeviceConfig, DeviceStatus, PROTOCOL_DISPLAY_NAMES } from '@/types';
 import { useSimulatorStore } from '@/lib/store';
+import { simulationApi } from '@/lib/simulation-api';
 
 interface DeviceCardProps {
   device: DeviceConfig;
@@ -26,8 +27,7 @@ interface DeviceCardProps {
 export function DeviceCard({ device, onEdit }: DeviceCardProps) {
   const { 
     simulations, 
-    startSimulation, 
-    stopSimulation,
+    setSimulationStatus,
     deleteDevice,
     duplicateDevice,
   } = useSimulatorStore();
@@ -62,10 +62,44 @@ export function DeviceCard({ device, onEdit }: DeviceCardProps) {
   };
 
   const handleToggleSimulation = async () => {
-    if (status === 'running' || status === 'connecting') {
-      await stopSimulation(device.id);
-    } else {
-      await startSimulation(device.id);
+    try {
+      if (status === 'running' || status === 'connecting') {
+        setSimulationStatus(device.id, 'connecting');
+        await simulationApi.stopDevice(device.id);
+        setSimulationStatus(device.id, 'idle');
+        console.log(`Simulation stopped: ${device.name}`);
+      } else {
+        setSimulationStatus(device.id, 'connecting');
+        
+        // Get protocol config for MQTT topic
+        const protocolConfig = useSimulatorStore.getState().getProtocolConfig(device.id);
+        const mqttTopic = protocolConfig && 'topic' in protocolConfig 
+          ? (protocolConfig as { topic: string }).topic 
+          : `devices/${device.id}/telemetry`;
+        
+        // Convert device config to simulation API format
+        const simulatedDevice = {
+          deviceId: device.id,
+          name: device.name,
+          protocol: device.protocol,
+          interval: device.intervalMs,
+          topic: mqttTopic,
+          sensors: device.sensors.map(s => ({
+            name: s.name,
+            sensorType: s.type,
+            minValue: s.minValue,
+            maxValue: s.maxValue,
+            unit: s.unit,
+          })),
+        };
+        
+        await simulationApi.startDevice(simulatedDevice);
+        setSimulationStatus(device.id, 'running');
+        console.log(`Simulation started: ${device.name} on topic: ${mqttTopic}`);
+      }
+    } catch (error) {
+      setSimulationStatus(device.id, 'error');
+      console.error('Simulation error:', error instanceof Error ? error.message : 'Failed to toggle simulation');
     }
   };
 

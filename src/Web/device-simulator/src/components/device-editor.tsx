@@ -347,13 +347,13 @@ function MqttConfigEditor({ config, onChange }: { config: MqttConfig; onChange: 
         <Input
           value={config.topic}
           onChange={e => onChange({ ...config, topic: e.target.value })}
-          placeholder="sensormine/devices/{deviceId}/telemetry"
+          placeholder="devices/{deviceId}/telemetry"
         />
       </div>
       <div className="space-y-2">
         <Label>QoS</Label>
         <Select
-          value={config.qos.toString()}
+          value={(config.qos ?? 1).toString()}
           onChange={e => onChange({ ...config, qos: parseInt(e.target.value) as 0 | 1 | 2 })}
         >
           <option value="0">0 - At most once</option>

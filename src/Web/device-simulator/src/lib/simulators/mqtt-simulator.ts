@@ -101,7 +101,8 @@ export class MqttSimulator extends BaseProtocolSimulator {
     // Use schema-based generation if available, otherwise use sensor-based
     const message = this.schema ? this.generateSchemaMessage() : this.generateMessage();
     const payload = JSON.stringify(message);
-    const topic = this.mqttConfig.topic.replace('{deviceId}', this.device.id);
+    const topicTemplate = this.mqttConfig.topic || 'devices/{deviceId}/telemetry';
+    const topic = topicTemplate.replace('{deviceId}', this.device.id);
     
     // Simulate publish
     this.log('debug', `Publishing to topic: ${topic}`, {
@@ -164,7 +165,7 @@ export function getDefaultMqttConfig(deviceId: string): MqttConfig {
     brokerUrl: 'mqtt://localhost',
     port: 1883,
     clientId: `device-${deviceId}`,
-    topic: `sensormine/devices/{deviceId}/telemetry`,
+    topic: `devices/{deviceId}/telemetry`,
     qos: 1,
     useTls: false,
   };

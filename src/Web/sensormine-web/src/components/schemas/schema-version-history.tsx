@@ -2,6 +2,16 @@
  * Schema Version History Component
  * 
  * Display schema version history
+ * 
+ * TODO: Implement full version history functionality:
+ * - Add ability to compare versions (diff view)
+ * - Add rollback functionality to previous versions
+ * - Add version tagging/labeling
+ * - Add version approval workflow
+ * - Add version search/filter
+ * - Show which device types use each version
+ * - Add ability to create new version from old version
+ * - Add visual diff highlighting for JSON schema changes
  */
 
 'use client';

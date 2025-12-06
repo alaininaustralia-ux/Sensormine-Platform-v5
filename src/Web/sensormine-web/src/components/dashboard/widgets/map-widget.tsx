@@ -43,7 +43,7 @@ const Circle = dynamic(
 const LayersControl = dynamic(
   () => import('react-leaflet').then((mod) => mod.LayersControl),
   { ssr: false }
-);
+) as any; // TypeScript workaround for dynamic import with subcomponents
 
 const MarkerClusterGroup = dynamic(
   () => import('react-leaflet-cluster'),

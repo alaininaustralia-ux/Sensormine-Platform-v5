@@ -81,26 +81,29 @@ public class DeviceTypeRepository : IDeviceTypeRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(dt => dt.Id == deviceType.Id);
 
+        string? oldValue = null;
+        string? newValue = null;
         if (currentState != null)
         {
-            var oldValue = JsonSerializer.Serialize(currentState);
-            
-            // Update timestamp
-            deviceType.UpdatedAt = DateTime.UtcNow;
+            // Serialize BEFORE attaching to context to avoid circular references
+            oldValue = JsonSerializer.Serialize(currentState);
+            newValue = JsonSerializer.Serialize(deviceType);
+        }
 
-            // Create version snapshot
+        // Update timestamp
+        deviceType.UpdatedAt = DateTime.UtcNow;
+
+        // Update the entity in the context
+        _context.DeviceTypes.Update(deviceType);
+        
+        // Create version snapshot and audit log (these will be saved together)
+        if (currentState != null)
+        {
             await CreateVersionSnapshotAsync(deviceType, "Device Type updated", deviceType.CreatedBy ?? "system");
-
-            // Create audit log
-            var newValue = JsonSerializer.Serialize(deviceType);
             await CreateAuditLogAsync(deviceType, "Updated", oldValue, newValue, null, deviceType.CreatedBy ?? "system");
         }
-        else
-        {
-            deviceType.UpdatedAt = DateTime.UtcNow;
-        }
 
-        _context.DeviceTypes.Update(deviceType);
+        // Save all changes (device type, version, and audit log) in one transaction
         await _context.SaveChangesAsync();
 
         return deviceType;

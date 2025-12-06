@@ -197,8 +197,8 @@ export function SchemaList() {
                     {schema.description}
                   </TableCell>
                   <TableCell>
-                    <Badge className={STATUS_COLORS[schema.status]}>
-                      {schema.status}
+                    <Badge className={schema.status ? STATUS_COLORS[schema.status] : 'bg-gray-500'}>
+                      {schema.status || 'Unknown'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -219,7 +219,7 @@ export function SchemaList() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {new Date(schema.updatedAt).toLocaleDateString()}
+                    {schema.updatedAt ? new Date(schema.updatedAt).toLocaleDateString() : 'N/A'}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>

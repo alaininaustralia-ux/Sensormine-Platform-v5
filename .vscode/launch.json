@@ -215,6 +215,23 @@
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    },
+    {
+      "name": "Simulation.API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-simulation-api",
+      "program": "${workspaceFolder}/src/Services/Simulation.API/bin/Debug/net9.0/Simulation.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/Simulation.API",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
     }
   ],
   "compounds": [
@@ -261,7 +278,8 @@
         "Query.API",
         "StreamProcessing.Service",
         "VideoMetadata.API",
-        "Billing.API"
+        "Billing.API",
+        "Simulation.API"
       ]
     }
   ]

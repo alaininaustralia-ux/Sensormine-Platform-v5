@@ -166,14 +166,15 @@ public class DeviceRepository : IDeviceRepository
     {
         var device = await _context.Devices
             .Include(d => d.DeviceType)
-            .ThenInclude(dt => dt!.Schema)
             .FirstOrDefaultAsync(d => d.DeviceId == deviceId && d.TenantId == tenantId);
 
-        if (device?.DeviceType?.Schema == null)
+        if (device?.DeviceType?.SchemaId == null)
         {
             return null;
         }
 
-        return (device.DeviceType.SchemaId, device.DeviceType.Schema.Name);
+        // Note: SchemaName should be fetched from SchemaRegistry.API in microservices architecture
+        // Returning null for SchemaName since we don't have FK relationship
+        return (device.DeviceType.SchemaId, null);
     }
 }

@@ -225,7 +225,7 @@ public class TimeSeriesController : ControllerBase
     /// </summary>
     /// <param name="measurement">The measurement/table name</param>
     /// <param name="deviceId">Optional device ID filter</param>
-    /// <param name="hours">Number of hours to look back (default: 24, max: 168)</param>
+    /// <param name="hours">Number of hours to look back (default: 24, max: 168, supports decimals for minutes)</param>
     /// <param name="limit">Maximum results (default: 100, max: 1000)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Recent time-series data</returns>
@@ -234,12 +234,12 @@ public class TimeSeriesController : ControllerBase
     public async Task<IActionResult> GetRecent(
         string measurement,
         [FromQuery] string? deviceId = null,
-        [FromQuery] int hours = 24,
+        [FromQuery] double hours = 24,
         [FromQuery] int limit = 100,
         CancellationToken cancellationToken = default)
     {
         // Validate and clamp parameters using class constants
-        hours = Math.Clamp(hours, 1, MaxLookbackHours);
+        hours = Math.Clamp(hours, 0.001, MaxLookbackHours);
         limit = Math.Clamp(limit, 1, MaxResultsLimit);
 
         var request = new TimeSeriesQueryRequest

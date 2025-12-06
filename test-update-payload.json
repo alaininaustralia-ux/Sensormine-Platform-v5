@@ -1,0 +1,19 @@
+{
+  "alertTemplates": [],
+  "protocolConfig": {
+    "mqtt": {
+      "topic": "sensormine/devices/{deviceId}/telemetry",
+      "keepAlive": 60,
+      "broker": "mqtt://localhost:1883",
+      "cleanSession": true,
+      "qos": 1
+    }
+  },
+  "name": "Flood Detector ",
+  "isActive": true,
+  "customFields": [],
+  "tags": [],
+  "schemaId": "550e8400-e29b-41d4-a716-446655440000",
+  "description": "Test description update",
+  "protocol": "MQTT"
+}

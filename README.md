@@ -88,15 +88,17 @@ Sensormine/
    This starts 9 containers:
    - **Kafka** (port 9092) - Event streaming
    - **MQTT Broker** (ports 1883, 9001) - IoT device connectivity  
-   - **TimescaleDB** (port 5452) - Time-series data
-   - **PostgreSQL** (port 5433) - Metadata storage
+   - **TimescaleDB** (port 5452) - **Time-series telemetry data**
+   - **PostgreSQL** (port 5433) - **Configuration & metadata**
    - **Redis** (port 6379) - Cache & sessions
    - **MinIO** (ports 9000, 9090) - Object storage
    - **OpenSearch** (port 9200) - Full-text search
    - **Jaeger** (port 16686) - Distributed tracing
    - **Kafka UI** (port 8080) - Kafka management
    
-   > **📚 Complete Infrastructure Guide**: See [`docs/local-infrastructure.md`](docs/local-infrastructure.md) for detailed configuration, connection strings, and troubleshooting.
+   > **📚 Infrastructure Guides**: 
+   > - [local-infrastructure.md](docs/local-infrastructure.md) - Complete setup guide
+   > - [database-architecture.md](docs/database-architecture.md) - **Database strategy & best practices**
 
 3. **Restore dependencies**
    ```bash

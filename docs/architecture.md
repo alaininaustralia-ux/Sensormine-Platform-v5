@@ -1,5 +1,7 @@
 # Sensormine Platform - Architecture Documentation
 
+> **📊 Database Architecture**: For detailed information about database design, dual-database strategy, and best practices, see [database-architecture.md](./database-architecture.md)
+
 ## System Architecture
 
 ### Overview
