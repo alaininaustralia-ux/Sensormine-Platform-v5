@@ -84,7 +84,7 @@ public class AlertCondition
     /// <summary>
     /// Comparison operator
     /// </summary>
-    public string Operator { get; set; } = string.Empty; // >, <, =, !=, between, contains, etc.
+    public AlertOperator Operator { get; set; }
 
     /// <summary>
     /// Threshold value(s)
@@ -100,6 +100,72 @@ public class AlertCondition
     /// Unit of measurement (for display purposes)
     /// </summary>
     public string? Unit { get; set; }
+
+    /// <summary>
+    /// Alert level for this condition (e.g., warning at 80%, critical at 90%)
+    /// </summary>
+    public AlertSeverity Level { get; set; } = AlertSeverity.Warning;
+}
+
+/// <summary>
+/// Alert comparison operators
+/// </summary>
+public enum AlertOperator
+{
+    /// <summary>
+    /// Greater than
+    /// </summary>
+    GreaterThan,
+
+    /// <summary>
+    /// Less than
+    /// </summary>
+    LessThan,
+
+    /// <summary>
+    /// Equal to
+    /// </summary>
+    Equal,
+
+    /// <summary>
+    /// Not equal to
+    /// </summary>
+    NotEqual,
+
+    /// <summary>
+    /// Between two values (inclusive)
+    /// </summary>
+    Between,
+
+    /// <summary>
+    /// Outside of range (exclusive)
+    /// </summary>
+    Outside,
+
+    /// <summary>
+    /// Pattern: New plateau detected (value stabilizes at new level)
+    /// </summary>
+    Plateau,
+
+    /// <summary>
+    /// Pattern: Escalating values detected (continuous increase)
+    /// </summary>
+    Escalating,
+
+    /// <summary>
+    /// Pattern: De-escalating values detected (continuous decrease)
+    /// </summary>
+    Deescalating,
+
+    /// <summary>
+    /// Pattern: Spike detected (sudden sharp increase then return)
+    /// </summary>
+    Spike,
+
+    /// <summary>
+    /// Pattern: Drop detected (sudden sharp decrease then return)
+    /// </summary>
+    Drop
 }
 
 /// <summary>
@@ -116,6 +182,11 @@ public class EscalationRule
     /// Additional delivery channels for escalation
     /// </summary>
     public List<string> EscalationChannels { get; set; } = new();
+
+    /// <summary>
+    /// Additional recipients for escalation
+    /// </summary>
+    public List<string> EscalationRecipients { get; set; } = new();
 
     /// <summary>
     /// Message to include in escalation notification
