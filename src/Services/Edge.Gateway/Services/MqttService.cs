@@ -1,5 +1,5 @@
 using MQTTnet;
-using MQTTnet.Server;
+using MQTTnet.Client;
 using System.Text;
 using System.Text.Json;
 using Confluent.Kafka;
@@ -7,16 +7,15 @@ using Confluent.Kafka;
 namespace Edge.Gateway.Services;
 
 /// <summary>
-/// MQTT service that receives device telemetry and forwards to Kafka
+/// MQTT service that subscribes to device telemetry and forwards to Kafka
 /// </summary>
 public class MqttService : BackgroundService
 {
     private readonly ILogger<MqttService> _logger;
     private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
-    private MqttServer? _mqttServer;
+    private IMqttClient? _mqttClient;
     private IProducer<string, string>? _kafkaProducer;
-    private readonly bool _enableAuthentication;
     private readonly bool _enableRateLimiting;
 
     public MqttService(
@@ -27,7 +26,6 @@ public class MqttService : BackgroundService
         _logger = logger;
         _configuration = configuration;
         _serviceProvider = serviceProvider;
-        _enableAuthentication = _configuration.GetValue<bool>("Authentication:Enabled", false);
         _enableRateLimiting = _configuration.GetValue<bool>("RateLimiting:Enabled", true);
     }
 
@@ -43,24 +41,35 @@ public class MqttService : BackgroundService
             _kafkaProducer = new ProducerBuilder<string, string>(kafkaConfig).Build();
             _logger.LogInformation("Kafka producer initialized: {Servers}", kafkaConfig.BootstrapServers);
 
-            // Create MQTT server
+            // Create MQTT client
             var mqttFactory = new MqttFactory();
-            _mqttServer = mqttFactory.CreateMqttServer(ConfigureMqttServer());
+            _mqttClient = mqttFactory.CreateMqttClient();
 
-            // Subscribe to events
-            _mqttServer.InterceptingPublishAsync += OnMessageReceived;
+            // Configure MQTT client options
+            var mqttHost = _configuration["Mqtt:Host"] ?? "localhost";
+            var mqttPort = _configuration.GetValue<int>("Mqtt:Port", 1883);
             
-            // Configure authentication if enabled
-            if (_enableAuthentication)
-            {
-                _mqttServer.ValidatingConnectionAsync += OnValidatingConnection;
-            }
+            var mqttOptions = new MqttClientOptionsBuilder()
+                .WithTcpServer(mqttHost, mqttPort)
+                .WithClientId("EdgeGateway-" + Guid.NewGuid())
+                .WithCleanSession()
+                .Build();
 
-            // Start MQTT server
-            await _mqttServer.StartAsync();
-            _logger.LogInformation("MQTT server started on port 1883 (Authentication: {Auth}, RateLimiting: {RateLimit})", 
-                _enableAuthentication ? "Enabled" : "Disabled",
-                _enableRateLimiting ? "Enabled" : "Disabled");
+            // Subscribe to message received event
+            _mqttClient.ApplicationMessageReceivedAsync += OnMessageReceived;
+
+            // Connect to MQTT broker
+            await _mqttClient.ConnectAsync(mqttOptions, stoppingToken);
+            _logger.LogInformation("MQTT client connected to {Host}:{Port}", mqttHost, mqttPort);
+
+            // Subscribe to device telemetry topics
+            var subscribeOptions = mqttFactory.CreateSubscribeOptionsBuilder()
+                .WithTopicFilter("devices/+/telemetry")
+                .WithTopicFilter("sensormine/devices/+/telemetry")
+                .Build();
+
+            await _mqttClient.SubscribeAsync(subscribeOptions, stoppingToken);
+            _logger.LogInformation("Subscribed to MQTT topics: devices/+/telemetry, sensormine/devices/+/telemetry");
 
             // Keep running until cancellation
             await Task.Delay(Timeout.Infinite, stoppingToken);
@@ -76,21 +85,7 @@ public class MqttService : BackgroundService
         }
     }
 
-    private MqttServerOptions ConfigureMqttServer()
-    {
-        var optionsBuilder = new MqttServerOptionsBuilder()
-            .WithDefaultEndpoint()
-            .WithDefaultEndpointPort(1883);
-
-        var options = optionsBuilder.Build();
-
-        // Note: Authentication will be handled via ValidatingConnectionAsync event
-        // Configure in ExecuteAsync after server is created
-
-        return options;
-    }
-
-    private async Task OnMessageReceived(InterceptingPublishEventArgs args)
+    private async Task OnMessageReceived(MqttApplicationMessageReceivedEventArgs args)
     {
         try
         {
@@ -98,7 +93,7 @@ public class MqttService : BackgroundService
             var payload = Encoding.UTF8.GetString(args.ApplicationMessage.PayloadSegment);
             var deviceId = ExtractDeviceId(topic);
 
-            _logger.LogDebug("Received message from device {DeviceId} on topic {Topic}", deviceId, topic);
+            _logger.LogInformation("Received message from device {DeviceId} on topic {Topic}", deviceId, topic);
 
             // Check rate limiting
             if (_enableRateLimiting)
@@ -109,7 +104,6 @@ public class MqttService : BackgroundService
                 if (!await rateLimiter.AllowRequestAsync(deviceId))
                 {
                     _logger.LogWarning("Rate limit exceeded for device {DeviceId}, message dropped", deviceId);
-                    args.ProcessPublish = false;
                     return;
                 }
             }
@@ -136,7 +130,7 @@ public class MqttService : BackgroundService
                     };
 
                     var result = await _kafkaProducer.ProduceAsync(kafkaTopic, message);
-                    _logger.LogDebug("Forwarded to Kafka topic {Topic}, partition {Partition}, offset {Offset}", 
+                    _logger.LogInformation("Forwarded to Kafka topic {Topic}, partition {Partition}, offset {Offset}", 
                         result.Topic, result.Partition.Value, result.Offset.Value);
                 }
             }
@@ -178,39 +172,6 @@ public class MqttService : BackgroundService
         return messages;
     }
 
-    private async Task OnValidatingConnection(ValidatingConnectionEventArgs args)
-    {
-        try
-        {
-            var deviceId = args.ClientId;
-            var username = args.UserName;
-            // Password is string in MQTTnet v4
-            var password = args.Password != null ? Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(args.Password)) : null;
-
-            using var scope = _serviceProvider.CreateScope();
-            var deviceApiClient = scope.ServiceProvider.GetRequiredService<IDeviceApiClient>();
-            
-            var isAuthenticated = await deviceApiClient.AuthenticateDeviceAsync(
-                deviceId,
-                username,
-                args.Password, // Use directly as string
-                CancellationToken.None);
-
-            args.ReasonCode = isAuthenticated
-                ? MQTTnet.Protocol.MqttConnectReasonCode.Success
-                : MQTTnet.Protocol.MqttConnectReasonCode.BadUserNameOrPassword;
-            
-            _logger.LogInformation("Authentication attempt for device {DeviceId}: {Result}", 
-                deviceId, 
-                isAuthenticated ? "Success" : "Failed");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error validating connection for client {ClientId}", args.ClientId);
-            args.ReasonCode = MQTTnet.Protocol.MqttConnectReasonCode.ServerUnavailable;
-        }
-    }
-
     private string ExtractDeviceId(string topic)
     {
         // Extract device ID from Azure-style topic pattern: devices/{deviceId}/telemetry
@@ -236,10 +197,10 @@ public class MqttService : BackgroundService
     {
         _logger.LogInformation("Stopping MQTT service...");
 
-        if (_mqttServer != null)
+        if (_mqttClient != null && _mqttClient.IsConnected)
         {
-            await _mqttServer.StopAsync();
-            _mqttServer.Dispose();
+            await _mqttClient.DisconnectAsync(cancellationToken: cancellationToken);
+            _mqttClient.Dispose();
         }
 
         _kafkaProducer?.Dispose();

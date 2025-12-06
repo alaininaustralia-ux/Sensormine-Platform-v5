@@ -100,30 +100,35 @@ export class MqttSimulator extends BaseProtocolSimulator {
 
     // Use schema-based generation if available, otherwise use sensor-based
     const message = this.schema ? this.generateSchemaMessage() : this.generateMessage();
-    const payload = JSON.stringify(message);
     const topicTemplate = this.mqttConfig.topic || 'devices/{deviceId}/telemetry';
     const topic = topicTemplate.replace('{deviceId}', this.device.id);
     
-    // Simulate publish
+    // Actually publish to MQTT via Simulation.API
     this.log('debug', `Publishing to topic: ${topic}`, {
       topic,
       qos: this.mqttConfig.qos,
-      payloadSize: payload.length,
+      payloadSize: JSON.stringify(message).length,
     });
 
-    // Simulate network latency
-    const latencyMs = Math.random() * 50 + 10; // 10-60ms
-    const shouldFail = Math.random() < 0.01; // 1% failure rate
-
-    setTimeout(() => {
-      if (shouldFail) {
-        this.log('error', 'Publish failed: Network timeout');
-        this.onStatus('running', message, 'Publish timeout');
-      } else {
-        this.log('info', `Published message (${payload.length} bytes, QoS ${this.mqttConfig.qos})`);
+    // Import and use the simulation API to publish real MQTT messages
+    import('../simulation-api').then(({ simulationApi }) => {
+      simulationApi.publish({
+        topic,
+        payload: message as Record<string, unknown>,
+        deviceId: this.device.id,
+      })
+      .then(() => {
+        this.log('info', `Published message (${JSON.stringify(message).length} bytes, QoS ${this.mqttConfig.qos})`);
         this.onStatus('running', message);
-      }
-    }, latencyMs);
+      })
+      .catch((error) => {
+        this.log('error', `Publish failed: ${error.message}`);
+        this.onStatus('running', message, `Error: ${error.message}`);
+      });
+    }).catch((error) => {
+      this.log('error', `Failed to load simulation API: ${error.message}`);
+      this.onStatus('running', message, 'API Error');
+    });
   }
 
   /**

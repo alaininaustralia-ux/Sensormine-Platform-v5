@@ -118,6 +118,69 @@ public class SimulationService : BackgroundService
         return logs.OrderByDescending(l => l.Timestamp).Take(limit).ToList();
     }
 
+    /// <summary>
+    /// Publish a single message to MQTT (on-demand from UI)
+    /// </summary>
+    public async Task<PublishResult> PublishMessage(string topic, Dictionary<string, object> payload, string? deviceId = null)
+    {
+        try
+        {
+            if (_mqttClient?.IsConnected != true)
+            {
+                _logger.LogWarning("MQTT client not connected, cannot publish message");
+                return new PublishResult 
+                { 
+                    Success = false, 
+                    Error = "MQTT client not connected" 
+                };
+            }
+
+            var payloadJson = JsonSerializer.Serialize(payload);
+
+            var message = new MqttApplicationMessageBuilder()
+                .WithTopic(topic)
+                .WithPayload(payloadJson)
+                .WithQualityOfServiceLevel(MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce)
+                .Build();
+
+            await _mqttClient.PublishAsync(message, CancellationToken.None);
+
+            var timestamp = DateTime.UtcNow;
+            _logger.LogInformation("Published telemetry to {Topic} for device {DeviceId}", topic, deviceId ?? "N/A");
+
+            // Add to message log
+            _messageLogs.Enqueue(new SimulationLogEntry
+            {
+                Timestamp = timestamp,
+                DeviceId = deviceId ?? "manual",
+                Topic = topic,
+                Payload = payloadJson,
+                Status = "success"
+            });
+
+            // Keep only last MaxLogEntries
+            while (_messageLogs.Count > MaxLogEntries)
+            {
+                _messageLogs.TryDequeue(out _);
+            }
+
+            return new PublishResult 
+            { 
+                Success = true, 
+                Timestamp = timestamp 
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error publishing message to {Topic}", topic);
+            return new PublishResult 
+            { 
+                Success = false, 
+                Error = ex.Message 
+            };
+        }
+    }
+
     private double GenerateSensorValue(SimulatedSensor sensor, Random random)
     {
         // Use custom range if provided
@@ -281,4 +344,11 @@ public class SimulationLogEntry
     public string Topic { get; set; } = string.Empty;
     public string Payload { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+}
+
+public class PublishResult
+{
+    public bool Success { get; set; }
+    public string? Error { get; set; }
+    public DateTime Timestamp { get; set; }
 }

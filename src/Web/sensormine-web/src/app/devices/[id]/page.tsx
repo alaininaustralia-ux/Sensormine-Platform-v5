@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { usePreferencesStore } from '@/lib/stores/preferences-store';
 import {
   ActivityIcon,
   ArrowLeftIcon,
@@ -39,6 +40,7 @@ export default function DevicePage() {
   const router = useRouter();
   const { toast } = useToast();
   const deviceId = params.id as string;
+  const addRecentlyViewedDevice = usePreferencesStore((state) => state.addRecentlyViewedDevice);
 
   const [device, setDevice] = useState<Device | null>(null);
   const [deviceType, setDeviceType] = useState<DeviceType | null>(null);
@@ -62,6 +64,9 @@ export default function DevicePage() {
         }
 
         setDevice(deviceData);
+        
+        // Track recently viewed device
+        addRecentlyViewedDevice(deviceId);
 
         // Fetch device type details
         if (deviceData.deviceTypeId) {
@@ -84,7 +89,7 @@ export default function DevicePage() {
     if (deviceId) {
       fetchDeviceData();
     }
-  }, [deviceId, toast]);
+  }, [deviceId, toast, addRecentlyViewedDevice]);
 
   const handleRefresh = () => {
     window.location.reload();

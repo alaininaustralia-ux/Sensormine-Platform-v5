@@ -34,6 +34,12 @@ export interface SimulationLogEntry {
   status: string;
 }
 
+export interface PublishTelemetryRequest {
+  topic: string;
+  payload: Record<string, unknown>;
+  deviceId?: string;
+}
+
 export const simulationApi = {
   async startDevice(device: SimulatedDevice): Promise<{ message: string }> {
     const response = await fetch(`${SIMULATION_API_URL}/api/simulation/start`, {
@@ -58,6 +64,21 @@ export const simulationApi = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to stop device');
+    }
+    
+    return response.json();
+  },
+
+  async publish(request: PublishTelemetryRequest): Promise<{ message: string; topic: string; deviceId?: string; timestamp: string }> {
+    const response = await fetch(`${SIMULATION_API_URL}/api/simulation/publish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to publish telemetry');
     }
     
     return response.json();

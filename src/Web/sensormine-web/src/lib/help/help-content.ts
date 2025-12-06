@@ -1385,57 +1385,364 @@ mosquitto_sub -h localhost -p 1883 \\
       {
         id: 'dashboard-creation',
         title: 'Creating Dashboards',
-        summary: 'Build custom dashboards to visualize device data',
+        summary: 'Build custom dashboards with schema-driven field selection',
         content: `
 # Creating Dashboards
 
-Dashboards provide real-time visualization of your device telemetry data.
+Dashboards provide real-time visualization of your device telemetry data using an intuitive, schema-driven approach.
 
-## Dashboard Components
+## Dashboard Builder Overview
 
-### Time-Series Charts
-- Line charts for trending data
-- Multiple devices on one chart
-- Configurable time ranges
-- Auto-refresh intervals
+The Sensormine dashboard builder allows you to create custom visualizations by selecting fields directly from your device type schemas. This ensures that only valid, properly-typed fields are used in your widgets.
 
-### Gauges
-- Current values
-- Min/max thresholds
-- Color-coded status
+### Key Features
 
-### Status Indicators
-- Device online/offline
-- Alert status
-- System health
+- **Schema-Driven Field Selection**: Browse device types and select fields from their schemas
+- **Intelligent Recommendations**: Widget-specific suggestions (e.g., gauges work best with single numeric fields)
+- **Flexible Data Sources**: Choose between real-time, historical, or aggregated data
+- **Drag-and-Drop Layout**: Arrange widgets on a responsive grid
+- **Auto-Refresh**: Configure automatic data updates
 
-### Data Tables
-- Latest readings
-- Sortable columns
-- Export to CSV
+## Widget Types
 
-## Creating a Dashboard
+### 1. Charts (Time-Series)
+**Best for**: Visualizing trends over time
 
-1. Navigate to **Dashboard**
-2. Click **Create Dashboard**
-3. Enter name and description
-4. Add widgets:
-   - Select widget type
-   - Choose devices and metrics
-   - Configure display options
-5. Arrange widgets by drag-and-drop
-6. Save dashboard
+**Recommended Configuration**:
+- Data Source: Historical
+- Fields: 1-5 numeric fields
+- Time Range: Last 24 hours, 7 days, etc.
+- Aggregation: Average, Sum, Min, Max
+
+**Example Use Cases**:
+- Temperature trends from multiple sensors
+- Power consumption over time
+- Network traffic patterns
+- Production output metrics
+
+### 2. Gauges
+**Best for**: Single metric visualization with thresholds
+
+**Recommended Configuration**:
+- Data Source: Real-time
+- Fields: 1 numeric field
+- Aggregation: Average
+- Refresh: Every 5 seconds
+
+**Example Use Cases**:
+- Current temperature reading
+- Tank fill level
+- CPU usage percentage
+- Voltage level
+
+### 3. KPI Cards
+**Best for**: Displaying key performance indicators
+
+**Recommended Configuration**:
+- Data Source: Real-time or Aggregated
+- Fields: 1 field (numeric or string)
+- Format: Large number with unit
+
+**Example Use Cases**:
+- Total device count
+- Daily production count
+- Average response time
+- System uptime percentage
+
+### 4. Tables
+**Best for**: Displaying multiple fields from multiple devices
+
+**Recommended Configuration**:
+- Data Source: Real-time
+- Fields: Multiple fields (up to 10)
+- Sorting: Enabled
+- Pagination: Yes
+
+**Example Use Cases**:
+- Device status overview
+- Latest readings from all sensors
+- Alert history
+- Audit logs
+
+### 5. Maps
+**Best for**: Geo-located device data
+
+**Recommended Configuration**:
+- Data Source: Real-time
+- Fields: latitude, longitude, and status fields
+- Auto-zoom to fit all markers
+
+**Example Use Cases**:
+- Fleet tracking
+- Environmental sensor network
+- Warehouse asset locations
+- Field equipment monitoring
+
+## Creating a Dashboard (Step-by-Step)
+
+### Step 1: Navigate to Dashboard Builder
+1. Click **Dashboard** in the sidebar
+2. Click **Create Dashboard** or **+ New Dashboard**
+
+### Step 2: Configure Dashboard Settings
+1. Enter **Dashboard Name** (e.g., "Factory Floor Monitoring")
+2. Add **Description** (optional, helps others understand the purpose)
+3. Select **Template** (optional) or start from scratch
+4. Choose **Grid Layout** settings (columns, row height)
+
+### Step 3: Add Widgets
+
+#### Adding a Chart Widget
+1. Click **Add Widget** → **Chart**
+2. Enter widget title (e.g., "Temperature Trends")
+3. Configure data source:
+   - **Data Type**: Select "Historical Data"
+   - **Time Range**: Select "Last 24 Hours"
+   - **Aggregation**: Select "Average"
+4. Click **Add Fields**
+5. Select **Device Type** from dropdown (e.g., "Temperature Sensor")
+6. Browse available fields from the schema
+7. Select fields to plot (e.g., "temperature", "humidity")
+8. Fields are displayed with:
+   - 🔢 Icon indicating data type
+   - Field name and path
+   - Data type (number, string, boolean)
+   - Unit (°C, %, etc.)
+   - Description
+9. Click **Done** when finished
+10. Configure chart appearance:
+    - Chart type (line, bar, area)
+    - Colors
+    - Legend position
+11. Click **Add Widget**
+
+#### Adding a Gauge Widget
+1. Click **Add Widget** → **Gauge**
+2. Enter widget title (e.g., "Current Temperature")
+3. Configure data source:
+   - **Data Type**: Select "Real-time Data"
+   - **Refresh Interval**: 5 seconds
+4. Click **Add Fields**
+5. Select **Device Type** (e.g., "Temperature Sensor")
+6. Select **ONE numeric field** (e.g., "temperature")
+7. Configure gauge settings:
+   - Min/max values
+   - Threshold colors (green/yellow/red)
+   - Unit display
+8. Click **Add Widget**
+
+#### Adding a KPI Card
+1. Click **Add Widget** → **KPI Card**
+2. Enter widget title (e.g., "Active Devices")
+3. Select data source and aggregation
+4. Select field to display
+5. Choose format (number, percentage, duration)
+6. Click **Add Widget**
+
+#### Adding a Table Widget
+1. Click **Add Widget** → **Table**
+2. Enter widget title (e.g., "Device Status")
+3. Select **Device Type**
+4. Select multiple fields to display as columns
+5. Configure table settings:
+   - Sortable columns
+   - Page size
+   - Refresh interval
+6. Click **Add Widget**
+
+### Step 4: Arrange Widgets
+- **Drag** widgets to reposition
+- **Resize** by dragging corners
+- Widgets snap to grid for alignment
+- Use full width for charts
+- Stack gauges side-by-side
+
+### Step 5: Save Dashboard
+1. Click **Save** in the toolbar
+2. Dashboard is now available in your dashboard list
+3. Set as **Home Dashboard** (optional)
+
+## Field Selector Features
+
+### Device Type Selection
+The field selector shows all device types in your system with:
+- Device type name
+- Protocol badge (MQTT, HTTP, etc.)
+- Number of registered devices
+
+### Field Browser
+For each device type, you can see:
+
+**Field Information**:
+- **Icon**: Visual indicator of data type (🔢 number, 📝 string, ✓ boolean)
+- **Field Name**: Human-readable name from schema
+- **Data Type**: number, string, boolean, object, array
+- **Unit**: °C, %, kPa, etc. (if defined in schema)
+- **Description**: What the field represents
+- **Field Path**: Exact path in telemetry (e.g., \`gps.lat\`)
+
+**Nested Fields**:
+If a device schema has nested objects, they are flattened:
+- Parent object: \`gps\`
+  - \`gps.lat\` → GPS Location > Latitude
+  - \`gps.lon\` → GPS Location > Longitude
+  - \`gps.accuracy\` → GPS Location > Accuracy
+
+**Search and Filter**:
+- Type in the search box to filter fields
+- Searches both field names and paths
+- Case-insensitive
+
+### Multi-Select
+- Click checkboxes to select multiple fields (for charts, tables)
+- Click field badge to remove from selection
+- Selected fields show in "Selected Fields" section
+
+### Single-Select
+- For gauges and KPI cards
+- Only one field can be selected
+- Click a field to select it
+
+## Data Source Configuration
+
+### Real-time Data
+**When to use**: Current values, live monitoring
+
+**Configuration**:
+- Refresh Interval: 1-300 seconds
+- No time range needed
+- Shows latest value for each field
+
+**Best for**: Gauges, KPI cards, status indicators
+
+### Historical Data
+**When to use**: Trends over time, analysis
+
+**Configuration**:
+- Time Range: Minutes, hours, days, or weeks
+- Aggregation: How to group data points
+  - **Average**: Mean value over interval
+  - **Sum**: Total of all values
+  - **Min**: Minimum value
+  - **Max**: Maximum value
+  - **Count**: Number of data points
+
+**Best for**: Charts showing trends
+
+**Example**:
+- Time Range: Last 7 days
+- Aggregation: Average
+- Interval: 1 hour
+- Result: 168 data points (7 × 24)
+
+### Aggregated Data
+**When to use**: Summary statistics, reporting
+
+**Configuration**:
+- Aggregation type
+- Grouping (by device, time bucket, etc.)
+
+**Best for**: KPI cards, summary tables
 
 ## Best Practices
 
-- Group related devices
-- Use consistent time ranges
-- Add meaningful titles
-- Include alert indicators
-- Set appropriate refresh rates
+### Widget Placement
+- **Top row**: Most important KPIs and status indicators
+- **Middle**: Time-series charts
+- **Bottom**: Detailed tables and maps
+- **Sidebar**: Alert status and notifications
+
+### Field Selection
+- Use **descriptive field names** from your schema
+- Select fields with **compatible units** for charts (don't mix temperature with pressure)
+- Limit charts to **5 fields** maximum for readability
+- Use **colors** to distinguish between fields
+
+### Performance
+- Set **appropriate refresh intervals** (don't refresh every second unless needed)
+- Use **aggregated data** for long time ranges
+- Limit **table page size** to 25-50 rows
+- **Archive old dashboards** you no longer use
+
+### Organization
+- Create **separate dashboards** for different purposes:
+  - Operations monitoring
+  - Maintenance tracking
+  - Security overview
+  - Management reporting
+- Use **meaningful names** and descriptions
+- Add **tags** to categorize dashboards
+- **Share** dashboards with team members
+
+## Troubleshooting
+
+### No Fields Showing
+**Problem**: Field selector shows "No schema assigned"
+
+**Solution**:
+1. Go to **Settings** → **Device Types**
+2. Select the device type
+3. Click **Assign Schema**
+4. Choose appropriate schema
+5. Save device type
+6. Return to dashboard builder
+
+### Fields Not Updating
+**Problem**: Data not refreshing in widgets
+
+**Solution**:
+1. Check device is sending data (go to **Devices** → **View Details**)
+2. Verify refresh interval is set correctly
+3. Check browser console for errors
+4. Try manual refresh (click refresh icon)
+
+### Widget Shows "No Data"
+**Problem**: Widget configured but shows no data
+
+**Solution**:
+1. Verify device type has active devices
+2. Check time range (historical data might be outside range)
+3. Ensure devices are sending the selected fields
+4. Check field paths match schema exactly
+
+## Advanced Features
+
+### Dashboard Templates
+Use pre-built templates for common scenarios:
+- **Operations Dashboard**: Device status, alerts, key metrics
+- **Maintenance Dashboard**: Error rates, uptime, performance
+- **Security Dashboard**: Access logs, intrusion detection
+- **Executive Dashboard**: High-level KPIs and trends
+
+### Dashboard Sharing
+1. Click **Share** on dashboard
+2. Add users or teams
+3. Set permissions (view/edit)
+4. Copy share link
+
+### Export Options
+- **PDF**: Print-friendly version
+- **CSV**: Export table data
+- **Image**: Screenshot of dashboard
+- **JSON**: Dashboard configuration
+
+### API Access
+Dashboards can be accessed via API for:
+- Embedding in external systems
+- Automated reporting
+- Integration with BI tools
+
+## Next Steps
+
+After creating your dashboard:
+1. **Test with real data**: Send telemetry from devices
+2. **Refine layouts**: Adjust widget sizes and positions
+3. **Set up alerts**: Add threshold alerts for critical metrics
+4. **Share with team**: Collaborate on monitoring
+5. **Create more dashboards**: Build dashboards for different use cases
 `,
-        tags: ['dashboards', 'visualization', 'charts'],
-        relatedArticles: ['chart-types', 'data-queries'],
+        tags: ['dashboards', 'visualization', 'charts', 'field-selector', 'widgets'],
+        relatedArticles: ['chart-types', 'data-queries', 'device-types-guide', 'schema-creation'],
       },
     ],
   },

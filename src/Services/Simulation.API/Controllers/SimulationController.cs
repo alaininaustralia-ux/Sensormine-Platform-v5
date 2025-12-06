@@ -109,6 +109,53 @@ public class SimulationController : ControllerBase
             return Conflict(new { error = "Device already running" });
         }
     }
+
+    /// <summary>
+    /// Publish a single telemetry message to MQTT (on-demand)
+    /// This allows the UI to control exactly when and what to send
+    /// </summary>
+    [HttpPost("publish")]
+    public async Task<IActionResult> PublishTelemetry([FromBody] PublishTelemetryRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Topic))
+        {
+            return BadRequest(new { error = "Topic is required" });
+        }
+
+        if (request.Payload == null)
+        {
+            return BadRequest(new { error = "Payload is required" });
+        }
+
+        try
+        {
+            var result = await _simulationService.PublishMessage(
+                request.Topic, 
+                request.Payload, 
+                request.DeviceId
+            );
+
+            if (result.Success)
+            {
+                return Ok(new 
+                { 
+                    message = "Telemetry published successfully",
+                    topic = request.Topic,
+                    deviceId = request.DeviceId,
+                    timestamp = result.Timestamp
+                });
+            }
+            else
+            {
+                return StatusCode(503, new { error = result.Error });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error publishing telemetry to {Topic}", request.Topic);
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
 }
 
 public class QuickStartRequest
@@ -116,4 +163,11 @@ public class QuickStartRequest
     public string? DeviceId { get; set; }
     public string? Name { get; set; }
     public int? Interval { get; set; }
+}
+
+public class PublishTelemetryRequest
+{
+    public string Topic { get; set; } = string.Empty;
+    public Dictionary<string, object> Payload { get; set; } = new();
+    public string? DeviceId { get; set; }
 }

@@ -7,18 +7,47 @@
 'use client';
 
 import { useDashboardStore } from '@/lib/stores/dashboard-store';
+import { usePreferencesStore } from '@/lib/stores/preferences-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2, LayoutDashboard } from 'lucide-react';
+import { Plus, Edit, Trash2, LayoutDashboard, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export default function DashboardListPage() {
   const router = useRouter();
   const { dashboards, deleteDashboard, setCurrentDashboard } = useDashboardStore();
+  const { 
+    isFavoriteDashboard, 
+    addFavoriteDashboard, 
+    removeFavoriteDashboard
+  } = usePreferencesStore();
   
   // Filter out templates
   const userDashboards = dashboards.filter(d => !d.isTemplate);
+  
+  // Sort by favorites first, then by updated date
+  const sortedDashboards = [...userDashboards].sort((a, b) => {
+    const aIsFav = isFavoriteDashboard(a.id);
+    const bIsFav = isFavoriteDashboard(b.id);
+    
+    if (aIsFav && !bIsFav) return -1;
+    if (!aIsFav && bIsFav) return 1;
+    
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
+  
+  const handleToggleFavorite = (dashboardId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isFavoriteDashboard(dashboardId)) {
+      removeFavoriteDashboard(dashboardId);
+    } else {
+      addFavoriteDashboard(dashboardId);
+    }
+  };
   
   const handleCreateNew = () => {
     setCurrentDashboard(null);
@@ -68,53 +97,72 @@ export default function DashboardListPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {userDashboards.map((dashboard) => (
-            <Card key={dashboard.id} className="hover:border-primary transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <Link 
-                    href={`/dashboard/${dashboard.id}`}
-                    className="hover:underline flex-1 truncate"
-                  >
-                    {dashboard.name}
-                  </Link>
-                  <div className="flex gap-1 ml-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      asChild
+          {sortedDashboards.map((dashboard) => {
+            const isFavorite = isFavoriteDashboard(dashboard.id);
+            
+            return (
+              <Card key={dashboard.id} className={cn(
+                "hover:border-primary transition-colors",
+                isFavorite && "border-yellow-500/50 bg-yellow-50/5"
+              )}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <Link 
+                      href={`/dashboard/${dashboard.id}`}
+                      className="hover:underline flex-1 truncate"
                     >
-                      <Link href={`/dashboard/${dashboard.id}/edit`}>
-                        <Edit className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive"
-                      onClick={() => handleDelete(dashboard.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      {dashboard.name}
+                    </Link>
+                    <div className="flex gap-1 ml-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "h-8 w-8",
+                          isFavorite && "text-yellow-500 hover:text-yellow-600"
+                        )}
+                        onClick={(e) => handleToggleFavorite(dashboard.id, e)}
+                        title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        asChild
+                      >
+                        <Link href={`/dashboard/${dashboard.id}/edit`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => handleDelete(dashboard.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardTitle>
+                  {dashboard.description && (
+                    <CardDescription className="line-clamp-2">
+                      {dashboard.description}
+                    </CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>{dashboard.widgets.length} widgets</span>
+                    <span>
+                      Updated {new Date(dashboard.updatedAt).toLocaleDateString()}
+                    </span>
                   </div>
-                </CardTitle>
-                {dashboard.description && (
-                  <CardDescription className="line-clamp-2">
-                    {dashboard.description}
-                  </CardDescription>
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>{dashboard.widgets.length} widgets</span>
-                  <span>
-                    Updated {new Date(dashboard.updatedAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

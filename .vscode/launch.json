@@ -232,6 +232,40 @@
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    },
+    {
+      "name": "Preferences.API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-preferences-api",
+      "program": "${workspaceFolder}/src/Services/Preferences.API/bin/Debug/net9.0/Preferences.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/Preferences.API",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Dashboard.API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-dashboard-api",
+      "program": "${workspaceFolder}/src/Services/Dashboard.API/bin/Debug/net9.0/Dashboard.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/Dashboard.API",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
     }
   ],
   "compounds": [
@@ -244,7 +278,9 @@
       "configurations": [
         "ApiGateway",
         "SchemaRegistry.API",
-        "Device.API"
+        "Device.API",
+        "Preferences.API",
+        "Dashboard.API"
       ]
     },
     {
@@ -253,6 +289,8 @@
         "ApiGateway",
         "SchemaRegistry.API",
         "Device.API",
+        "Preferences.API",
+        "Dashboard.API",
         "Alerts.API",
         "DigitalTwin.API",
         "Edge.Gateway",
@@ -271,6 +309,8 @@
         "ApiGateway",
         "SchemaRegistry.API",
         "Device.API",
+        "Preferences.API",
+        "Dashboard.API",
         "Alerts.API",
         "DigitalTwin.API",
         "Edge.Gateway",

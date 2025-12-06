@@ -21,6 +21,8 @@ export const serviceUrls = {
   schema: process.env.NEXT_PUBLIC_SCHEMA_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5021',
   query: process.env.NEXT_PUBLIC_QUERY_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5297',
   alerts: process.env.NEXT_PUBLIC_ALERTS_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5295',
+  preferences: process.env.NEXT_PUBLIC_PREFERENCES_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5296',
+  dashboard: process.env.NEXT_PUBLIC_DASHBOARD_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5297',
 } as const;
 
 export const endpoints = {
@@ -63,5 +65,18 @@ export const endpoints = {
     create: '/api/alerts',
     update: (id: string) => `/api/alerts/${id}`,
     delete: (id: string) => `/api/alerts/${id}`,
+  },
+  
+  // User Preferences
+  userPreferences: {
+    get: '/api/UserPreferences',
+    upsert: '/api/UserPreferences',
+    delete: '/api/UserPreferences',
+  },
+  
+  // Site Configuration
+  siteConfiguration: {
+    get: '/api/SiteConfiguration',
+    upsert: '/api/SiteConfiguration',
   },
 } as const;

@@ -2,24 +2,32 @@
  * Dashboard Store
  * 
  * Zustand store for managing dashboard state, including CRUD operations,
- * widget management, and persistence to LocalStorage.
+ * widget management, and persistence with backend API sync.
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Dashboard, Widget, LayoutItem, DashboardFilters } from '../types/dashboard';
+import { dashboardApi } from '../api/dashboards';
 
 interface DashboardState {
   // State
   dashboards: Dashboard[];
   currentDashboard: Dashboard | null;
   isEditMode: boolean;
+  isLoading: boolean;
+  isSyncing: boolean;
+  lastError: string | null;
+  
+  // Initialization
+  initializeDashboards: (userId: string) => Promise<void>;
+  loadFromServer: (userId: string) => Promise<void>;
   
   // Dashboard CRUD operations
-  createDashboard: (dashboard: Omit<Dashboard, 'id' | 'createdAt' | 'updatedAt'>) => Dashboard;
+  createDashboard: (dashboard: Omit<Dashboard, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>, userId: string) => Promise<Dashboard>;
   getDashboard: (id: string) => Dashboard | undefined;
-  updateDashboard: (id: string, updates: Partial<Dashboard>) => void;
-  deleteDashboard: (id: string) => void;
+  updateDashboard: (id: string, updates: Partial<Dashboard>, userId: string) => Promise<void>;
+  deleteDashboard: (id: string, userId: string) => Promise<void>;
   listDashboards: (filters?: DashboardFilters) => Dashboard[];
   
   // Dashboard state management
@@ -27,18 +35,18 @@ interface DashboardState {
   setEditMode: (isEditMode: boolean) => void;
   
   // Widget operations
-  addWidget: (dashboardId: string, widget: Omit<Widget, 'id' | 'createdAt' | 'updatedAt'>, layout: Omit<LayoutItem, 'i'>) => Widget;
-  updateWidget: (dashboardId: string, widgetId: string, updates: Partial<Widget>) => void;
-  deleteWidget: (dashboardId: string, widgetId: string) => void;
+  addWidget: (dashboardId: string, widget: Omit<Widget, 'id' | 'createdAt' | 'updatedAt'>, layout: Omit<LayoutItem, 'i'>, userId: string) => Promise<Widget>;
+  updateWidget: (dashboardId: string, widgetId: string, updates: Partial<Widget>, userId: string) => Promise<void>;
+  deleteWidget: (dashboardId: string, widgetId: string, userId: string) => Promise<void>;
   
   // Layout operations
-  updateLayout: (dashboardId: string, layout: LayoutItem[]) => void;
+  updateLayout: (dashboardId: string, layout: LayoutItem[], userId: string) => Promise<void>;
   
   // Template operations
-  createFromTemplate: (templateId: string, name: string) => Dashboard | null;
+  createFromTemplate: (templateId: string, name: string, userId: string) => Promise<Dashboard | null>;
   
   // Utility operations
-  duplicateDashboard: (id: string, newName: string) => Dashboard | null;
+  duplicateDashboard: (id: string, newName: string, userId: string) => Promise<Dashboard | null>;
   clearAll: () => void;
 }
 
@@ -120,22 +128,80 @@ export const useDashboardStore = create<DashboardState>()(
       dashboards: [],
       currentDashboard: null,
       isEditMode: false,
+      isLoading: false,
+      isSyncing: false,
+      lastError: null,
+      
+      // Initialize dashboards for a user
+      initializeDashboards: async (userId: string) => {
+        set({ isLoading: true, lastError: null });
+        
+        try {
+          const dashboardDtos = await dashboardApi.list(userId);
+          const dashboards = dashboardDtos.map(dto => dashboardApi.fromDto(dto));
+          set({ dashboards, isLoading: false });
+        } catch (error) {
+          console.error('Failed to initialize dashboards:', error);
+          set({ 
+            isLoading: false,
+            lastError: error instanceof Error ? error.message : 'Failed to load dashboards'
+          });
+        }
+      },
+      
+      // Load dashboards from server
+      loadFromServer: async (userId: string) => {
+        set({ isLoading: true, lastError: null });
+        
+        try {
+          const dashboardDtos = await dashboardApi.list(userId);
+          const dashboards = dashboardDtos.map(dto => dashboardApi.fromDto(dto));
+          set({ dashboards, isLoading: false });
+        } catch (error) {
+          console.error('Failed to load dashboards from server:', error);
+          set({ 
+            isLoading: false,
+            lastError: error instanceof Error ? error.message : 'Failed to load dashboards'
+          });
+        }
+      },
       
       // Create a new dashboard
-      createDashboard: (dashboardData) => {
+      createDashboard: async (dashboardData, userId) => {
+        // Optimistic update - create locally first
         const now = new Date();
-        const newDashboard: Dashboard = {
-          id: generateId(),
+        const tempId = generateId();
+        const localDashboard: Dashboard = {
+          id: tempId,
           ...dashboardData,
+          createdBy: userId,
           createdAt: now,
           updatedAt: now,
         };
         
         set((state) => ({
-          dashboards: [...state.dashboards, newDashboard],
+          dashboards: [...state.dashboards, localDashboard],
         }));
         
-        return newDashboard;
+        // Sync to server
+        try {
+          const request = dashboardApi.toCreateRequest(dashboardData);
+          const dto = await dashboardApi.create(request, userId);
+          const serverDashboard = dashboardApi.fromDto(dto);
+          
+          // Replace local version with server version
+          set((state) => ({
+            dashboards: state.dashboards.map(d => 
+              d.id === tempId ? serverDashboard : d
+            ),
+          }));
+          
+          return serverDashboard;
+        } catch (error) {
+          console.error('Failed to create dashboard on server:', error);
+          set({ lastError: error instanceof Error ? error.message : 'Failed to create dashboard' });
+          return localDashboard;
+        }
       },
       
       // Get dashboard by ID
@@ -144,7 +210,8 @@ export const useDashboardStore = create<DashboardState>()(
       },
       
       // Update dashboard
-      updateDashboard: (id, updates) => {
+      updateDashboard: async (id, updates, userId) => {
+        // Optimistic update - update locally first
         set((state) => ({
           dashboards: state.dashboards.map(d =>
             d.id === id
@@ -156,15 +223,43 @@ export const useDashboardStore = create<DashboardState>()(
               ? { ...state.currentDashboard, ...updates, updatedAt: new Date() }
               : state.currentDashboard,
         }));
+        
+        // Sync to server (fire and forget)
+        try {
+          const request = dashboardApi.toUpdateRequest(updates);
+          const dto = await dashboardApi.update(id, request, userId);
+          const serverDashboard = dashboardApi.fromDto(dto);
+          
+          // Update with server version
+          set((state) => ({
+            dashboards: state.dashboards.map(d => 
+              d.id === id ? serverDashboard : d
+            ),
+            currentDashboard:
+              state.currentDashboard?.id === id ? serverDashboard : state.currentDashboard,
+          }));
+        } catch (error) {
+          console.error('Failed to update dashboard on server:', error);
+          set({ lastError: error instanceof Error ? error.message : 'Failed to update dashboard' });
+        }
       },
       
       // Delete dashboard
-      deleteDashboard: (id) => {
+      deleteDashboard: async (id, userId) => {
+        // Optimistic update - delete locally first
         set((state) => ({
           dashboards: state.dashboards.filter(d => d.id !== id),
           currentDashboard:
             state.currentDashboard?.id === id ? null : state.currentDashboard,
         }));
+        
+        // Sync to server (fire and forget)
+        try {
+          await dashboardApi.delete(id, userId);
+        } catch (error) {
+          console.error('Failed to delete dashboard on server:', error);
+          set({ lastError: error instanceof Error ? error.message : 'Failed to delete dashboard' });
+        }
       },
       
       // List dashboards with optional filters
@@ -184,7 +279,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
       
       // Add widget to dashboard
-      addWidget: (dashboardId, widgetData, layoutData) => {
+      addWidget: async (dashboardId, widgetData, layoutData, userId) => {
         const now = new Date();
         const widgetId = generateId();
         
@@ -200,6 +295,7 @@ export const useDashboardStore = create<DashboardState>()(
           ...layoutData,
         };
         
+        // Optimistic update
         set((state) => ({
           dashboards: state.dashboards.map(d =>
             d.id === dashboardId
@@ -222,13 +318,27 @@ export const useDashboardStore = create<DashboardState>()(
               : state.currentDashboard,
         }));
         
+        // Sync to server (fire and forget)
+        const dashboard = get().getDashboard(dashboardId);
+        if (dashboard) {
+          dashboardApi.update(
+            dashboardId,
+            { widgets: dashboard.widgets, layout: dashboard.layout },
+            userId
+          ).catch(error => {
+            console.error('Failed to sync widget addition:', error);
+            set({ lastError: error instanceof Error ? error.message : 'Failed to sync widget' });
+          });
+        }
+        
         return newWidget;
       },
       
       // Update widget
-      updateWidget: (dashboardId, widgetId, updates) => {
+      updateWidget: async (dashboardId, widgetId, updates, userId) => {
         const now = new Date();
         
+        // Optimistic update
         set((state) => ({
           dashboards: state.dashboards.map(d =>
             d.id === dashboardId
@@ -256,12 +366,26 @@ export const useDashboardStore = create<DashboardState>()(
                 }
               : state.currentDashboard,
         }));
+        
+        // Sync to server (fire and forget)
+        const dashboard = get().getDashboard(dashboardId);
+        if (dashboard) {
+          dashboardApi.update(
+            dashboardId,
+            { widgets: dashboard.widgets },
+            userId
+          ).catch(error => {
+            console.error('Failed to sync widget update:', error);
+            set({ lastError: error instanceof Error ? error.message : 'Failed to sync widget' });
+          });
+        }
       },
       
       // Delete widget
-      deleteWidget: (dashboardId, widgetId) => {
+      deleteWidget: async (dashboardId, widgetId, userId) => {
         const now = new Date();
         
+        // Optimistic update
         set((state) => ({
           dashboards: state.dashboards.map(d =>
             d.id === dashboardId
@@ -283,12 +407,26 @@ export const useDashboardStore = create<DashboardState>()(
                 }
               : state.currentDashboard,
         }));
+        
+        // Sync to server (fire and forget)
+        const dashboard = get().getDashboard(dashboardId);
+        if (dashboard) {
+          dashboardApi.update(
+            dashboardId,
+            { widgets: dashboard.widgets, layout: dashboard.layout },
+            userId
+          ).catch(error => {
+            console.error('Failed to sync widget deletion:', error);
+            set({ lastError: error instanceof Error ? error.message : 'Failed to sync widget' });
+          });
+        }
       },
       
       // Update layout
-      updateLayout: (dashboardId, layout) => {
+      updateLayout: async (dashboardId, layout, userId) => {
         const now = new Date();
         
+        // Optimistic update
         set((state) => ({
           dashboards: state.dashboards.map(d =>
             d.id === dashboardId
@@ -300,10 +438,20 @@ export const useDashboardStore = create<DashboardState>()(
               ? { ...state.currentDashboard, layout, updatedAt: now }
               : state.currentDashboard,
         }));
+        
+        // Sync to server (fire and forget)
+        dashboardApi.update(
+          dashboardId,
+          { layout },
+          userId
+        ).catch(error => {
+          console.error('Failed to sync layout update:', error);
+          set({ lastError: error instanceof Error ? error.message : 'Failed to sync layout' });
+        });
       },
       
       // Create dashboard from template
-      createFromTemplate: (templateId, name) => {
+      createFromTemplate: async (templateId, name, userId) => {
         const template = get().dashboards.find(d => d.id === templateId && d.isTemplate);
         
         if (!template) return null;
@@ -326,28 +474,21 @@ export const useDashboardStore = create<DashboardState>()(
           i: widgetIdMap.get(l.i) || l.i,
         }));
         
-        const newDashboard: Dashboard = {
-          id: generateId(),
+        const dashboardData = {
           name,
           description: template.description,
           layout: newLayout,
           widgets: newWidgets,
           isTemplate: false,
-          createdBy: 'current-user', // TODO: Get from auth context
-          createdAt: now,
-          updatedAt: now,
           tags: template.tags,
         };
         
-        set((state) => ({
-          dashboards: [...state.dashboards, newDashboard],
-        }));
-        
-        return newDashboard;
+        // Use createDashboard to handle API sync
+        return await get().createDashboard(dashboardData, userId);
       },
       
       // Duplicate dashboard
-      duplicateDashboard: (id, newName) => {
+      duplicateDashboard: async (id, newName, userId) => {
         const dashboard = get().getDashboard(id);
         
         if (!dashboard) return null;
@@ -370,22 +511,17 @@ export const useDashboardStore = create<DashboardState>()(
           i: widgetIdMap.get(l.i) || l.i,
         }));
         
-        const newDashboard: Dashboard = {
-          ...dashboard,
-          id: generateId(),
+        const dashboardData = {
           name: newName,
+          description: dashboard.description,
           layout: newLayout,
           widgets: newWidgets,
           isTemplate: false,
-          createdAt: now,
-          updatedAt: now,
+          tags: dashboard.tags,
         };
         
-        set((state) => ({
-          dashboards: [...state.dashboards, newDashboard],
-        }));
-        
-        return newDashboard;
+        // Use createDashboard to handle API sync
+        return await get().createDashboard(dashboardData, userId);
       },
       
       // Clear all dashboards (for testing)

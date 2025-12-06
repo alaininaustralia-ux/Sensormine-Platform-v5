@@ -9,6 +9,7 @@
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useDashboardStore } from '@/lib/stores/dashboard-store';
+import { usePreferencesStore } from '@/lib/stores/preferences-store';
 import { DashboardGrid } from '@/components/dashboard/dashboard-grid';
 import { Button } from '@/components/ui/button';
 import { Edit, ArrowLeft } from 'lucide-react';
@@ -19,13 +20,16 @@ export default function DashboardViewPage() {
   const dashboardId = params.id as string;
   
   const { getDashboard, setCurrentDashboard } = useDashboardStore();
+  const addRecentlyViewedDashboard = usePreferencesStore((state) => state.addRecentlyViewedDashboard);
   const dashboard = getDashboard(dashboardId);
   
   useEffect(() => {
     if (dashboard) {
       setCurrentDashboard(dashboard);
+      // Track recently viewed dashboard
+      addRecentlyViewedDashboard(dashboard.id);
     }
-  }, [dashboard, setCurrentDashboard]);
+  }, [dashboard, setCurrentDashboard, addRecentlyViewedDashboard, dashboardId]);
   
   if (!dashboard) {
     return (

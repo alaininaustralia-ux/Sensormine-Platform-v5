@@ -13,8 +13,12 @@ import {
   getDefaultProtocolConfig, 
   ProtocolConfig 
 } from './simulators';
+import { BaseProtocolSimulator, createSimulator } from './simulators';
 
 const MAX_LOGS = 500;
+
+// Store running simulator instances (not persisted)
+const runningSimulators = new Map<string, BaseProtocolSimulator>();
 
 interface SimulatorStore {
   // State
@@ -40,6 +44,8 @@ interface SimulatorStore {
   
   // Simulation actions
   setSimulationStatus: (deviceId: string, status: 'idle' | 'connecting' | 'running' | 'error') => void;
+  startSimulation: (deviceId: string) => Promise<void>;
+  stopSimulation: (deviceId: string) => Promise<void>;
   startAllSimulations: () => Promise<void>;
   stopAllSimulations: () => Promise<void>;
   
@@ -216,7 +222,7 @@ export const useSimulatorStore = create<SimulatorStore>()(
         return get().protocolConfigs.get(deviceId);
       },
 
-      // Simulation actions (now handled by Simulation API backend)
+      // Simulation actions (using local simulators that publish via Simulation.API)
       setSimulationStatus: (deviceId, status) => {
         set(state => {
           const newSimulations = new Map(state.simulations);
@@ -238,57 +244,97 @@ export const useSimulatorStore = create<SimulatorStore>()(
         });
       },
 
+      startSimulation: async (deviceId) => {
+        const { devices, getProtocolConfig, addLog } = get();
+        const device = devices.find(d => d.id === deviceId);
+        
+        if (!device) {
+          console.error(`Device ${deviceId} not found`);
+          return;
+        }
+
+        // Stop any existing simulator for this device
+        const existingSimulator = runningSimulators.get(deviceId);
+        if (existingSimulator) {
+          await existingSimulator.stop();
+          runningSimulators.delete(deviceId);
+        }
+
+        try {
+          get().setSimulationStatus(deviceId, 'connecting');
+
+          // Get or create protocol config
+          let protocolConfig = getProtocolConfig(deviceId);
+          if (!protocolConfig) {
+            protocolConfig = getDefaultProtocolConfig(device.protocol, deviceId);
+            get().setProtocolConfig(deviceId, protocolConfig);
+          }
+
+          // Create simulator instance
+          const simulator = createSimulator(
+            device,
+            protocolConfig,
+            (log) => {
+              addLog(log);
+            },
+            (status, message, error) => {
+              // Update simulation stats
+              set(state => {
+                const newSimulations = new Map(state.simulations);
+                const existing = newSimulations.get(deviceId);
+                
+                if (existing && status === 'running') {
+                  newSimulations.set(deviceId, {
+                    ...existing,
+                    status,
+                    messageCount: existing.messageCount + (error ? 0 : 1),
+                    errorCount: existing.errorCount + (error ? 1 : 0),
+                    lastMessage: message,
+                  });
+                }
+                
+                return { simulations: newSimulations };
+              });
+            }
+          );
+
+          // Store the simulator instance
+          runningSimulators.set(deviceId, simulator);
+
+          // Start the simulator
+          await simulator.start();
+          get().setSimulationStatus(deviceId, 'running');
+        } catch (error) {
+          get().setSimulationStatus(deviceId, 'error');
+          console.error(`Failed to start ${device.name}:`, error);
+        }
+      },
+
+      stopSimulation: async (deviceId) => {
+        const simulator = runningSimulators.get(deviceId);
+        if (simulator) {
+          await simulator.stop();
+          runningSimulators.delete(deviceId);
+        }
+        get().setSimulationStatus(deviceId, 'idle');
+      },
+
       startAllSimulations: async () => {
-        const { devices, getProtocolConfig } = get();
+        const { devices } = get();
         
         for (const device of devices) {
           if (!device.enabled) continue;
-          
-          try {
-            get().setSimulationStatus(device.id, 'connecting');
-            
-            const protocolConfig = getProtocolConfig(device.id);
-            const mqttTopic = protocolConfig && 'topic' in protocolConfig 
-              ? (protocolConfig as { topic: string }).topic 
-              : `devices/${device.id}/telemetry`;
-            
-            const { simulationApi } = await import('./simulation-api');
-            await simulationApi.startDevice({
-              deviceId: device.id,
-              name: device.name,
-              protocol: device.protocol,
-              interval: device.intervalMs,
-              topic: mqttTopic,
-              sensors: device.sensors.map(s => ({
-                name: s.name,
-                sensorType: s.type,
-                minValue: s.minValue,
-                maxValue: s.maxValue,
-                unit: s.unit,
-              })),
-            });
-            
-            get().setSimulationStatus(device.id, 'running');
-          } catch (error) {
-            get().setSimulationStatus(device.id, 'error');
-            console.error(`Failed to start ${device.name}:`, error);
-          }
+          await get().startSimulation(device.id);
         }
       },
 
       stopAllSimulations: async () => {
         const { devices } = get();
-        const { simulationApi } = await import('./simulation-api');
         
         for (const device of devices) {
           const simulation = get().simulations.get(device.id);
           if (simulation?.status === 'running') {
-            try {
-              await simulationApi.stopDevice(device.id);
-              get().setSimulationStatus(device.id, 'idle');
-            } catch (error) {
-              console.error(`Failed to stop ${device.name}:`, error);
-            }
+            await get().stopSimulation(device.id);
           }
         }
       },
