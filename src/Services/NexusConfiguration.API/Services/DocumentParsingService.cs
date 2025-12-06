@@ -1,6 +1,5 @@
 using NexusConfiguration.API.DTOs;
 using NexusConfiguration.API.Models;
-using Sensormine.AI.Services;
 using System.Text;
 using System.Text.Json;
 
@@ -9,7 +8,6 @@ namespace NexusConfiguration.API.Services;
 public class DocumentParsingService : IDocumentParsingService
 {
     private readonly HttpClient _httpClient;
-    private readonly IAiMeteringService _meteringService;
     private readonly ILogger<DocumentParsingService> _logger;
     private readonly string _apiKey;
     private const string MODEL_NAME = "claude-haiku-4-5";
@@ -17,12 +15,10 @@ public class DocumentParsingService : IDocumentParsingService
 
     public DocumentParsingService(
         IHttpClientFactory httpClientFactory,
-        IAiMeteringService meteringService,
         IConfiguration configuration,
         ILogger<DocumentParsingService> logger)
     {
         _httpClient = httpClientFactory.CreateClient();
-        _meteringService = meteringService;
         _logger = logger;
         _apiKey = configuration["Anthropic:ApiKey"] ?? "";
         
@@ -96,21 +92,13 @@ public class DocumentParsingService : IDocumentParsingService
                 PropertyNameCaseInsensitive = true
             });
 
-            // Track AI usage
+            // Log AI usage
             var duration = DateTime.UtcNow - startTime;
-            await _meteringService.TrackUsageAsync(new Sensormine.AI.Models.AiUsageEvent
-            {
-                TenantId = tenantId,
-                UserId = userId,
-                Model = MODEL_NAME,
-                Operation = "document_parsing",
-                InputTokens = response?.Usage?.InputTokens ?? 0,
-                OutputTokens = response?.Usage?.OutputTokens ?? 0,
-                TotalTokens = (response?.Usage?.InputTokens ?? 0) + (response?.Usage?.OutputTokens ?? 0),
-                DurationMs = (int)duration.TotalMilliseconds,
-                Success = true,
-                Timestamp = DateTime.UtcNow
-            });
+            var inputTokens = response?.Usage?.InputTokens ?? 0;
+            var outputTokens = response?.Usage?.OutputTokens ?? 0;
+            _logger.LogInformation(
+                "Document parsing completed - TenantId: {TenantId}, Model: {Model}, Duration: {Duration}ms, InputTokens: {InputTokens}, OutputTokens: {OutputTokens}",
+                tenantId, MODEL_NAME, duration.TotalMilliseconds, inputTokens, outputTokens);
 
             // Parse Claude's response
             var contentText = response?.Content?.FirstOrDefault()?.Text ?? string.Empty;
@@ -157,19 +145,11 @@ public class DocumentParsingService : IDocumentParsingService
         {
             _logger.LogError(ex, "Error parsing document: {FileName}", request.FileName);
 
-            // Track failed AI usage
+            // Log failed AI usage
             var duration = DateTime.UtcNow - startTime;
-            await _meteringService.TrackUsageAsync(new Sensormine.AI.Models.AiUsageEvent
-            {
-                TenantId = tenantId,
-                UserId = userId,
-                Model = MODEL_NAME,
-                Operation = "document_parsing",
-                DurationMs = (int)duration.TotalMilliseconds,
-                Success = false,
-                ErrorMessage = ex.Message,
-                Timestamp = DateTime.UtcNow
-            });
+            _logger.LogError(ex, 
+                "Document parsing failed - TenantId: {TenantId}, Model: {Model}, Duration: {Duration}ms",
+                tenantId, MODEL_NAME, duration.TotalMilliseconds);
 
             return new ParseDocumentResponse
             {

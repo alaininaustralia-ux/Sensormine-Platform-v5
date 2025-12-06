@@ -1,9 +1,4 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Microsoft.CodeAnalysis.Scripting;
 using NexusConfiguration.API.DTOs;
-using Sensormine.AI.Services;
 using System.Text;
 using System.Text.Json;
 
@@ -12,7 +7,6 @@ namespace NexusConfiguration.API.Services;
 public class CustomLogicService : ICustomLogicService
 {
     private readonly HttpClient _httpClient;
-    private readonly IAiMeteringService _meteringService;
     private readonly ILogger<CustomLogicService> _logger;
     private readonly string _apiKey;
     private const string MODEL_NAME = "claude-haiku-4-5";
@@ -20,12 +14,10 @@ public class CustomLogicService : ICustomLogicService
 
     public CustomLogicService(
         IHttpClientFactory httpClientFactory,
-        IAiMeteringService meteringService,
         IConfiguration configuration,
         ILogger<CustomLogicService> logger)
     {
         _httpClient = httpClientFactory.CreateClient();
-        _meteringService = meteringService;
         _logger = logger;
         _apiKey = configuration["Anthropic:ApiKey"] ?? "";
         
@@ -82,21 +74,13 @@ public class CustomLogicService : ICustomLogicService
                 PropertyNameCaseInsensitive = true
             });
 
-            // Track AI usage
+            // Log AI usage
             var duration = DateTime.UtcNow - startTime;
-            await _meteringService.TrackUsageAsync(new Sensormine.AI.Models.AiUsageEvent
-            {
-                TenantId = tenantId,
-                UserId = userId,
-                Model = MODEL_NAME,
-                Operation = "custom_logic_generation",
-                InputTokens = response?.Usage?.InputTokens ?? 0,
-                OutputTokens = response?.Usage?.OutputTokens ?? 0,
-                TotalTokens = (response?.Usage?.InputTokens ?? 0) + (response?.Usage?.OutputTokens ?? 0),
-                DurationMs = (int)duration.TotalMilliseconds,
-                Success = true,
-                Timestamp = DateTime.UtcNow
-            });
+            var inputTokens = response?.Usage?.InputTokens ?? 0;
+            var outputTokens = response?.Usage?.OutputTokens ?? 0;
+            _logger.LogInformation(
+                "Custom logic generation completed - TenantId: {TenantId}, Model: {Model}, Duration: {Duration}ms, InputTokens: {InputTokens}, OutputTokens: {OutputTokens}",
+                tenantId, MODEL_NAME, duration.TotalMilliseconds, inputTokens, outputTokens);
 
             // Parse Claude's response
             var contentText = response?.Content?.FirstOrDefault()?.Text ?? string.Empty;
@@ -115,19 +99,11 @@ public class CustomLogicService : ICustomLogicService
         {
             _logger.LogError(ex, "Error generating custom logic");
 
-            // Track failed AI usage
+            // Log failed AI usage
             var duration = DateTime.UtcNow - startTime;
-            await _meteringService.TrackUsageAsync(new Sensormine.AI.Models.AiUsageEvent
-            {
-                TenantId = tenantId,
-                UserId = userId,
-                Model = MODEL_NAME,
-                Operation = "custom_logic_generation",
-                DurationMs = (int)duration.TotalMilliseconds,
-                Success = false,
-                ErrorMessage = ex.Message,
-                Timestamp = DateTime.UtcNow
-            });
+            _logger.LogError(ex,
+                "Custom logic generation failed - TenantId: {TenantId}, Model: {Model}, Duration: {Duration}ms",
+                tenantId, MODEL_NAME, duration.TotalMilliseconds);
 
             return new GenerateCustomLogicResponse
             {
@@ -137,34 +113,60 @@ public class CustomLogicService : ICustomLogicService
         }
     }
 
-    public async Task<ValidateCustomLogicResponse> ValidateLogicAsync(ValidateCustomLogicRequest request)
+    public Task<ValidateCustomLogicResponse> ValidateLogicAsync(ValidateCustomLogicRequest request)
     {
         try
         {
             _logger.LogInformation("Validating custom logic ({Language})", request.Language);
 
+            // Simple validation - check for common syntax issues
+            var warnings = new List<string>();
+            var errors = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(request.Code))
+            {
+                errors.Add("Code cannot be empty");
+            }
+
             if (request.Language.ToLower() == "csharp")
             {
-                return await ValidateCSharpCodeAsync(request.Code);
-            }
-            else
-            {
-                return new ValidateCustomLogicResponse
+                // Basic C# syntax checks
+                if (!request.Code.Contains("return") && !request.Code.Contains("=>"))
                 {
-                    IsValid = true,
-                    Warnings = new List<string> { $"Validation not implemented for {request.Language}. Assuming valid." }
-                };
+                    warnings.Add("Code may not return a value");
+                }
+                
+                // Count braces
+                var openBraces = request.Code.Count(c => c == '{');
+                var closeBraces = request.Code.Count(c => c == '}');
+                if (openBraces != closeBraces)
+                {
+                    errors.Add($"Mismatched braces: {openBraces} opening vs {closeBraces} closing");
+                }
+
+                // Check for common keywords
+                if (request.Code.Contains("Dictionary") && !request.Code.Contains("using System.Collections.Generic"))
+                {
+                    warnings.Add("May need 'using System.Collections.Generic;' directive");
+                }
             }
+
+            return Task.FromResult(new ValidateCustomLogicResponse
+            {
+                IsValid = errors.Count == 0,
+                Errors = errors,
+                Warnings = warnings
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error validating custom logic");
             
-            return new ValidateCustomLogicResponse
+            return Task.FromResult(new ValidateCustomLogicResponse
             {
                 IsValid = false,
                 Errors = new List<string> { $"Validation error: {ex.Message}" }
-            };
+            });
         }
     }
 
@@ -267,79 +269,6 @@ SUGGESTIONS:
         }
 
         return (code, explanation, suggestions);
-    }
-
-    private async Task<ValidateCustomLogicResponse> ValidateCSharpCodeAsync(string code)
-    {
-        var errors = new List<string>();
-        var warnings = new List<string>();
-
-        try
-        {
-            // Parse the code to check for syntax errors
-            var syntaxTree = CSharpSyntaxTree.ParseText(code);
-            var diagnostics = syntaxTree.GetDiagnostics();
-
-            foreach (var diagnostic in diagnostics)
-            {
-                if (diagnostic.Severity == DiagnosticSeverity.Error)
-                {
-                    errors.Add($"Line {diagnostic.Location.GetLineSpan().StartLinePosition.Line + 1}: {diagnostic.GetMessage()}");
-                }
-                else if (diagnostic.Severity == DiagnosticSeverity.Warning)
-                {
-                    warnings.Add($"Line {diagnostic.Location.GetLineSpan().StartLinePosition.Line + 1}: {diagnostic.GetMessage()}");
-                }
-            }
-
-            // Try to compile the code
-            if (errors.Count == 0)
-            {
-                try
-                {
-                    var options = ScriptOptions.Default
-                        .AddReferences(typeof(object).Assembly, typeof(Console).Assembly, typeof(Dictionary<,>).Assembly)
-                        .AddImports("System", "System.Collections.Generic", "System.Linq");
-
-                    var script = CSharpScript.Create(code, options);
-                    var compilation = script.GetCompilation();
-                    var compilationDiagnostics = compilation.GetDiagnostics();
-
-                    foreach (var diagnostic in compilationDiagnostics)
-                    {
-                        if (diagnostic.Severity == DiagnosticSeverity.Error)
-                        {
-                            errors.Add(diagnostic.GetMessage());
-                        }
-                        else if (diagnostic.Severity == DiagnosticSeverity.Warning)
-                        {
-                            warnings.Add(diagnostic.GetMessage());
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    errors.Add($"Compilation error: {ex.Message}");
-                }
-            }
-
-            return new ValidateCustomLogicResponse
-            {
-                IsValid = errors.Count == 0,
-                Errors = errors,
-                Warnings = warnings
-            };
-        }
-        catch (Exception ex)
-        {
-            return new ValidateCustomLogicResponse
-            {
-                IsValid = false,
-                Errors = new List<string> { $"Validation exception: {ex.Message}" }
-            };
-        }
-
-        await Task.CompletedTask; // Make async
     }
 
     private class AnthropicResponse

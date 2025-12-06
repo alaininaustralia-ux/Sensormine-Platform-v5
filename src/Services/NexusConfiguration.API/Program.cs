@@ -3,7 +3,6 @@ using NexusConfiguration.API.Data;
 using NexusConfiguration.API.Repositories;
 using NexusConfiguration.API.Services;
 using Npgsql;
-using Sensormine.AI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,9 +37,6 @@ builder.Services.AddDbContext<NexusConfigurationDbContext>(options =>
 
 // Register repositories
 builder.Services.AddScoped<INexusConfigurationRepository, NexusConfigurationRepository>();
-
-// Register AI services
-builder.Services.AddSingleton<IAiMeteringService, AiMeteringService>();
 
 // Register application services
 builder.Services.AddScoped<IDocumentParsingService, DocumentParsingService>();
