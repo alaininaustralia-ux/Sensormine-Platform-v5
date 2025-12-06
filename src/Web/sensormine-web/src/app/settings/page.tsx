@@ -6,7 +6,7 @@
 
 import Link from 'next/link';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Cpu, Database, Users, Shield, Bell, Palette } from 'lucide-react';
+import { Cpu, Database, Users, Shield, Bell, Palette, Settings2 } from 'lucide-react';
 
 const settingsCategories = [
   {
@@ -14,6 +14,12 @@ const settingsCategories = [
     description: 'Configure device type templates with protocols and schemas',
     icon: Cpu,
     href: '/settings/device-types',
+  },
+  {
+    title: 'Nexus Configuration',
+    description: 'AI-powered configuration builder for Nexus IoT devices',
+    icon: Settings2,
+    href: '/settings/nexus-configuration',
   },
   {
     title: 'Schemas',
