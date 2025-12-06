@@ -65,7 +65,7 @@ src/
 
 ## Recent Major Changes
 
-### 🚀 Latest Session (Dec 6, 2025 - Evening): Nexus Configuration Builder Backend Complete
+### 🚀 Latest Session (Dec 6, 2025 - Late Evening): Nexus Configuration Builder - Backend + Frontend Wizard Complete
 
 **NexusConfiguration.API Service (NEW - Port 5298):**
 - Complete .NET 9 Web API for managing Nexus device configurations
@@ -115,12 +115,35 @@ src/
 - CORS configured for frontend (localhost:3020)
 - Swagger documentation enabled
 
+**Frontend Implementation Complete:**
+1. **Configuration List Page** (`/settings/nexus-configuration`):
+   - Search and filter by status
+   - Table view with probe types and protocols
+   - Action menu (Edit, Deploy, Duplicate, Delete)
+   - Pagination controls
+   - Integration with settings navigation
+
+2. **Multi-Step Configuration Wizard** (`/settings/nexus-configuration/new`):
+   - Step 1: Upload or manual entry selector
+   - Step 2: Probe configuration editor (add/remove/edit probes)
+   - Step 3: Communication settings (MQTT, HTTP, Azure IoT Hub)
+   - Step 4: Review and save summary
+   - Progress bar with visual indicators
+   - Form state management across steps
+
+**TypeScript API Client:**
+- Complete API client with all 11 endpoints
+- Type-safe interfaces for all DTOs
+- Error handling and toast notifications
+
 **Next Steps:**
-- Frontend UI implementation (multi-step wizard)
-- API endpoint testing
-- Integration with Device.API and SchemaRegistry.API
-- Template library population
-- Unit and integration tests
+- Templates page implementation
+- Configuration edit page
+- Deploy modal (Device Type + Schema creation)
+- AI document parsing integration
+- Custom logic editor with Monaco
+- Schema field mapper UI
+- Integration testing
 
 ---
 
