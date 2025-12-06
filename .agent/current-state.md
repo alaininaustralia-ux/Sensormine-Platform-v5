@@ -1,10 +1,10 @@
 # Sensormine Platform v5 - Current State
 
-**Last Updated**: 2025-12-07 (Dashboard Backend Integration Complete)  
-**Current Sprint**: Dashboard Persistence & Multi-Tenant Support  
-**Active Story**: Dashboard.API - Database Backend Implementation  
-**Build Status**: ✅ All services built successfully, Dashboard.API fully implemented  
-**Architecture**: 🎯 Device Type-Centric + Dashboard Database Persistence + Multi-Tenant Isolation
+**Last Updated**: 2025-12-06 (NexusConfiguration.API Backend Complete)  
+**Current Sprint**: Nexus Configuration Builder Implementation  
+**Active Story**: NexusConfiguration.API Backend (Complete) → Frontend UI (Next)  
+**Build Status**: ✅ All services built successfully, NexusConfiguration.API backend complete  
+**Architecture**: 🎯 Device Type-Centric + Dashboard Database Persistence + Multi-Tenant Isolation + Nexus Config Builder
 
 ---
 
@@ -31,7 +31,7 @@ src/
 │   │   └── package.json
 │   └── Sensormine.Mobile/ # Mobile app (React Native/Flutter) - TODO
 │
-├── Services/              # 11 Microservices (Backend - Foundation Ready)
+├── Services/              # 12 Microservices (Backend - Foundation Ready)
 │   ├── ApiGateway/        # Entry point, rate limiting, auth
 │   ├── Edge.Gateway/      # MQTT broker, device connectivity
 │   ├── Ingestion.Service/ # Data ingestion pipeline
@@ -42,7 +42,8 @@ src/
 │   ├── DigitalTwin.API/   # Digital twin state management
 │   ├── VideoMetadata.API/ # Video processing metadata
 │   ├── StreamProcessing.Service/ # Real-time stream processing
-│   └── Billing.API/       # Billing, metering, Stripe integration
+│   ├── Billing.API/       # Billing, metering, Stripe integration
+│   └── NexusConfiguration.API/ # ✅ NEW: Nexus device configuration builder (port 5298)
 │
 └── Shared/                # 7 Shared Libraries
     ├── Sensormine.Core/   # Domain models, interfaces, utilities
@@ -62,7 +63,68 @@ src/
 
 ---
 
-## Recent Major Changes (Dec 5, 2025)
+## Recent Major Changes
+
+### 🚀 Latest Session (Dec 6, 2025 - Evening): Nexus Configuration Builder Backend Complete
+
+**NexusConfiguration.API Service (NEW - Port 5298):**
+- Complete .NET 9 Web API for managing Nexus device configurations
+- PostgreSQL database with JSONB columns for flexible configuration storage
+- 11 REST API endpoints for CRUD operations, AI features, and deployment
+- Database migration applied successfully
+- Build status: ✅ SUCCESS
+
+**Key Features Implemented:**
+1. **AI-Powered Document Parsing**:
+   - Upload PDF/Markdown datasheets
+   - Anthropic Claude Haiku 4.5 extracts probe configurations, communication settings, alert rules
+   - Returns parsed configuration with confidence scoring
+   - Endpoint: `POST /api/NexusConfiguration/parse-document`
+
+2. **AI-Powered Custom Logic Generation**:
+   - Natural language → C# transformation code
+   - Supports probe-specific data transformations
+   - Returns generated code with explanation and suggestions
+   - Endpoint: `POST /api/NexusConfiguration/generate-logic`
+
+3. **Configuration Management**:
+   - Full CRUD operations with multi-tenant support
+   - Template library for reusable configurations
+   - Search and filtering capabilities
+   - Version control ready (status: Draft/Validated/Deployed)
+
+4. **Deployment Integration**:
+   - Creates Device Types in Device.API
+   - Creates Schemas in SchemaRegistry.API
+   - Maps probe configurations to schema fields
+   - Endpoint: `POST /api/NexusConfiguration/deploy`
+
+**Database Schema (nexus_configurations table):**
+- Probe configurations (RS485, RS232, OneWire, 4-20mA analog)
+- Schema field mappings (probe → schema field)
+- Communication settings (MQTT, Azure IoT Hub DPS)
+- Custom logic storage (up to 50KB)
+- Alert rule templates
+- Multi-tenant isolation
+- Template/category support
+
+**Technical Implementation:**
+- Removed complex AI metering integration (simplified to logging)
+- Removed Roslyn compilation (basic syntax validation)
+- Health checks with EF Core
+- CORS configured for frontend (localhost:3020)
+- Swagger documentation enabled
+
+**Next Steps:**
+- Frontend UI implementation (multi-step wizard)
+- API endpoint testing
+- Integration with Device.API and SchemaRegistry.API
+- Template library population
+- Unit and integration tests
+
+---
+
+## Previous Major Changes (Dec 5-7, 2025)
 
 ### 🎯 Architecture Redesign: Device Type-Centric Approach
 **Complete architectural pivot from device-centric to Device Type-centric configuration:**
