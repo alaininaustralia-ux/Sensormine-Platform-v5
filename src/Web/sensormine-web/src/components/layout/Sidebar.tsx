@@ -33,6 +33,8 @@ const navigation = [
 const settingsNavigation = [
   { name: 'Device Types', href: '/settings/device-types' },
   { name: 'Schemas', href: '/settings/schemas' },
+  { name: 'Alert Rules', href: '/settings/alert-rules' },
+  { name: 'Nexus Configuration', href: '/settings/nexus-configuration' },
   { name: 'Users', href: '/settings/users' },
 ];
 

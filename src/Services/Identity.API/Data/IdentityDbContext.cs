@@ -107,6 +107,10 @@ public class IdentityDbContext : DbContext
             });
         });
 
+        // TODO: Seed default super admin tenant and user via SQL script or startup code
+        // HasData cannot be used with entities that have owned types mapped to JSONB
+        // See: https://github.com/npgsql/efcore.pg/issues/2485
+        /*
         // Seed default super admin tenant
         var defaultTenantId = "00000000-0000-0000-0000-000000000001";
         modelBuilder.Entity<Tenant>().HasData(new Tenant
@@ -136,5 +140,6 @@ public class IdentityDbContext : DbContext
             CreatedAt = DateTimeOffset.UtcNow,
             Metadata = new Dictionary<string, string>()
         });
+        */
     }
 }
