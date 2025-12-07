@@ -137,7 +137,133 @@ Edge Gateway → Kafka Topic → Ingestion Service → Validation → Storage
 - Rate limiting
 - Request routing
 
-### 6. AI & Semantic Layer
+### 6. Mobile Application Layer (.NET MAUI)
+**Purpose**: Cross-platform mobile app for field technicians with offline-first capabilities
+
+**Technology Stack**:
+- .NET MAUI (.NET 8+)
+- C# 12
+- MVVM pattern (CommunityToolkit.Mvvm)
+- SQLite for offline storage
+- MSAL for Azure AD authentication
+
+**Key Components**:
+
+#### NFC Module
+- **Purpose**: Near Field Communication for device interaction
+- **Platform-Specific Implementations**:
+  - iOS: CoreNFC framework
+  - Android: Android.Nfc API
+- **Capabilities**:
+  - Read device ID, firmware, hardware info
+  - Read diagnostics (battery, sensors, errors)
+  - Write configuration to device
+  - NDEF message parsing
+
+#### Offline Storage Module
+- **Local Database**: SQLite with Entity Framework Core
+- **Cached Data**:
+  - Device types and schemas
+  - Configuration templates
+  - Diagnostic history
+  - Audit logs (pending sync)
+- **Sync Queue**: Pending operations (create, update, delete)
+- **Cache Strategy**: LRU eviction with 24-hour expiration
+
+#### Sync Service
+- **Background Sync**: Automatic sync when connectivity returns
+- **Retry Logic**: Exponential backoff with Polly
+- **Conflict Resolution**: Server wins with user notification
+- **Priority Queue**:
+  1. Audit logs (critical)
+  2. Device provisioning/deprovisioning
+  3. Configuration changes
+  4. Diagnostic data
+  5. Attachments (compressed)
+
+#### Configuration Management
+- **JSON Schema Validation**: Real-time validation against device type schemas
+- **Template Library**: Pre-configured setups for common scenarios
+- **Tabletop Configuration**: Offline provisioning without cloud connection
+- **Bulk Operations**: Configure multiple devices in batch
+
+#### Location Services
+- **GPS Integration**: MAUI Geolocation API
+- **Map Control**: MAUI Maps or Esri ArcGIS Runtime
+- **Geocoding**: Address lookup via Google Maps or OpenStreetMap
+- **Waypoints**: Saved locations for reuse
+
+#### Security Module
+- **Authentication**: MSAL with Azure AD / Entra ID
+- **Biometric Auth**: Fingerprint, Face ID for app access
+- **Secure Storage**: iOS Keychain, Android Keystore
+- **Token Management**: Automatic refresh with secure storage
+- **Audit Trail**: Local logging with cloud sync
+
+**Mobile App Architecture**:
+```
+┌─────────────────────────────────────────┐
+│         Mobile App (.NET MAUI)          │
+├─────────────────────────────────────────┤
+│  Views (XAML)                           │
+│    ├─ Device List/Detail                │
+│    ├─ NFC Scan Page                     │
+│    ├─ Configuration Editor              │
+│    ├─ Diagnostics View                  │
+│    └─ Settings                          │
+├─────────────────────────────────────────┤
+│  ViewModels (MVVM)                      │
+│    ├─ Device Management                 │
+│    ├─ NFC Operations                    │
+│    ├─ Configuration                     │
+│    └─ Sync Status                       │
+├─────────────────────────────────────────┤
+│  Services                               │
+│    ├─ NFC Service (platform-specific)   │
+│    ├─ API Clients (Refit)              │
+│    ├─ Database Context (EF Core)        │
+│    ├─ Sync Service (Background)         │
+│    ├─ Location Service                  │
+│    └─ Auth Service (MSAL)               │
+├─────────────────────────────────────────┤
+│  Local Storage (SQLite)                 │
+│    ├─ Devices Cache                     │
+│    ├─ Schemas Cache                     │
+│    ├─ Sync Queue                        │
+│    ├─ Audit Logs                        │
+│    └─ Diagnostic History                │
+└─────────────────────────────────────────┘
+            ↓ HTTPS (REST)
+┌─────────────────────────────────────────┐
+│      SensorMine Platform APIs           │
+│  (Device.API, SchemaRegistry.API, etc)  │
+└─────────────────────────────────────────┘
+```
+
+**Offline-First Workflow**:
+1. User performs action (e.g., configure device via NFC)
+2. Action executed against local SQLite database
+3. Action added to sync queue
+4. Background service monitors connectivity
+5. When online, sync service pushes queued operations to platform APIs
+6. Successful sync removes item from queue
+7. Failed sync retries with exponential backoff
+
+**Mobile Security Considerations**:
+- All API calls use HTTPS (TLS 1.3)
+- Certificate pinning for added security
+- SQLite database encrypted using SQLCipher
+- NFC write operations require authentication
+- Screen capture disabled on sensitive pages
+- Root/jailbreak detection with user warning
+- Automatic logout after 15 minutes of inactivity
+
+**Platform Requirements**:
+- **iOS**: 14.0+, iPhone 7+ for NFC
+- **Android**: 8.0 (API 26)+, NFC hardware required
+- **Distribution**: App Store, Google Play, or Enterprise
+
+### 7. AI & Semantic Layer
 **Purpose**: ML inference, AI operations, and semantic search
 
 **Components**:

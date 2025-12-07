@@ -95,15 +95,109 @@ SensorMine is an industrial IoT and video analytics platform that ingests, model
 - Change device type (with data migration warning)
 - Bulk operations on devices of same type
 
-#### 2.1.3 Mobile Device Support
+#### 2.1.4 Mobile App Requirements (.NET MAUI)
 
-**Mobile app supports:**
-- Nexus provisioning
-- QR / serial number scanning
-- Field metadata collection (custom fields included)
-- Diagnostics
-- Viewing recent telemetry
-- Offline operation with later sync
+**Platform**: Cross-platform mobile application built with .NET MAUI for iOS and Android
+
+**Technology Stack:**
+- .NET MAUI (.NET 8+)
+- C# 12
+- NFC support (CoreNFC for iOS, Android.Nfc for Android)
+- SQLite for offline storage
+- Azure AD / Entra ID authentication
+
+**Core Capabilities:**
+
+**1. NFC-Based Device Interaction:**
+- Tap Nexus device to read device ID, type, firmware, hardware info
+- Read diagnostics via NFC (battery, sensors, errors, last broadcast time)
+- Write configuration to device via NFC
+- Support NDEF message parsing
+- Visual and haptic feedback for NFC operations
+- Works offline (direct device communication)
+
+**2. Device Configuration Management:**
+- Load device types and schemas from platform
+- Apply JSON configuration validated against device schema
+- Tabletop configuration (offline mode without cloud connection)
+- Import configuration via file, QR code, clipboard, or Bluetooth/WiFi
+- Configuration templates for common setups
+- Bulk configuration operations
+- Configuration preview before applying
+- Rollback to previous configuration
+
+**3. Location Services:**
+- GPS location capture (latitude, longitude, altitude)
+- Manual coordinate entry with multiple formats (decimal degrees, DMS, UTM)
+- Map view with device markers
+- Address geocoding (GPS to street address)
+- Save waypoints for reuse
+- Write location to device and platform
+
+**4. Custom Field Handling:**
+- Dynamic form generation based on Device Type definitions
+- Supported field types: text, numeric, boolean, dropdown, date/datetime, image, file, barcode, signature
+- Field validation (required, min/max, regex)
+- Conditional fields based on other field values
+- Offline data entry with automatic sync
+- Draft auto-save
+
+**5. Device Lifecycle Management:**
+- Device provisioning with custom fields
+- Device reconfiguration
+- Device deprovisioning with optional factory reset
+- Maintenance mode toggle (suspend broadcasts and alerts)
+- Configuration change history and audit trail
+
+**6. Offline-First Architecture:**
+- All operations work offline first
+- Local SQLite database for caching
+- Cache device schemas, configurations, custom field definitions
+- Sync queue for pending operations
+- Automatic sync when connectivity returns
+- Conflict resolution (server wins with notification)
+- Manual sync trigger
+- Cache expiration (24-hour default)
+
+**7. Security & Authentication:**
+- OAuth 2.0 / OpenID Connect authentication
+- Azure AD / Entra ID integration
+- Biometric authentication (fingerprint, Face ID) for app access
+- Role-based access controls (admin, technician, viewer)
+- Secure token storage (iOS Keychain, Android Keystore)
+- Token refresh with seamless re-authentication
+- Automatic logout after 15 minutes of inactivity
+- Encrypted local database (SQLCipher)
+
+**8. Audit & Compliance:**
+- Full audit trail of all field actions
+- Log every NFC read, write, configuration change
+- Audit log includes: timestamp, device ID, user ID, action type, old/new config, GPS location, result
+- Local audit log storage with cloud sync
+- Export audit logs as CSV or JSON
+
+**9. Additional Features:**
+- QR code and barcode scanning
+- Photo capture and attachment to devices
+- File attachments with compression
+- Diagnostic history viewer
+- Export diagnostics as JSON or CSV
+- Push notifications for critical alerts
+- Background sync service
+
+**Platform Requirements:**
+- **iOS**: Minimum iOS 14.0+, iPhone 7+ for NFC, App Store distribution
+- **Android**: Minimum Android 8.0 (API 26)+, NFC hardware required, Google Play distribution
+- Both platforms support enterprise distribution for internal deployments
+
+**Performance Targets:**
+- App startup: < 3 seconds (cold), < 1 second (warm)
+- NFC scan and read: < 2 seconds
+- NFC write configuration: < 5 seconds
+- Page navigation: < 300ms
+- Background sync: every 5 minutes when connected
+
+**For detailed MAUI requirements and architecture, see [mobile-maui-requirements.md](./mobile-maui-requirements.md)**
 
 ---
 

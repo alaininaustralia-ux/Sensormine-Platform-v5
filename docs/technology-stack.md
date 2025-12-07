@@ -319,23 +319,107 @@ A **cloud-agnostic architecture** designed for portability, performance, and lon
 
 ---
 
-## Mobile Application (Future)
+## Mobile Application (.NET MAUI)
 
 ### Cross-Platform Framework
-**React Native** (Recommended)
-- Share code with web React components
-- Large ecosystem
+**.NET MAUI (.NET 8+)** (Selected)
+- Native iOS and Android from single C# codebase
+- Leverage existing .NET backend expertise
+- Share business logic with backend services
 - Hot reload for rapid development
+- Strong typing and IDE support (Visual Studio, VS Code)
+- NFC support via platform-specific implementations
+- Mature ecosystem with NuGet packages
 
-**Alternative: Flutter**
-- High performance, beautiful UIs
-- Single codebase for iOS and Android
-- Dart language
+**Why MAUI over React Native/Flutter:**
+- **Team expertise**: Leverages existing C# skills
+- **Code sharing**: Share models, DTOs, validation logic with backend
+- **Performance**: Native compilation, no JavaScript bridge
+- **Enterprise support**: Long-term support from Microsoft
+- **NFC support**: Better NFC integration on both iOS and Android
+
+### Mobile Architecture
+
+**UI Framework:**
+- MAUI native controls
+- Community Toolkit MAUI
+- Syncfusion MAUI controls (advanced charts/gauges)
+- .NET MAUI Maps
+
+**MVVM Pattern:**
+- ViewModels with CommunityToolkit.Mvvm
+- Data binding and commands
+- Dependency injection
+
+**Data & Storage:**
+- SQLite (SQLite-net-pcl) for offline storage
+- Entity Framework Core for SQLite
+- MAUI SecureStorage for credentials
+- Akavache for caching
+
+**Networking:**
+- HttpClient for REST API calls
+- Refit for typed HTTP clients
+- Polly for resilience (retry, circuit breaker, timeout)
+
+**NFC Integration:**
+- iOS: CoreNFC via platform-specific code
+- Android: Android.Nfc API via platform-specific code
+- NDEF message parsing
+- Custom NFC command/response protocol
+
+**Authentication:**
+- MSAL (Microsoft Authentication Library)
+- Azure AD / Entra ID integration
+- Biometric authentication (MAUI Essentials)
+- Secure token storage
+
+**Other Libraries:**
+- ZXing.Net.Maui (QR/barcode scanning)
+- Serilog (logging)
+- Polly (resilience patterns)
 
 ### Mobile Backend
-- Same REST/GraphQL APIs as web
-- Push notifications via Firebase Cloud Messaging (FCM)
-- Offline-first architecture with local SQLite
+- Same REST APIs as web application
+- Push notifications via Azure Notification Hubs or Firebase Cloud Messaging
+- Offline-first architecture with local SQLite database
+- Background sync service with conflict resolution
+- JWT token-based authentication
+
+### Platform Requirements
+
+**iOS:**
+- Minimum version: iOS 14.0+
+- NFC capability requires iPhone 7+ with iOS 13+
+- CoreNFC entitlements in Info.plist
+- Distribution via App Store or Enterprise
+
+**Android:**
+- Minimum version: Android 8.0 (API 26)+
+- NFC hardware required
+- NFC permissions in AndroidManifest.xml
+- Distribution via Google Play Store or APK sideloading
+
+### Key Features
+
+**NFC Operations:**
+- Device discovery via NFC tap
+- Read device diagnostics (battery, sensors, errors)
+- Write configuration to device
+- Offline device interaction
+
+**Offline-First:**
+- All operations work offline first
+- Background sync when connectivity returns
+- Queue pending operations
+- Conflict resolution
+
+**Field Technician Workflows:**
+- Device provisioning with custom fields
+- Configuration management
+- Location capture (GPS + manual)
+- Photo and document attachments
+- Audit trail of all actions
 
 ---
 
