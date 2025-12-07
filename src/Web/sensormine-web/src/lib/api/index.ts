@@ -89,3 +89,25 @@ export type {
   KpiQueryParams,
   CategoricalQueryParams,
 } from './widget-data';
+
+export {
+  alertRulesApi,
+  alertInstancesApi,
+} from './alerts';
+
+export type {
+  AlertRule,
+  CreateAlertRuleRequest,
+  UpdateAlertRuleRequest,
+  AlertInstance,
+  AlertInstanceStatistics,
+  AlertCondition,
+  EscalationRule,
+} from './alerts';
+
+export {
+  AlertSeverity as ApiAlertSeverity,
+  AlertTargetType,
+  AlertOperator,
+  AlertStatus,
+} from './alerts';

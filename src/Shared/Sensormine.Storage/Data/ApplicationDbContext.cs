@@ -32,6 +32,11 @@ public class ApplicationDbContext : DbContext
     // Dashboard Management
     public DbSet<Dashboard> Dashboards { get; set; } = null!;
 
+    // Alert Management
+    public DbSet<AlertRule> AlertRules { get; set; } = null!;
+    public DbSet<AlertInstance> AlertInstances { get; set; } = null!;
+    public DbSet<AlertDeliveryChannel> AlertDeliveryChannels { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -43,6 +48,7 @@ public class ApplicationDbContext : DbContext
         ConfigureUserPreferenceEntities(modelBuilder);
         ConfigureSiteConfigurationEntities(modelBuilder);
         ConfigureDashboardEntities(modelBuilder);
+        ConfigureAlertEntities(modelBuilder);
     }
 
     private void ConfigureSchemaEntities(ModelBuilder modelBuilder)
@@ -739,6 +745,329 @@ public class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => new { e.TenantId, e.ParentDashboardId })
                 .HasDatabaseName("ix_dashboards_tenant_parent");
+        });
+    }
+
+    private void ConfigureAlertEntities(ModelBuilder modelBuilder)
+    {
+        // AlertRule Configuration
+        modelBuilder.Entity<AlertRule>(entity =>
+        {
+            entity.ToTable("alert_rules");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedOnAdd();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .IsRequired();
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.Description)
+                .HasColumnName("description")
+                .HasColumnType("text");
+
+            entity.Property(e => e.Severity)
+                .HasColumnName("severity")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.TargetType)
+                .HasColumnName("target_type")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.DeviceTypeIds)
+                .HasColumnName("device_type_ids")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.DeviceIds)
+                .HasColumnName("device_ids")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.Conditions)
+                .HasColumnName("conditions")
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<AlertCondition>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<AlertCondition>())
+                .IsRequired();
+
+            entity.Property(e => e.ConditionLogic)
+                .HasColumnName("condition_logic")
+                .HasMaxLength(10)
+                .IsRequired();
+
+            entity.Property(e => e.TimeWindowSeconds)
+                .HasColumnName("time_window_seconds")
+                .IsRequired();
+
+            entity.Property(e => e.EvaluationFrequencySeconds)
+                .HasColumnName("evaluation_frequency_seconds")
+                .IsRequired();
+
+            entity.Property(e => e.DeliveryChannels)
+                .HasColumnName("delivery_channels")
+                .HasColumnType("text[]");
+
+            entity.Property(e => e.Recipients)
+                .HasColumnName("recipients")
+                .HasColumnType("text[]");
+
+            entity.Property(e => e.IsEnabled)
+                .HasColumnName("is_enabled")
+                .HasDefaultValue(true);
+
+            entity.Property(e => e.EscalationRule)
+                .HasColumnName("escalation_rule")
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => v != null ? System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null) : null,
+                    v => v != null ? System.Text.Json.JsonSerializer.Deserialize<EscalationRule>(v, (System.Text.Json.JsonSerializerOptions?)null) : null);
+
+            entity.Property(e => e.CooldownMinutes)
+                .HasColumnName("cooldown_minutes")
+                .IsRequired();
+
+            entity.Property(e => e.Tags)
+                .HasColumnName("tags")
+                .HasColumnType("text[]");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            // Indexes
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("ix_alert_rules_tenant");
+
+            entity.HasIndex(e => new { e.TenantId, e.Name })
+                .HasDatabaseName("ix_alert_rules_tenant_name");
+
+            entity.HasIndex(e => e.IsEnabled)
+                .HasDatabaseName("ix_alert_rules_enabled");
+
+            entity.HasIndex(e => e.TargetType)
+                .HasDatabaseName("ix_alert_rules_target_type");
+
+            entity.HasIndex(e => e.Tags)
+                .HasDatabaseName("ix_alert_rules_tags")
+                .HasMethod("gin");
+        });
+
+        // AlertInstance Configuration
+        modelBuilder.Entity<AlertInstance>(entity =>
+        {
+            entity.ToTable("alert_instances");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedOnAdd();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .IsRequired();
+
+            entity.Property(e => e.AlertRuleId)
+                .HasColumnName("alert_rule_id")
+                .IsRequired();
+
+            entity.Property(e => e.DeviceId)
+                .HasColumnName("device_id")
+                .IsRequired();
+
+            entity.Property(e => e.Severity)
+                .HasColumnName("severity")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.Status)
+                .HasColumnName("status")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.Message)
+                .HasColumnName("message")
+                .HasColumnType("text")
+                .IsRequired();
+
+            entity.Property(e => e.Details)
+                .HasColumnName("details")
+                .HasColumnType("text")
+                .IsRequired();
+
+            entity.Property(e => e.FieldValues)
+                .HasColumnName("field_values")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.TriggeredAt)
+                .HasColumnName("triggered_at")
+                .IsRequired();
+
+            entity.Property(e => e.AcknowledgedAt)
+                .HasColumnName("acknowledged_at");
+
+            entity.Property(e => e.AcknowledgedBy)
+                .HasColumnName("acknowledged_by")
+                .HasMaxLength(255);
+
+            entity.Property(e => e.AcknowledgmentNotes)
+                .HasColumnName("acknowledgment_notes")
+                .HasColumnType("text");
+
+            entity.Property(e => e.ResolvedAt)
+                .HasColumnName("resolved_at");
+
+            entity.Property(e => e.ResolutionNotes)
+                .HasColumnName("resolution_notes")
+                .HasColumnType("text");
+
+            entity.Property(e => e.IsEscalated)
+                .HasColumnName("is_escalated")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.EscalatedAt)
+                .HasColumnName("escalated_at");
+
+            entity.Property(e => e.NotificationCount)
+                .HasColumnName("notification_count")
+                .HasDefaultValue(0);
+
+            entity.Property(e => e.LastNotificationAt)
+                .HasColumnName("last_notification_at");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            // Indexes
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("ix_alert_instances_tenant");
+
+            entity.HasIndex(e => e.AlertRuleId)
+                .HasDatabaseName("ix_alert_instances_rule");
+
+            entity.HasIndex(e => e.DeviceId)
+                .HasDatabaseName("ix_alert_instances_device");
+
+            entity.HasIndex(e => e.Status)
+                .HasDatabaseName("ix_alert_instances_status");
+
+            entity.HasIndex(e => e.Severity)
+                .HasDatabaseName("ix_alert_instances_severity");
+
+            entity.HasIndex(e => e.TriggeredAt)
+                .HasDatabaseName("ix_alert_instances_triggered_at")
+                .IsDescending();
+
+            // Foreign keys
+            entity.HasOne(e => e.AlertRule)
+                .WithMany()
+                .HasForeignKey(e => e.AlertRuleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Device)
+                .WithMany()
+                .HasForeignKey(e => e.DeviceId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // AlertDeliveryChannel Configuration
+        modelBuilder.Entity<AlertDeliveryChannel>(entity =>
+        {
+            entity.ToTable("alert_delivery_channels");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedOnAdd();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .IsRequired();
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.Description)
+                .HasColumnName("description")
+                .HasColumnType("text");
+
+            entity.Property(e => e.Type)
+                .HasColumnName("type")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.IsEnabled)
+                .HasColumnName("is_enabled")
+                .HasDefaultValue(true);
+
+            entity.Property(e => e.Configuration)
+                .HasColumnName("configuration")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.MessageTemplate)
+                .HasColumnName("message_template")
+                .HasColumnType("text");
+
+            entity.Property(e => e.UseDefaultTemplate)
+                .HasColumnName("use_default_template")
+                .HasDefaultValue(true);
+
+            entity.Property(e => e.Tags)
+                .HasColumnName("tags")
+                .HasColumnType("text[]");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            // Indexes
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("ix_alert_delivery_channels_tenant");
+
+            entity.HasIndex(e => new { e.TenantId, e.Name })
+                .HasDatabaseName("ix_alert_delivery_channels_tenant_name")
+                .IsUnique();
+
+            entity.HasIndex(e => e.Type)
+                .HasDatabaseName("ix_alert_delivery_channels_type");
+
+            entity.HasIndex(e => e.IsEnabled)
+                .HasDatabaseName("ix_alert_delivery_channels_enabled");
         });
     }
 }
