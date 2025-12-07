@@ -1,0 +1,252 @@
+namespace Query.API.Controllers;
+
+using Microsoft.AspNetCore.Mvc;
+using Query.API.Models;
+using Query.API.Services;
+using Sensormine.Storage.Interfaces;
+using Sensormine.Storage.TimeSeries;
+
+/// <summary>
+/// Controller for widget-specific data queries
+/// Provides simplified endpoints optimized for dashboard widgets
+/// </summary>
+[ApiController]
+[Route("api/widgetdata")]
+[Produces("application/json")]
+public class WidgetDataController : ControllerBase
+{
+    private readonly ITimeSeriesRepository _repository;
+    private readonly ILogger<WidgetDataController> _logger;
+    private const string DefaultMeasurement = "telemetry";
+
+    public WidgetDataController(
+        ITimeSeriesRepository repository,
+        ILogger<WidgetDataController> logger)
+    {
+        _repository = repository;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Get real-time data (latest values) for widgets
+    /// Returns the most recent data points from the last hour
+    /// </summary>
+    /// <param name="fields">Comma-separated field names to retrieve (e.g., "temperature,humidity")</param>
+    /// <param name="deviceIds">Optional comma-separated device IDs to filter by</param>
+    /// <param name="limit">Maximum number of data points to return (default: 100)</param>
+    [HttpGet("realtime")]
+    [ProducesResponseType(typeof(WidgetDataResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetRealtime(
+        [FromQuery] string? fields = null,
+        [FromQuery] string? deviceIds = null,
+        [FromQuery] int limit = 100,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Validate limit
+            if (limit <= 0 || limit > 1000)
+            {
+                return BadRequest(new { error = "Limit must be between 1 and 1000" });
+            }
+
+            // Parse input parameters
+            var fieldList = string.IsNullOrWhiteSpace(fields) 
+                ? new List<string>() 
+                : fields.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+            
+            var deviceIdList = string.IsNullOrWhiteSpace(deviceIds)
+                ? null
+                : deviceIds.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+
+        // Query last hour of data
+        var request = new TimeSeriesQueryRequest
+        {
+            StartTime = DateTimeOffset.UtcNow.AddHours(-1),
+            EndTime = DateTimeOffset.UtcNow,
+            Limit = limit,
+            SortDirection = "desc"
+        };
+
+        var result = await _queryService.QueryAsync("telemetry", request, cancellationToken);
+
+        // Transform to widget-friendly format
+        var response = new WidgetDataResponse
+        {
+            Timestamp = DateTimeOffset.UtcNow,
+            DataPoints = result.Data.Select(d => new WidgetDataPoint
+            {
+                DeviceId = d.DeviceId,
+                Timestamp = d.Timestamp,
+                Values = d.Values
+            }).ToList(),
+            Count = result.Data.Count
+        };
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Get historical time-series data for widget
+    /// Returns data over a specified time range
+    /// </summary>
+    [HttpGet("historical")]
+    [ProducesResponseType(typeof(WidgetDataResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetHistorical(
+        [FromQuery] string fields,
+        [FromQuery] string startTime,
+        [FromQuery] string endTime,
+        [FromQuery] string? deviceTypeIds,
+        [FromQuery] string? deviceIds,
+        [FromQuery] int limit = 1000,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new TimeSeriesQueryRequest
+        {
+            StartTime = DateTimeOffset.Parse(startTime),
+            EndTime = DateTimeOffset.Parse(endTime),
+            Limit = limit,
+            SortDirection = "asc"
+        };
+
+        var result = await _queryService.QueryAsync("telemetry", request, cancellationToken);
+
+        var response = new WidgetDataResponse
+        {
+            Timestamp = DateTimeOffset.UtcNow,
+            DataPoints = result.Data.Select(d => new WidgetDataPoint
+            {
+                DeviceId = d.DeviceId,
+                Timestamp = d.Timestamp,
+                Values = d.Values
+            }).ToList(),
+            Count = result.Data.Count,
+            TimeRange = new TimeRangeInfo
+            {
+                Start = request.StartTime,
+                End = request.EndTime
+            }
+        };
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Get aggregated data for widget
+    /// Returns aggregated values over time intervals
+    /// </summary>
+    [HttpGet("aggregated")]
+    [ProducesResponseType(typeof(AggregatedWidgetDataResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAggregated(
+        [FromQuery] string fields,
+        [FromQuery] string startTime,
+        [FromQuery] string endTime,
+        [FromQuery] string aggregation = "avg",
+        [FromQuery] string? interval = "5m",
+        [FromQuery] string? deviceTypeIds = null,
+        [FromQuery] string? deviceIds = null,
+        CancellationToken cancellationToken = default)
+    {
+        var fieldList = fields.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        
+        var request = new AggregateQueryRequest
+        {
+            StartTime = DateTimeOffset.Parse(startTime),
+            EndTime = DateTimeOffset.Parse(endTime),
+            AggregateFunction = aggregation,
+            Field = fieldList.FirstOrDefault() ?? "value",
+            GroupByInterval = interval
+        };
+
+        var result = await _queryService.QueryAggregatedAsync("telemetry", request, cancellationToken);
+
+        var response = new AggregatedWidgetDataResponse
+        {
+            Timestamp = DateTimeOffset.UtcNow,
+            Aggregation = aggregation,
+            Interval = interval ?? "raw",
+            Series = new List<AggregatedSeries>
+            {
+                new AggregatedSeries
+                {
+                    Field = request.Field,
+                    DataPoints = result.Data.Select(d => new AggregatedDataPoint
+                    {
+                        Timestamp = d.Timestamp ?? DateTimeOffset.UtcNow,
+                        Value = d.Value ?? 0,
+                        Count = d.Count
+                    }).ToList()
+                }
+            },
+            TimeRange = new TimeRangeInfo
+            {
+                Start = request.StartTime,
+                End = request.EndTime
+            }
+        };
+
+        return Ok(response);
+    }
+}
+
+/// <summary>
+/// Widget-friendly data response
+/// </summary>
+public class WidgetDataResponse
+{
+    public DateTimeOffset Timestamp { get; set; }
+    public List<WidgetDataPoint> DataPoints { get; set; } = new();
+    public int Count { get; set; }
+    public TimeRangeInfo? TimeRange { get; set; }
+}
+
+/// <summary>
+/// Single data point for widget
+/// </summary>
+public class WidgetDataPoint
+{
+    public string DeviceId { get; set; } = string.Empty;
+    public DateTimeOffset Timestamp { get; set; }
+    public Dictionary<string, object> Values { get; set; } = new();
+}
+
+/// <summary>
+/// Aggregated data response for widgets
+/// </summary>
+public class AggregatedWidgetDataResponse
+{
+    public DateTimeOffset Timestamp { get; set; }
+    public string Aggregation { get; set; } = string.Empty;
+    public string Interval { get; set; } = string.Empty;
+    public List<AggregatedSeries> Series { get; set; } = new();
+    public TimeRangeInfo? TimeRange { get; set; }
+}
+
+/// <summary>
+/// Time series of aggregated data
+/// </summary>
+public class AggregatedSeries
+{
+    public string Field { get; set; } = string.Empty;
+    public List<AggregatedDataPoint> DataPoints { get; set; } = new();
+}
+
+/// <summary>
+/// Aggregated data point
+/// </summary>
+public class AggregatedDataPoint
+{
+    public DateTimeOffset Timestamp { get; set; }
+    public decimal Value { get; set; }
+    public long Count { get; set; }
+}
+
+/// <summary>
+/// Time range information
+/// </summary>
+public class TimeRangeInfo
+{
+    public DateTimeOffset Start { get; set; }
+    public DateTimeOffset End { get; set; }
+}

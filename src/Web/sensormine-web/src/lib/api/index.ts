@@ -111,3 +111,21 @@ export {
   AlertOperator,
   AlertStatus,
 } from './alerts';
+
+export { nexusConfigurationApi } from './nexusConfiguration';
+export type {
+  NexusConfiguration,
+  ProbeConfig,
+  CommunicationSettings,
+  AlertRuleTemplate as NexusAlertRuleTemplate,
+  CreateNexusConfigurationRequest,
+  UpdateNexusConfigurationRequest,
+  ParseDocumentRequest,
+  ParseDocumentResponse,
+  GenerateCustomLogicRequest,
+  GenerateCustomLogicResponse,
+  ValidateCustomLogicRequest,
+  ValidateCustomLogicResponse,
+  DeployConfigurationRequest,
+  DeployConfigurationResponse,
+} from './nexusConfiguration';
