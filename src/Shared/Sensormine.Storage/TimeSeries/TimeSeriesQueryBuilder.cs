@@ -147,8 +147,16 @@ WHERE tenant_id = @tenantId::uuid
             }
         }
 
-        // Add aggregate column
-        selectClause.Add($"{aggregateFunction}({valueExpression}) AS Value");
+        // Add aggregate column - handle percentile functions specially
+        if (aggregateFunction.Contains("percentile_cont"))
+        {
+            // Percentile functions already include the full expression
+            selectClause.Add($"{aggregateFunction} AS Value");
+        }
+        else
+        {
+            selectClause.Add($"{aggregateFunction}({valueExpression}) AS Value");
+        }
         selectClause.Add($"COUNT(*) AS Count");
 
         var sql = $@"
@@ -226,6 +234,11 @@ VALUES (@timestamp, @deviceId, @tenantId::uuid, @metricName, @value, @unit, @tag
             "count" => "COUNT",
             "first" => "first",  // TimescaleDB specific
             "last" => "last",    // TimescaleDB specific
+            "median" or "p50" => "percentile_cont(0.5) WITHIN GROUP (ORDER BY value)",  // PostgreSQL percentile
+            "p90" => "percentile_cont(0.9) WITHIN GROUP (ORDER BY value)",
+            "p95" => "percentile_cont(0.95) WITHIN GROUP (ORDER BY value)",
+            "p99" => "percentile_cont(0.99) WITHIN GROUP (ORDER BY value)",
+            "p99.9" => "percentile_cont(0.999) WITHIN GROUP (ORDER BY value)",
             _ => "AVG"
         };
     }

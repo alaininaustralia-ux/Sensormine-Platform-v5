@@ -133,7 +133,8 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
             var valueOrdinal = reader.GetOrdinal("Value");
             if (!reader.IsDBNull(valueOrdinal))
             {
-                result.Value = reader.GetDecimal(valueOrdinal);
+                // PostgreSQL stores as double precision, convert to decimal
+                result.Value = Convert.ToDecimal(reader.GetDouble(valueOrdinal));
             }
 
             // Try to read bucket if it exists
