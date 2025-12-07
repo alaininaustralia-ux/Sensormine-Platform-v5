@@ -136,14 +136,29 @@ src/
 - Type-safe interfaces for all DTOs
 - Error handling and toast notifications
 
+**Phase 3 Complete - Templates & Full CRUD:**
+3. **Templates Page** (`/settings/nexus-configuration/templates`):
+   - Browse templates by category
+   - Search and filter functionality
+   - Clone templates to create new configurations
+   - Template cards with probe info and tags
+
+4. **Configuration View/Edit Page** (`/settings/nexus-configuration/[id]`):
+   - Tabbed interface (Overview, Probes, Communication, Logic, Alerts)
+   - Edit basic information (name, description)
+   - View all configuration details in organized tabs
+   - Deploy functionality (creates Device Type + Schema)
+   - Delete functionality with confirmation
+   - Status tracking and metadata display
+
 **Next Steps:**
-- Templates page implementation
-- Configuration edit page
-- Deploy modal (Device Type + Schema creation)
-- AI document parsing integration
-- Custom logic editor with Monaco
-- Schema field mapper UI
-- Integration testing
+- AI document upload and parsing UI
+- Custom logic editor with Monaco/CodeMirror
+- AI assistant chat for logic generation
+- Advanced editing (probes, communication, alerts in place)
+- Schema field mapper visual editor
+- Device simulator integration for testing
+- Configuration export/import (JSON)
 
 ---
 
