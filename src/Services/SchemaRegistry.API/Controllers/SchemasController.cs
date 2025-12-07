@@ -208,16 +208,60 @@ public class SchemasController : ControllerBase
                 return NotFound($"Schema with ID {id} not found");
             }
 
-            // Update fields
+            // Update schema metadata
             schema.Description = request.Description ?? schema.Description;
             schema.UpdatedBy = userId;
             schema.UpdatedAt = DateTimeOffset.UtcNow;
+
+            // If JSON schema is provided, create a new version
+            if (!string.IsNullOrWhiteSpace(request.JsonSchema))
+            {
+                // Validate JSON schema format
+                var validationResult = await _validationService.ValidateSchemaAsync(request.JsonSchema);
+                if (!validationResult.IsValid)
+                {
+                    return BadRequest(new { message = "Invalid JSON Schema", errors = validationResult.Errors });
+                }
+
+                // Determine next version number
+                var existingVersions = await _schemaRepository.ListVersionsAsync(id, tenantId);
+                var nextVersionNumber = existingVersions.Count + 1;
+
+                // Unset previous default versions
+                foreach (var existingVersion in existingVersions.Where(v => v.IsDefault))
+                {
+                    existingVersion.IsDefault = false;
+                    await _schemaRepository.UpdateVersionAsync(existingVersion);
+                }
+
+                // Create new version
+                var newVersion = new SchemaVersion
+                {
+                    Id = Guid.NewGuid(),
+                    SchemaId = id,
+                    Version = $"v{nextVersionNumber}",
+                    JsonSchema = request.JsonSchema,
+                    Status = SchemaStatus.Active,
+                    IsDefault = true, // New version becomes default
+                    DeviceTypes = new List<string>(),
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow,
+                    CreatedBy = userId
+                };
+
+                // Add the new version
+                await _schemaRepository.CreateVersionAsync(newVersion);
+
+                _logger.LogInformation("Created new version {Version} for schema {SchemaId}", newVersion.Version, id);
+            }
 
             var updated = await _schemaRepository.UpdateAsync(schema);
             
             _logger.LogInformation("Updated schema {SchemaId} for tenant {TenantId}", id, tenantId);
 
-            return Ok(MapToDto(updated));
+            // Reload to get the new version
+            var schemaWithVersions = await _schemaRepository.GetByIdAsync(id, tenantId);
+            return Ok(MapToDto(schemaWithVersions!));
         }
         catch (Exception ex)
         {
@@ -254,6 +298,9 @@ public class SchemasController : ControllerBase
 
     private static SchemaDto MapToDto(Schema schema)
     {
+        // Find the default/current version
+        var currentVersion = schema.Versions?.FirstOrDefault(v => v.IsDefault);
+        
         return new SchemaDto
         {
             Id = schema.Id,
@@ -264,6 +311,19 @@ public class SchemasController : ControllerBase
             UpdatedAt = schema.UpdatedAt,
             CreatedBy = schema.CreatedBy,
             UpdatedBy = schema.UpdatedBy,
+            CurrentVersion = currentVersion != null ? new SchemaVersionDetailDto
+            {
+                Id = currentVersion.Id,
+                SchemaId = currentVersion.SchemaId,
+                Version = currentVersion.Version,
+                JsonSchema = currentVersion.JsonSchema,
+                Status = currentVersion.Status.ToString(),
+                IsDefault = currentVersion.IsDefault,
+                DeviceTypes = currentVersion.DeviceTypes,
+                CreatedAt = currentVersion.CreatedAt,
+                UpdatedAt = currentVersion.UpdatedAt,
+                CreatedBy = currentVersion.CreatedBy
+            } : null,
             Versions = schema.Versions?.Select(v => new SchemaVersionDto
             {
                 Id = v.Id,
