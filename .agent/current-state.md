@@ -1,10 +1,10 @@
 # Sensormine Platform v5 - Current State
 
-**Last Updated**: 2025-12-07 (Dashboard Backend Integration Complete)  
-**Current Sprint**: Dashboard Persistence & Multi-Tenant Support  
-**Active Story**: Dashboard.API - Database Backend Implementation  
-**Build Status**: ✅ All services built successfully, Dashboard.API fully implemented  
-**Architecture**: 🎯 Device Type-Centric + Dashboard Database Persistence + Multi-Tenant Isolation
+**Last Updated**: 2025-12-07 (User Management & Multi-Tenant Infrastructure Complete)  
+**Current Sprint**: Identity & Access Management  
+**Active Story**: Identity.API - User Management with SSO & RBAC  
+**Build Status**: ✅ All services built successfully, Identity.API fully implemented  
+**Architecture**: 🎯 Device Type-Centric + Dashboard Database Persistence + Multi-Tenant Isolation + User Management & RBAC
 
 ---
 
@@ -31,8 +31,9 @@ src/
 │   │   └── package.json
 │   └── Sensormine.Mobile/ # Mobile app (React Native/Flutter) - TODO
 │
-├── Services/              # 11 Microservices (Backend - Foundation Ready)
+├── Services/              # 12 Microservices (Backend - Foundation Ready)
 │   ├── ApiGateway/        # Entry point, rate limiting, auth
+│   ├── Identity.API/      # ✅ User management, invitations, SSO (NEW)
 │   ├── Edge.Gateway/      # MQTT broker, device connectivity
 │   ├── Ingestion.Service/ # Data ingestion pipeline
 │   ├── Device.API/        # Device management CRUD
@@ -62,7 +63,264 @@ src/
 
 ---
 
-## Recent Major Changes (Dec 5, 2025)
+## Recent Major Changes
+
+### 🔐 User Management & Multi-Tenant Infrastructure (Dec 7, 2025) - **LATEST**
+
+**Complete user management system with SSO support, RBAC, and multi-tenant isolation:**
+
+#### Identity.API Microservice (NEW - Port 5300)
+**Purpose:** Centralized user and tenant management service
+
+**Key Features:**
+- User CRUD operations with full lifecycle management
+- Invitation workflow for user onboarding
+- Role-based access control (RBAC)
+- SSO-ready architecture
+- Production-grade security
+
+**Implementation Details:**
+1. **User Management:**
+   - PostgreSQL database with `users`, `user_invitations`, `tenants` tables
+   - Argon2id password hashing (64MB memory, 3 iterations, 256-bit output)
+   - Email-based user identification
+   - Account lockout after 5 failed login attempts
+   - MFA-ready architecture (phone number support)
+
+2. **Invitation Workflow:**
+   - Secure 256-bit random tokens
+   - 7-day expiration (configurable)
+   - Status tracking: Pending, Accepted, Expired, Cancelled, Rejected
+   - One-time use tokens
+   - Resend functionality
+
+3. **Role-Based Access Control:**
+   - **Viewer**: Read-only access to dashboards and data
+   - **Dashboard Editor**: Can create/edit dashboards and visualizations
+   - **Administrator**: Full tenant access (users, devices, settings)
+   - **Super Administrator**: Cross-tenant access for platform operators
+
+4. **Database Schema:**
+   ```sql
+   users: id, tenant_id, email, full_name, password_hash, role, 
+          is_active, is_super_admin, sso_provider, sso_user_id,
+          last_login_at, locked_out_until, failed_login_attempts,
+          metadata (jsonb), phone_number, mfa_enabled, avatar_url,
+          preferred_language, timezone
+   
+   user_invitations: id, tenant_id, email, role, invited_by,
+                      invited_by_name, token, status, expires_at,
+                      accepted_at, accepted_user_id, message, metadata (jsonb)
+   
+   tenants: id, tenant_id, name, status, subdomain, stripe_customer_id,
+            subscription_plan_id, branding (jsonb), settings (jsonb),
+            contact_email, billing_address (jsonb), is_trial, trial_ends_at
+   ```
+
+5. **API Endpoints (11 total):**
+   - `GET/POST/PUT/DELETE /api/User` - User management
+   - `GET /api/User/{id}` - Get user by ID
+   - `POST /api/User/{id}/change-password` - Password management
+   - `GET /api/User/statistics` - User statistics
+   - `GET/POST/DELETE /api/Invitation` - Invitation management
+   - `POST /api/Invitation/accept` - Accept invitation
+   - `POST /api/Invitation/{id}/cancel` - Cancel invitation
+   - `POST /api/Invitation/{id}/resend` - Resend invitation
+
+6. **Seed Data:**
+   - Default System tenant (ID: `00000000-0000-0000-0000-000000000001`)
+   - Super admin user: `admin@sensormine.com` (must change password on first login)
+
+#### Multi-Tenant Infrastructure
+**Purpose:** Ensure complete data isolation across tenants
+
+**Components:**
+1. **TenantMiddleware (Sensormine.Core):**
+   - Extracts tenant context from JWT claims or HTTP headers
+   - Injects `TenantId`, `UserId`, `UserRole`, `IsSuperAdmin` into `HttpContext.Items`
+   - Falls back to default tenant for development
+   - Comprehensive logging for debugging
+
+2. **TenantContext Service:**
+   - Centralized service for tenant/user resolution
+   - Methods: `GetTenantId()`, `GetUserId()`, `GetUserRole()`, `IsSuperAdmin()`
+   - Supports JWT claims: `tenant_id`, `user_id`, `role`, `is_super_admin`
+   - Supports HTTP headers: `X-Tenant-Id`, `X-User-Id`
+
+3. **Tenant Isolation Pattern:**
+   - All database queries scoped by `tenant_id` column
+   - Repository pattern with tenant filtering
+   - Super admins can bypass tenant filtering for cross-tenant operations
+
+#### JWT Token Structure
+**Enhanced token with comprehensive claims:**
+```json
+{
+  "sub": "user-guid",
+  "email": "user@example.com",
+  "name": "User Full Name",
+  "role": "Administrator",
+  "tenant_id": "tenant-guid",
+  "user_id": "user-guid",
+  "is_super_admin": false,
+  "permissions": [
+    "read", "write", "delete", 
+    "manage_users", "manage_devices", 
+    "manage_dashboards", "manage_alerts"
+  ],
+  "iss": "sensormine",
+  "aud": "sensormine-app",
+  "exp": 1733610000,
+  "iat": 1733606400
+}
+```
+
+#### Permission System
+**35+ granular permissions across 3 role tiers:**
+
+| Permission | Viewer | Dashboard Editor | Administrator |
+|------------|--------|------------------|---------------|
+| View dashboards | ✅ | ✅ | ✅ |
+| Create/edit dashboards | ❌ | ✅ | ✅ |
+| View devices | ✅ | ✅ | ✅ |
+| Manage devices | ❌ | ❌ | ✅ |
+| View users | ❌ | ❌ | ✅ |
+| Manage users | ❌ | ❌ | ✅ |
+| Manage alerts | ❌ | ❌ | ✅ |
+| System settings | ❌ | ❌ | ✅ |
+
+**Permission Strings:**
+- Basic: `read`, `write`, `delete`
+- Management: `manage_users`, `manage_devices`, `manage_dashboards`, `manage_alerts`, `manage_schemas`, `manage_device_types`
+- System: `manage_system`, `manage_tenants`, `view_audit_logs`
+
+#### SSO Integration (Ready)
+**Documented and ready for implementation:**
+
+**Supported Providers:**
+1. **Microsoft Azure AD / Entra ID**
+   - OIDC authentication
+   - Organization SSO
+   - Azure B2C support
+
+2. **Auth0**
+   - Universal login
+   - Social connections
+   - Enterprise connections
+
+3. **Google OAuth2**
+   - Google Workspace integration
+   - Consumer accounts
+
+4. **Generic OAuth2/OIDC**
+   - Any compliant provider
+   - Custom identity servers
+
+**User Provisioning Flow:**
+1. User authenticates with SSO provider
+2. ApiGateway receives callback with user info
+3. Identity.API checks if user exists by `sso_provider` + `sso_user_id`
+4. If exists: Update last login, return JWT
+5. If not exists: Create user with default Viewer role
+6. Admin can upgrade role as needed
+
+#### Authentication Updates (ApiGateway)
+**Enhanced JWT token generation:**
+1. **Updated `/api/auth/login`:**
+   - Generates JWT with all required claims
+   - Returns user object with permissions
+   - 1-hour access token, 7-day refresh token
+
+2. **Permission Helper:**
+   - `GetPermissionsForRole()` method maps roles to permission arrays
+   - Viewer: `["read"]`
+   - Dashboard Editor: `["read", "write", "manage_dashboards"]`
+   - Administrator: All permissions
+
+3. **SSO Endpoints (Documented):**
+   - `GET /api/sso/login/{provider}` - Initiate SSO flow
+   - `GET /api/sso/callback` - Handle SSO callback
+
+#### Documentation Created (42KB total)
+1. **`docs/user-management-overview.md` (17KB):**
+   - Complete system architecture
+   - Database schema documentation
+   - API endpoint reference
+   - Quick start guide
+   - Security features
+   - Testing examples
+   - Production deployment checklist
+
+2. **`docs/sso-integration.md` (13KB):**
+   - Azure AD setup guide
+   - Auth0 configuration
+   - Google OAuth2 setup
+   - Generic OIDC integration
+   - Claims mapping
+   - Security considerations
+   - Troubleshooting guide
+
+3. **`docs/permissions-matrix.md` (12KB):**
+   - Detailed permission matrix
+   - Role hierarchies
+   - Implementation patterns
+   - Authorization policies
+   - Frontend guards
+   - Testing guidelines
+
+#### Security Features
+1. **Password Security:**
+   - Argon2id hashing (Password Hashing Competition winner)
+   - Secure salt generation (128-bit)
+   - Memory-hard algorithm (64MB)
+   - No plaintext storage
+
+2. **Token Security:**
+   - JWT with HS256 signing
+   - Short-lived access tokens (1 hour)
+   - Long-lived refresh tokens (7 days)
+   - Token validation on every request
+
+3. **Account Security:**
+   - Failed login tracking
+   - Automatic lockout (5 attempts)
+   - Password complexity requirements
+   - MFA-ready architecture
+
+4. **Invitation Security:**
+   - Cryptographically secure tokens
+   - Expiration enforcement
+   - One-time use
+   - Cancellation support
+
+#### Services Running
+- Identity.API: `http://localhost:5300`
+- ApiGateway: `http://localhost:5020` (with enhanced auth)
+- PostgreSQL: `sensormine_identity` database
+
+#### Status
+✅ **Complete Implementation:**
+- User CRUD operations
+- Invitation workflow
+- Password management
+- Multi-tenant middleware
+- JWT with comprehensive claims
+- Permission system design
+- Comprehensive documentation
+
+⏳ **Next Phase:**
+- Frontend user management UI
+- Complete SSO provider integration
+- Authorization policy enforcement in all services
+- Tenant-scoped queries in existing services
+- MFA implementation
+- Email service for invitations
+
+**Commit Hash:** `355ccbb` (3 commits, 28 files, ~3,000 lines)
+
+---
+
+## Previous Major Changes (Dec 5-6, 2025)
 
 ### 🎯 Architecture Redesign: Device Type-Centric Approach
 **Complete architectural pivot from device-centric to Device Type-centric configuration:**
