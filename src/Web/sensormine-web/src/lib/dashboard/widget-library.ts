@@ -1,121 +1,94 @@
 /**
  * Widget Library
- * Defines available widgets and their default configurations (Story 4.1)
+ * Consolidated widget registry - single source of truth for all widgets
+ * 
+ * This file re-exports WIDGET_REGISTRY and provides backward compatibility
+ * with the old WIDGET_LIBRARY format.
  */
 
 import type { WidgetLibraryItem, DashboardTemplate } from './types';
+import { WIDGET_REGISTRY, type WidgetDefinition } from '../stores/widget-registry';
 
 /**
- * Available widgets in the widget library
+ * Convert WidgetDefinition (new format) to WidgetLibraryItem (old format)
+ * for backward compatibility
  */
-export const WIDGET_LIBRARY: WidgetLibraryItem[] = [
-  {
-    type: 'chart',
-    name: 'Chart',
-    description: 'Time-series line, bar, area, and scatter charts',
-    icon: 'LineChart',
+function widgetDefinitionToLibraryItem(widget: WidgetDefinition): WidgetLibraryItem {
+  return {
+    type: widget.type,
+    name: widget.name,
+    description: widget.description,
+    icon: widget.icon,
     defaultConfig: {
-      type: 'chart',
-      config: {
-        type: 'line',
-        showLegend: true,
-        aggregationInterval: '1m',
+      type: widget.type,
+      config: getDefaultConfig(widget.type),
+    },
+    defaultSize: { 
+      width: widget.defaultSize.w, 
+      height: widget.defaultSize.h 
+    },
+  };
+}
+
+/**
+ * Get default widget configuration by type
+ */
+function getDefaultConfig(type: string): Record<string, any> {
+  const defaults: Record<string, Record<string, any>> = {
+    chart: {
+      type: 'line',
+      showLegend: true,
+      aggregationInterval: '1m',
+    },
+    table: {
+      columns: [],
+      pageSize: 10,
+    },
+    map: {
+      zoom: 10,
+      showDeviceMarkers: true,
+    },
+    video: {
+      autoplay: false,
+      showTimeline: true,
+    },
+    gauge: {
+      min: 0,
+      max: 100,
+      thresholds: [
+        { value: 25, color: 'green' },
+        { value: 50, color: 'yellow' },
+        { value: 75, color: 'orange' },
+        { value: 100, color: 'red' },
+      ],
+    },
+    kpi: {
+      showTrend: true,
+      comparisonPeriod: 'day',
+    },
+    'device-list': {
+      deviceList: {
+        showStatusFilter: true,
+        showTypeFilter: true,
+        maxDevices: 50,
       },
     },
-    defaultSize: { width: 4, height: 3 },
-  },
-  {
-    type: 'table',
-    name: 'Table',
-    description: 'Data table with sorting and pagination',
-    icon: 'Table',
-    defaultConfig: {
-      type: 'table',
-      config: {
-        columns: [],
-        pageSize: 10,
-      },
-    },
-    defaultSize: { width: 4, height: 3 },
-  },
-  {
-    type: 'map',
-    name: 'Map',
-    description: 'Geographic map with device locations',
-    icon: 'Map',
-    defaultConfig: {
-      type: 'map',
-      config: {
-        zoom: 10,
-        showDeviceMarkers: true,
-      },
-    },
-    defaultSize: { width: 4, height: 4 },
-  },
-  {
-    type: 'video',
-    name: 'Video Feed',
-    description: 'Live video feed from connected cameras',
-    icon: 'Video',
-    defaultConfig: {
-      type: 'video',
-      config: {
-        autoplay: false,
-        showTimeline: true,
-      },
-    },
-    defaultSize: { width: 4, height: 3 },
-  },
-  {
-    type: 'gauge',
-    name: 'Gauge',
-    description: 'Circular gauge for single value display',
-    icon: 'Gauge',
-    defaultConfig: {
-      type: 'gauge',
-      config: {
-        min: 0,
-        max: 100,
-        thresholds: [
-          { value: 25, color: 'green' },
-          { value: 50, color: 'yellow' },
-          { value: 75, color: 'orange' },
-          { value: 100, color: 'red' },
-        ],
-      },
-    },
-    defaultSize: { width: 2, height: 2 },
-  },
-  {
-    type: 'kpi',
-    name: 'KPI Card',
-    description: 'Key performance indicator with trend',
-    icon: 'TrendingUp',
-    defaultConfig: {
-      type: 'kpi',
-      config: {
-        showTrend: true,
-        comparisonPeriod: 'day',
-      },
-    },
-    defaultSize: { width: 2, height: 2 },
-  },
-  {
-    type: 'text',
-    name: 'Text',
-    description: 'Static text or markdown content',
-    icon: 'Type',
-    defaultConfig: {
-      type: 'text',
-      config: {
-        content: 'Enter your text here...',
-        fontSize: 'md',
-        alignment: 'left',
-      },
-    },
-    defaultSize: { width: 2, height: 1 },
-  },
-];
+  };
+  return defaults[type] || {};
+}
+
+/**
+ * Widget library - converted from WIDGET_REGISTRY
+ * @deprecated Use WIDGET_REGISTRY from widget-registry.ts instead
+ */
+export const WIDGET_LIBRARY: WidgetLibraryItem[] = WIDGET_REGISTRY
+  .filter(w => w.available)
+  .map(widgetDefinitionToLibraryItem);
+
+/**
+ * Export WIDGET_REGISTRY as the primary API
+ */
+export { WIDGET_REGISTRY } from '../stores/widget-registry';
 
 /**
  * Default dashboard templates

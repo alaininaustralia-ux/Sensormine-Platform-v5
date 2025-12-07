@@ -14,10 +14,11 @@ import { cn } from '@/lib/utils';
 
 interface DashboardGridProps {
   className?: string;
+  deviceId?: string | null;
   onWidgetConfigure?: (widgetId: string) => void;
 }
 
-export function DashboardGrid({ className, onWidgetConfigure }: DashboardGridProps) {
+export function DashboardGrid({ className, deviceId, onWidgetConfigure }: DashboardGridProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [dropPosition, setDropPosition] = useState<{ x: number; y: number } | null>(null);
 
@@ -200,6 +201,7 @@ export function DashboardGrid({ className, onWidgetConfigure }: DashboardGridPro
           <DashboardWidgetComponent
             key={widget.id}
             widget={widget}
+            deviceId={deviceId}
             isSelected={selectedWidgetId === widget.id}
             isEditing={isEditing}
             onSelect={() => handleWidgetSelect(widget.id)}

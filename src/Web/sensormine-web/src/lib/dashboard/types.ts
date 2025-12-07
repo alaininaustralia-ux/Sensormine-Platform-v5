@@ -13,7 +13,8 @@ export type WidgetType =
   | 'video'
   | 'gauge'
   | 'kpi'
-  | 'text';
+  | 'text'
+  | 'device-list';
 
 /**
  * Dashboard layout type
@@ -136,6 +137,29 @@ export interface WidgetStyling {
 }
 
 /**
+ * Widget data configuration from widget-data-config component
+ */
+export interface WidgetDataConfig {
+  dataSource: {
+    type: 'realtime' | 'historical' | 'aggregated';
+    fields: Array<{
+      deviceTypeId: string;
+      deviceTypeName: string;
+      fieldPath: string;
+      fieldName: string;
+      fieldType: string;
+    }>;
+    aggregation?: 'avg' | 'sum' | 'min' | 'max' | 'count';
+    timeRange?: {
+      value: number;
+      unit: 'minutes' | 'hours' | 'days' | 'weeks';
+    };
+    refreshInterval?: number;
+  };
+  filters?: Record<string, unknown>;
+}
+
+/**
  * Dashboard widget definition
  */
 export interface DashboardWidget {
@@ -144,8 +168,31 @@ export interface DashboardWidget {
   type: WidgetType;
   position: WidgetPosition;
   dataSource?: DataSource;
+  dataConfig?: WidgetDataConfig;
   config: WidgetConfig;
   styling?: WidgetStyling;
+}
+
+/**
+ * Dashboard type enum matching backend
+ */
+export enum DashboardType {
+  Root = 0,
+  DeviceDetail = 1,
+  DeviceTypeList = 2,
+  Custom = 3,
+}
+
+/**
+ * Summary DTO for subpages in dashboard list
+ */
+export interface SubPageSummary {
+  id: string;
+  name: string;
+  description?: string;
+  dashboardType: DashboardType;
+  displayOrder: number;
+  widgetCount: number;
 }
 
 /**
@@ -164,6 +211,11 @@ export interface Dashboard {
   sharedWith?: string[];
   tags?: string[];
   templateId?: string;
+  parentDashboardId?: string;
+  parentDashboardName?: string;
+  subPages?: SubPageSummary[];
+  displayOrder: number;
+  dashboardType: DashboardType;
 }
 
 /**

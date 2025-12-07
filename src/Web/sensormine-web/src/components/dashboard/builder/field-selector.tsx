@@ -49,6 +49,9 @@ interface SchemaProperty {
 
 interface SchemaData {
   schemaContent?: string | SchemaContent;
+  currentVersion?: {
+    jsonSchema?: string;
+  };
 }
 
 export interface SelectedField {
@@ -83,17 +86,25 @@ export function FieldSelector({
   }, []);
 
   const loadSchemaFields = async (deviceType: DeviceType) => {
+    console.log('Loading schema fields for device type:', deviceType);
+    
     if (!deviceType.schemaId) {
+      console.warn('Device type has no schemaId:', deviceType);
       setSchemaFields([]);
       return;
     }
 
     try {
       setLoading(true);
+      console.log('Fetching schema with ID:', deviceType.schemaId);
       const schema = await getSchema(deviceType.schemaId);
+      console.log('Schema fetched:', schema);
+      console.log('Schema keys:', Object.keys(schema));
+      console.log('Schema currentVersion:', (schema as any).currentVersion);
       
       // Parse schema to extract fields
-      const fields = parseSchemaFields(schema as SchemaData);
+      const fields = parseSchemaFields(schema as any);
+      console.log('Parsed fields:', fields);
       setSchemaFields(fields);
     } catch (error) {
       console.error('Failed to load schema:', error);
@@ -122,17 +133,39 @@ export function FieldSelector({
     }
   };
 
-  const parseSchemaFields = (schema: { schemaContent?: string | SchemaContent }): SchemaField[] => {
+  const parseSchemaFields = (schema: any): SchemaField[] => {
     const fields: SchemaField[] = [];
 
-    if (!schema || !schema.schemaContent) {
+    console.log('Parsing schema:', schema);
+    console.log('Schema has currentVersion?', !!schema.currentVersion);
+    console.log('Schema has versions?', !!schema.versions);
+    console.log('Schema has schemaContent?', !!schema.schemaContent);
+
+    // Try multiple possible locations for the JSON schema
+    let schemaSource: string | SchemaContent | undefined;
+    
+    if (schema.currentVersion?.jsonSchema) {
+      console.log('Using currentVersion.jsonSchema');
+      schemaSource = schema.currentVersion.jsonSchema;
+    } else if (schema.versions && schema.versions.length > 0) {
+      console.log('Using versions[0].jsonSchema');
+      schemaSource = schema.versions[0].jsonSchema;
+    } else if (schema.schemaContent) {
+      console.log('Using schemaContent');
+      schemaSource = schema.schemaContent;
+    }
+
+    if (!schema || !schemaSource) {
+      console.warn('Schema or schema content is missing. Schema keys:', Object.keys(schema || {}));
       return fields;
     }
 
     try {
-      const content = typeof schema.schemaContent === 'string' 
-        ? JSON.parse(schema.schemaContent) 
-        : schema.schemaContent;
+      const content = typeof schemaSource === 'string' 
+        ? JSON.parse(schemaSource) 
+        : schemaSource;
+
+      console.log('Schema content parsed:', content);
 
       // Handle JSON Schema
       if (content.type === 'object' && content.properties) {
@@ -162,7 +195,11 @@ export function FieldSelector({
             });
           }
         });
+      } else {
+        console.warn('Schema content does not have expected structure (type: object with properties):', content);
       }
+
+      console.log('Extracted fields:', fields);
     } catch (error) {
       console.error('Failed to parse schema:', error);
     }
@@ -281,10 +318,17 @@ export function FieldSelector({
               {loading ? (
                 <div className="text-sm text-muted-foreground">Loading fields...</div>
               ) : filteredFields.length === 0 ? (
-                <div className="text-sm text-muted-foreground">
-                  {schemaFields.length === 0
-                    ? 'No schema assigned to this device type'
-                    : 'No fields match your search'}
+                <div className="text-sm text-muted-foreground space-y-2">
+                  {schemaFields.length === 0 ? (
+                    <>
+                      <p>No schema assigned to this device type.</p>
+                      <p className="text-xs">
+                        To add fields, assign a schema to the <span className="font-mono">{selectedDeviceType?.name}</span> device type.
+                      </p>
+                    </>
+                  ) : (
+                    'No fields match your search'
+                  )}
                 </div>
               ) : (
                 <div className="space-y-2">

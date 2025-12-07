@@ -57,7 +57,7 @@ export function WidgetLibrarySidebar({ onAddWidget }: WidgetLibrarySidebarProps)
                         onClick={() => onAddWidget(widget.type)}
                       >
                         <div className="flex items-start gap-2">
-                          <WidgetIcon className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                          <WidgetIcon className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm">{widget.name}</div>
                             <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">

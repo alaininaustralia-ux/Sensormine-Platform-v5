@@ -73,7 +73,7 @@ export function TableWidget({
   
   return (
     <BaseWidget {...baseProps}>
-      <div className="overflow-auto h-full">
+      <div className="h-full">
         <table className="w-full text-sm">
           <thead className="border-b sticky top-0 bg-background">
             <tr>
@@ -115,8 +115,8 @@ export function TableWidget({
             ) : (
               displayData.map((row, rowIndex) => (
                 <tr key={rowIndex} className="border-b hover:bg-muted/50">
-                  {columns.map((column) => (
-                    <td key={column.key} className="px-3 py-2">
+                  {columns.map((column, colIndex) => (
+                    <td key={`${rowIndex}-${colIndex}-${column.key}`} className="px-3 py-2">
                       {column.render
                         ? column.render(row[column.key], row)
                         : String(row[column.key] ?? '')}

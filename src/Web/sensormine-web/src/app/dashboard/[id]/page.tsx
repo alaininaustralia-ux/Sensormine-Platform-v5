@@ -7,29 +7,89 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { useDashboardStore } from '@/lib/stores/dashboard-store';
-import { usePreferencesStore } from '@/lib/stores/preferences-store';
-import { DashboardGrid } from '@/components/dashboard/dashboard-grid';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useDashboardStore } from '@/lib/dashboard/store';
+import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
+import { DeviceContextBanner } from '@/components/dashboard/DeviceContextBanner';
 import { Button } from '@/components/ui/button';
 import { Edit, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { dashboardApi } from '@/lib/api/dashboards';
+import type { Dashboard, DashboardWidget } from '@/lib/dashboard/types';
 
 export default function DashboardViewPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const dashboardId = params.id as string;
   
-  const { getDashboard, setCurrentDashboard } = useDashboardStore();
-  const addRecentlyViewedDashboard = usePreferencesStore((state) => state.addRecentlyViewedDashboard);
-  const dashboard = getDashboard(dashboardId);
+  // Get device context from URL parameters
+  const deviceId = searchParams.get('deviceId');
+  const deviceName = searchParams.get('deviceName');
+  
+  const { dashboard, loadDashboard } = useDashboardStore();
   
   useEffect(() => {
-    if (dashboard) {
-      setCurrentDashboard(dashboard);
-      // Track recently viewed dashboard
-      addRecentlyViewedDashboard(dashboard.id);
-    }
-  }, [dashboard, setCurrentDashboard, addRecentlyViewedDashboard, dashboardId]);
+    // Load dashboard from API
+    const fetchDashboard = async () => {
+      try {
+        const dashboardData = await dashboardApi.get(dashboardId, 'demo-user');
+        if (dashboardData) {
+          // Transform API response: merge layout positions into widgets
+          // The API returns layout and widgets separately in react-grid-layout format
+          interface LayoutItem {
+            i: string;
+            x: number;
+            y: number;
+            w: number;
+            h: number;
+          }
+          
+          const layout = (dashboardData.layout as LayoutItem[]) || [];
+          const widgets = dashboardData.widgets;
+          
+          // Merge layout positions into widgets and extract dataConfig
+          const enrichedWidgets: DashboardWidget[] = widgets.map((widget) => {
+            const layoutItem = layout.find((l) => l.i === widget.id);
+            
+            // Extract dataSource from config if it exists
+            const widgetConfig = widget.config as Record<string, unknown>;
+            const dataConfig = widgetConfig?.dataSource ? { dataSource: widgetConfig.dataSource } : undefined;
+            
+            return {
+              ...widget,
+              position: layoutItem
+                ? {
+                    x: layoutItem.x,
+                    y: layoutItem.y,
+                    width: layoutItem.w,
+                    height: layoutItem.h,
+                  }
+                : { x: 0, y: 0, width: 6, height: 4 },
+              dataConfig: dataConfig,
+            } as unknown as DashboardWidget;
+          });
+          
+          // Transform to internal Dashboard format
+          const transformedDashboard: Dashboard = {
+            ...dashboardData,
+            widgets: enrichedWidgets,
+            layoutType: 'grid',
+            createdBy: dashboardData.userId || 'demo-user',
+            isShared: false,
+            tags: [],
+            displayOrder: 0,
+            dashboardType: 3, // Custom
+          } as Dashboard;
+          
+          loadDashboard(transformedDashboard);
+        }
+      } catch (error) {
+        console.error('Failed to load dashboard:', error);
+      }
+    };
+    fetchDashboard();
+  }, [dashboardId, loadDashboard]);
   
   if (!dashboard) {
     return (
@@ -45,6 +105,11 @@ export default function DashboardViewPage() {
     );
   }
   
+  // Handle clear device context
+  const handleClearDeviceContext = () => {
+    router.push(`/dashboard/${dashboardId}`);
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <div className="h-14 border-b bg-background flex items-center px-4 gap-4">
@@ -70,11 +135,18 @@ export default function DashboardViewPage() {
         </Button>
       </div>
       
-      <div className="flex-1 overflow-auto p-6 bg-muted/10">
-        <DashboardGrid
-          dashboard={dashboard}
-          isEditMode={false}
+      {/* Device context banner */}
+      {deviceId && deviceName && (
+        <DeviceContextBanner
+          deviceId={deviceId}
+          deviceName={deviceName}
+          parentDashboardId={dashboard.parentDashboardId}
+          onClear={handleClearDeviceContext}
         />
+      )}
+      
+      <div className="flex-1 overflow-auto p-6 bg-muted/10">
+        <DashboardGrid deviceId={deviceId} />
       </div>
     </div>
   );

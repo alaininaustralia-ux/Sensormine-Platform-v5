@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import type { DashboardWidget, WidgetDragData, WidgetPosition } from '@/lib/dashboard/types';
 import { GRID_CONFIG } from '@/lib/dashboard/widget-library';
 import { cn } from '@/lib/utils';
+import { WidgetDataRenderer } from './WidgetDataRenderer';
 
 // Icon mapping
 const iconMap: Record<string, React.ElementType> = {
@@ -38,6 +39,7 @@ const iconMap: Record<string, React.ElementType> = {
 
 interface DashboardWidgetComponentProps {
   widget: DashboardWidget;
+  deviceId?: string | null;
   isSelected: boolean;
   isEditing: boolean;
   onSelect: () => void;
@@ -49,6 +51,7 @@ interface DashboardWidgetComponentProps {
 
 export function DashboardWidgetComponent({
   widget,
+  deviceId,
   isSelected,
   isEditing,
   onSelect,
@@ -153,58 +156,75 @@ export function DashboardWidgetComponent({
   };
 
   const renderWidgetContent = () => {
-    switch (widget.type) {
-      case 'chart':
-        return (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            <LineChart className="w-12 h-12" />
-            <span className="ml-2">Chart Widget</span>
-          </div>
-        );
-      case 'table':
-        return (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            <Table className="w-12 h-12" />
-            <span className="ml-2">Table Widget</span>
-          </div>
-        );
-      case 'map':
-        return (
-          <div className="flex items-center justify-center h-full text-muted-foreground bg-muted/50 rounded">
-            <Map className="w-12 h-12" />
-            <span className="ml-2">Map Widget</span>
-          </div>
-        );
-      case 'video':
-        return (
-          <div className="flex items-center justify-center h-full text-muted-foreground bg-black/80 rounded">
-            <Video className="w-12 h-12 text-white" />
-            <span className="ml-2 text-white">Video Feed</span>
-          </div>
-        );
-      case 'gauge':
-        return (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            <Gauge className="w-16 h-16" />
-          </div>
-        );
-      case 'kpi':
-        return (
-          <div className="flex flex-col items-center justify-center h-full">
-            <span className="text-3xl font-bold">--</span>
-            <span className="text-sm text-muted-foreground">No data</span>
-          </div>
-        );
-      case 'text':
-        return (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            <Type className="w-8 h-8" />
-            <span className="ml-2">Text Content</span>
-          </div>
-        );
-      default:
-        return null;
+    // Check if widget has data configuration
+    const hasDataConfig = widget.dataConfig && 
+                           widget.dataConfig.dataSource && 
+                           widget.dataConfig.dataSource.fields.length > 0;
+
+    // If configured, use WidgetDataRenderer
+    if (hasDataConfig) {
+      return <WidgetDataRenderer widget={widget} deviceId={deviceId} />;
     }
+
+    // Show configuration placeholder
+    if (!widget.dataConfig || !widget.dataConfig.dataSource || widget.dataConfig.dataSource.fields.length === 0) {
+      switch (widget.type) {
+        case 'chart':
+          return (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <LineChart className="w-12 h-12" />
+              <span className="text-sm mt-2">Configure data source</span>
+            </div>
+          );
+        case 'table':
+          return (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <Table className="w-12 h-12" />
+              <span className="text-sm mt-2">Configure data source</span>
+            </div>
+          );
+        case 'map':
+          return (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground bg-muted/50 rounded">
+              <Map className="w-12 h-12" />
+              <span className="text-sm mt-2">Configure data source</span>
+            </div>
+          );
+        case 'video':
+          return (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground bg-black/80 rounded">
+              <Video className="w-12 h-12 text-white" />
+              <span className="text-sm mt-2 text-white">Configure video source</span>
+            </div>
+          );
+        case 'gauge':
+          return (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <Gauge className="w-16 h-16" />
+              <span className="text-sm mt-2">Configure data source</span>
+            </div>
+          );
+        case 'kpi':
+          return (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <TrendingUp className="w-12 h-12" />
+              <span className="text-sm mt-2">Configure data source</span>
+            </div>
+          );
+        case 'text':
+          return (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <Type className="w-8 h-8" />
+              <span className="text-sm mt-2">Add text content</span>
+            </div>
+          );
+        default:
+          return null;
+      }
+    }
+
+    // Fallback - should never reach here
+    return null;
   };
 
   return (

@@ -6,14 +6,15 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useDashboardStore } from '@/lib/stores/dashboard-store';
 import { getWidgetDefinition } from '@/lib/stores/widget-registry';
 import { DashboardGrid } from '@/components/dashboard/dashboard-grid';
 import { WidgetLibrarySidebar } from '@/components/dashboard/builder/widget-library-sidebar';
 import { DashboardToolbar } from '@/components/dashboard/builder/dashboard-toolbar';
-import type { WidgetType, LayoutItem } from '@/lib/types/dashboard';
+import { WidgetConfigDialog } from '@/components/dashboard/builder/widget-config-dialog';
+import type { WidgetType, LayoutItem, Widget } from '@/lib/types/dashboard';
 
 export default function DashboardEditPage() {
   const router = useRouter();
@@ -25,9 +26,13 @@ export default function DashboardEditPage() {
     setCurrentDashboard,
     updateDashboard,
     addWidget,
+    updateWidget,
     deleteWidget,
     updateLayout,
   } = useDashboardStore();
+  
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [configureWidgetId, setConfigureWidgetId] = useState<string | null>(null);
   
   const dashboard = getDashboard(dashboardId);
   
@@ -44,7 +49,7 @@ export default function DashboardEditPage() {
     if (!widgetDef) return;
     
     // Find the next available position
-    const maxY = dashboard.layout.reduce(
+    const maxY = (dashboard.layout || []).reduce(
       (max, item) => Math.max(max, item.y + item.h),
       0
     );
@@ -58,6 +63,8 @@ export default function DashboardEditPage() {
       minH: widgetDef.minSize?.h,
     };
     
+    // TODO: Get userId from auth context when available
+    const userId = 'demo-user';
     addWidget(
       dashboard.id,
       {
@@ -66,23 +73,42 @@ export default function DashboardEditPage() {
         description: widgetDef.description,
         config: {},
       },
-      layoutItem
+      layoutItem,
+      userId
     );
   };
   
+  const handleConfigureWidget = (widgetId: string) => {
+    setConfigureWidgetId(widgetId);
+    setConfigDialogOpen(true);
+  };
+
+  const handleSaveConfiguration = (widgetId: string, updates: Partial<Widget>) => {
+    if (!dashboard) return;
+    // TODO: Get userId from auth context when available
+    const userId = 'demo-user';
+    updateWidget(dashboard.id, widgetId, updates, userId);
+  };
+
   const handleDeleteWidget = (widgetId: string) => {
     if (!dashboard) return;
-    deleteWidget(dashboard.id, widgetId);
+    // TODO: Get userId from auth context when available
+    const userId = 'demo-user';
+    deleteWidget(dashboard.id, widgetId, userId);
   };
   
   const handleLayoutChange = (newLayout: LayoutItem[]) => {
     if (!dashboard) return;
-    updateLayout(dashboard.id, newLayout);
+    // TODO: Get userId from auth context when available
+    const userId = 'demo-user';
+    updateLayout(dashboard.id, newLayout, userId);
   };
   
   const handleNameChange = (name: string) => {
     if (!dashboard) return;
-    updateDashboard(dashboard.id, { name });
+    // TODO: Get userId from auth context when available
+    const userId = 'demo-user';
+    updateDashboard(dashboard.id, { name }, userId);
   };
   
   const handleSave = () => {
@@ -123,10 +149,21 @@ export default function DashboardEditPage() {
             dashboard={dashboard}
             isEditMode={true}
             onLayoutChange={handleLayoutChange}
+            onConfigureWidget={handleConfigureWidget}
             onDeleteWidget={handleDeleteWidget}
           />
         </div>
       </div>
+
+      {/* Widget Configuration Panel */}
+      {configureWidgetId && (
+        <WidgetConfigDialog
+          widget={dashboard.widgets.find(w => w.id === configureWidgetId) || null}
+          open={configDialogOpen}
+          onOpenChange={setConfigDialogOpen}
+          onSave={handleSaveConfiguration}
+        />
+      )}
     </div>
   );
 }

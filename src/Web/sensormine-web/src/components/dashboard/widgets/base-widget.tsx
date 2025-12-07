@@ -55,8 +55,8 @@ export function BaseWidget({
   className,
 }: BaseWidgetProps) {
   return (
-    <Card className={`h-full flex flex-col ${className || ''}`}>
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+    <Card className={`h-full flex flex-col overflow-hidden ${className || ''}`}>
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 pt-3 bg-muted/30 border-b shrink-0">
         <div className="flex-1 min-w-0">
           <CardTitle className="text-base font-medium truncate">{title}</CardTitle>
           {description && (
@@ -110,7 +110,7 @@ export function BaseWidget({
         )}
       </CardHeader>
       
-      <CardContent className="flex-1 flex flex-col pt-0">
+      <CardContent className="flex-1 flex flex-col overflow-hidden p-4">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
             <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -123,7 +123,7 @@ export function BaseWidget({
             </div>
           </div>
         ) : (
-          <div className="flex-1 min-h-0">{children}</div>
+          <div className="flex-1 min-h-0 overflow-auto">{children}</div>
         )}
       </CardContent>
     </Card>

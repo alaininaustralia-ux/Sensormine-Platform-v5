@@ -13,7 +13,7 @@ import { WidgetFactory } from './widgets/widget-factory';
 
 export interface DashboardGridProps {
   /** Dashboard configuration */
-  dashboard: Dashboard;
+  dashboard: Dashboard | null;
   /** Whether the dashboard is in edit mode */
   isEditMode?: boolean;
   /** Callback when layout changes (drag/resize) */
@@ -62,7 +62,7 @@ export function DashboardGrid({
     onLayoutChange(updatedLayout);
   };
   
-  if (dashboard.widgets.length === 0) {
+  if (!dashboard || !dashboard.widgets || dashboard.widgets.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
         <p className="text-lg font-medium">No widgets yet</p>
@@ -97,6 +97,7 @@ export function DashboardGrid({
             )}
             <WidgetFactory
               widget={widget}
+              dashboardId={dashboard.id}
               isEditMode={isEditMode}
               onConfigure={onConfigureWidget}
               onDelete={onDeleteWidget}

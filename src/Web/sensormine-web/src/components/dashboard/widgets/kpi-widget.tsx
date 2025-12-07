@@ -217,7 +217,7 @@ export function KPIWidget({
   
   return (
     <BaseWidget {...baseProps}>
-      <div className="flex flex-col justify-center h-full space-y-2 p-4" role="region" aria-label={baseProps.title}>
+      <div className="flex flex-col justify-center h-full space-y-2" role="region" aria-label={baseProps.title}>
         {/* Loading indicator */}
         {isRefreshing && (
           <div data-testid="loading-indicator" className="absolute top-2 right-2">

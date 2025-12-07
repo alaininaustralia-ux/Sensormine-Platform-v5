@@ -41,7 +41,7 @@ export interface WidgetDataConfig {
 interface WidgetDataConfigProps {
   config: WidgetDataConfig;
   onChange: (config: WidgetDataConfig) => void;
-  widgetType: 'chart' | 'gauge' | 'kpi' | 'table' | 'map' | 'video';
+  widgetType: 'chart' | 'gauge' | 'kpi' | 'table' | 'map' | 'video' | 'device-list';
 }
 
 export function WidgetDataConfig({ config, onChange, widgetType }: WidgetDataConfigProps) {

@@ -6,23 +6,31 @@
 
 'use client';
 
+import { useEffect } from 'react';
 import { useDashboardStore } from '@/lib/stores/dashboard-store';
 import { usePreferencesStore } from '@/lib/stores/preferences-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2, LayoutDashboard, Star } from 'lucide-react';
+import { Plus, Edit, Trash2, LayoutDashboard, Star, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 export default function DashboardListPage() {
   const router = useRouter();
-  const { dashboards, deleteDashboard, setCurrentDashboard } = useDashboardStore();
+  const { dashboards, deleteDashboard, setCurrentDashboard, loadFromServer, isLoading } = useDashboardStore();
   const { 
     isFavoriteDashboard, 
     addFavoriteDashboard, 
     removeFavoriteDashboard
   } = usePreferencesStore();
+  
+  // Load dashboards from server on mount
+  useEffect(() => {
+    // TODO: Get userId from auth context when available
+    const userId = 'demo-user';
+    loadFromServer(userId);
+  }, [loadFromServer]);
   
   // Filter out templates
   const userDashboards = dashboards.filter(d => !d.isTemplate);
@@ -56,7 +64,9 @@ export default function DashboardListPage() {
   
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this dashboard?')) {
-      deleteDashboard(id);
+      // TODO: Get userId from auth context when available
+      const userId = 'demo-user';
+      deleteDashboard(id, userId);
     }
   };
   
@@ -76,7 +86,14 @@ export default function DashboardListPage() {
         </Button>
       </div>
       
-      {userDashboards.length === 0 ? (
+      {isLoading ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="h-12 w-12 text-muted-foreground mb-4 animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading dashboards...</p>
+          </CardContent>
+        </Card>
+      ) : userDashboards.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <LayoutDashboard className="h-12 w-12 text-muted-foreground mb-4" />

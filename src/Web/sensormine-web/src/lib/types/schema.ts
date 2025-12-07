@@ -17,7 +17,7 @@ export interface Schema {
   createdAt: string;
   updatedAt?: string;
   deletedAt?: string;
-  currentVersion?: SchemaVersion;
+  currentVersion?: SchemaVersion; // Includes jsonSchema for field parsing
   versions?: SchemaVersion[];
   // Backend fields
   createdBy?: string;

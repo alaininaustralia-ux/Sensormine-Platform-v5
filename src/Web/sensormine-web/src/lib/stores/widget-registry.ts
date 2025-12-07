@@ -71,6 +71,16 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'monitoring',
     available: true,
   },
+  {
+    type: 'device-list',
+    name: 'Device List',
+    description: 'List of devices with drill-down navigation',
+    icon: 'List',
+    defaultSize: { w: 6, h: 4 },
+    minSize: { w: 4, h: 3 },
+    category: 'monitoring',
+    available: true,
+  },
 ];
 
 /**

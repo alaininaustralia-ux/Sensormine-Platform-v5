@@ -17,9 +17,21 @@ import {
   GripVertical,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { WIDGET_LIBRARY } from '@/lib/dashboard/widget-library';
+import { WIDGET_REGISTRY } from '@/lib/stores/widget-registry';
 import type { WidgetLibraryItem, WidgetDragData } from '@/lib/dashboard/types';
 import { cn } from '@/lib/utils';
+
+// Convert WidgetDefinition to WidgetLibraryItem for compatibility
+const WIDGET_LIBRARY: WidgetLibraryItem[] = WIDGET_REGISTRY
+  .filter(w => w.available)
+  .map(w => ({
+    type: w.type,
+    name: w.name,
+    description: w.description,
+    icon: w.icon,
+    defaultConfig: { type: w.type, config: {} },
+    defaultSize: { width: w.defaultSize.w, height: w.defaultSize.h },
+  }));
 
 // Icon mapping
 const iconMap: Record<string, React.ElementType> = {

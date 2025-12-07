@@ -174,6 +174,8 @@ export const useDashboardStore = create<DashboardState>()(
         const localDashboard: Dashboard = {
           id: tempId,
           ...dashboardData,
+          layout: dashboardData.layout || [],
+          widgets: dashboardData.widgets || [],
           createdBy: userId,
           createdAt: now,
           updatedAt: now,
@@ -189,11 +191,14 @@ export const useDashboardStore = create<DashboardState>()(
           const dto = await dashboardApi.create(request, userId);
           const serverDashboard = dashboardApi.fromDto(dto);
           
-          // Replace local version with server version
+          // Replace local version with server version (including currentDashboard if it matches)
           set((state) => ({
             dashboards: state.dashboards.map(d => 
               d.id === tempId ? serverDashboard : d
             ),
+            currentDashboard: state.currentDashboard?.id === tempId 
+              ? serverDashboard 
+              : state.currentDashboard,
           }));
           
           return serverDashboard;
@@ -301,8 +306,8 @@ export const useDashboardStore = create<DashboardState>()(
             d.id === dashboardId
               ? {
                   ...d,
-                  widgets: [...d.widgets, newWidget],
-                  layout: [...d.layout, newLayoutItem],
+                  widgets: [...(d.widgets || []), newWidget],
+                  layout: [...(d.layout || []), newLayoutItem],
                   updatedAt: now,
                 }
               : d
@@ -311,8 +316,8 @@ export const useDashboardStore = create<DashboardState>()(
             state.currentDashboard?.id === dashboardId
               ? {
                   ...state.currentDashboard,
-                  widgets: [...state.currentDashboard.widgets, newWidget],
-                  layout: [...state.currentDashboard.layout, newLayoutItem],
+                  widgets: [...(state.currentDashboard.widgets || []), newWidget],
+                  layout: [...(state.currentDashboard.layout || []), newLayoutItem],
                   updatedAt: now,
                 }
               : state.currentDashboard,
@@ -344,7 +349,7 @@ export const useDashboardStore = create<DashboardState>()(
             d.id === dashboardId
               ? {
                   ...d,
-                  widgets: d.widgets.map(w =>
+                  widgets: (d.widgets || []).map(w =>
                     w.id === widgetId
                       ? { ...w, ...updates, updatedAt: now }
                       : w
@@ -357,7 +362,7 @@ export const useDashboardStore = create<DashboardState>()(
             state.currentDashboard?.id === dashboardId
               ? {
                   ...state.currentDashboard,
-                  widgets: state.currentDashboard.widgets.map(w =>
+                  widgets: (state.currentDashboard.widgets || []).map(w =>
                     w.id === widgetId
                       ? { ...w, ...updates, updatedAt: now }
                       : w
@@ -391,8 +396,8 @@ export const useDashboardStore = create<DashboardState>()(
             d.id === dashboardId
               ? {
                   ...d,
-                  widgets: d.widgets.filter(w => w.id !== widgetId),
-                  layout: d.layout.filter(l => l.i !== widgetId),
+                  widgets: (d.widgets || []).filter(w => w.id !== widgetId),
+                  layout: (d.layout || []).filter(l => l.i !== widgetId),
                   updatedAt: now,
                 }
               : d
@@ -401,8 +406,8 @@ export const useDashboardStore = create<DashboardState>()(
             state.currentDashboard?.id === dashboardId
               ? {
                   ...state.currentDashboard,
-                  widgets: state.currentDashboard.widgets.filter(w => w.id !== widgetId),
-                  layout: state.currentDashboard.layout.filter(l => l.i !== widgetId),
+                  widgets: (state.currentDashboard.widgets || []).filter(w => w.id !== widgetId),
+                  layout: (state.currentDashboard.layout || []).filter(l => l.i !== widgetId),
                   updatedAt: now,
                 }
               : state.currentDashboard,
@@ -481,6 +486,8 @@ export const useDashboardStore = create<DashboardState>()(
           widgets: newWidgets,
           isTemplate: false,
           tags: template.tags,
+          displayOrder: 0,
+          dashboardType: 0, // DashboardType.Root
         };
         
         // Use createDashboard to handle API sync
@@ -518,6 +525,8 @@ export const useDashboardStore = create<DashboardState>()(
           widgets: newWidgets,
           isTemplate: false,
           tags: dashboard.tags,
+          displayOrder: 0,
+          dashboardType: 0, // DashboardType.Root
         };
         
         // Use createDashboard to handle API sync

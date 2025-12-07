@@ -13,11 +13,14 @@ import { TableWidget } from './table-widget';
 import { ChartWidget } from './chart-widget';
 import { MapWidget } from './map-widget';
 import { VideoWidget } from './video-widget';
+import { DeviceListWidget } from './device-list-widget';
 import type { BaseWidgetProps } from './base-widget';
 
 export interface WidgetFactoryProps {
   /** Widget configuration */
   widget: Widget;
+  /** Dashboard ID (required for device-list navigation) */
+  dashboardId?: string;
   /** Whether the widget is in edit mode */
   isEditMode?: boolean;
   /** Callback when configure is clicked */
@@ -78,10 +81,19 @@ const mockDataGenerators = {
   video: () => ({
     onRefresh: async () => {},
   }),
+  'device-list': () => ({
+    config: {
+      showStatusFilter: true,
+      showTypeFilter: true,
+      maxDevices: 50,
+    },
+    dashboardId: 'mock-dashboard-id',
+  }),
 };
 
 export function WidgetFactory({
   widget,
+  dashboardId,
   isEditMode = false,
   onConfigure,
   onDelete,
@@ -117,6 +129,17 @@ export function WidgetFactory({
     
     case 'video':
       return <VideoWidget {...baseProps} />;
+    
+    case 'device-list': {
+      const deviceListConfig = widget.config.deviceList || mockDataGenerators['device-list']().config;
+      return (
+        <DeviceListWidget
+          {...baseProps}
+          config={deviceListConfig}
+          dashboardId={dashboardId || 'unknown'}
+        />
+      );
+    }
     
     default:
       return (

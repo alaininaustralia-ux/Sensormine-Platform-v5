@@ -15,6 +15,7 @@ import type {
   WidgetStyling,
   DashboardLayoutType,
 } from './types';
+import { DashboardType } from './types';
 import { getWidgetByType, GRID_CONFIG } from './widget-library';
 
 interface DashboardStore extends DashboardBuilderState {
@@ -53,6 +54,11 @@ interface DashboardStore extends DashboardBuilderState {
   setSharing: (isShared: boolean, sharedWith?: string[]) => void;
   addTag: (tag: string) => void;
   removeTag: (tag: string) => void;
+  
+  // Dashboard hierarchy
+  setParentDashboard: (parentDashboardId: string | null) => void;
+  setDisplayOrder: (displayOrder: number) => void;
+  setDashboardType: (dashboardType: number) => void;
 }
 
 /**
@@ -69,6 +75,8 @@ function createEmptyDashboard(name: string, layoutType: DashboardLayoutType = 'g
     createdBy,
     isShared: false,
     tags: [],
+    displayOrder: 0,
+    dashboardType: 0, // DashboardType.Root
   };
 }
 
@@ -420,6 +428,36 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     const tags = dashboard.tags || [];
     set({
       dashboard: { ...dashboard, tags: tags.filter((t) => t !== tag), updatedAt: new Date().toISOString() },
+      isDirty: true,
+    });
+  },
+
+  setParentDashboard: (parentDashboardId) => {
+    const { dashboard } = get();
+    if (!dashboard) return;
+
+    set({
+      dashboard: { ...dashboard, parentDashboardId: parentDashboardId || undefined, updatedAt: new Date().toISOString() },
+      isDirty: true,
+    });
+  },
+
+  setDisplayOrder: (displayOrder) => {
+    const { dashboard } = get();
+    if (!dashboard) return;
+
+    set({
+      dashboard: { ...dashboard, displayOrder, updatedAt: new Date().toISOString() },
+      isDirty: true,
+    });
+  },
+
+  setDashboardType: (dashboardType) => {
+    const { dashboard } = get();
+    if (!dashboard) return;
+
+    set({
+      dashboard: { ...dashboard, dashboardType, updatedAt: new Date().toISOString() },
       isDirty: true,
     });
   },

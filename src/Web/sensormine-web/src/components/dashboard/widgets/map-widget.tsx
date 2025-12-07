@@ -8,6 +8,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { BaseWidget, type BaseWidgetProps } from './base-widget';
 import { mockDeviceLocations, mockGeofences } from '@/lib/mock/device-locations';
 import type { DeviceLocation, DeviceStatus, DeviceType, Geofence, MapWidgetConfig } from '@/lib/types/map';
@@ -40,11 +41,6 @@ const Circle = dynamic(
   { ssr: false }
 );
 
-const LayersControl = dynamic(
-  () => import('react-leaflet').then((mod) => mod.LayersControl),
-  { ssr: false }
-) as any; // TypeScript workaround for dynamic import with subcomponents
-
 const MarkerClusterGroup = dynamic(
   () => import('react-leaflet-cluster'),
   { ssr: false }
@@ -52,10 +48,13 @@ const MarkerClusterGroup = dynamic(
 
 // Import Leaflet CSS
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 
-// Fix for default marker icons in Next.js
+// Dynamically import Leaflet to avoid SSR issues
+let L: any;
 if (typeof window !== 'undefined') {
+  L = require('leaflet');
+  
+  // Fix for default marker icons in Next.js
   delete (L.Icon.Default.prototype as any)._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -67,7 +66,9 @@ if (typeof window !== 'undefined') {
 /**
  * Create custom colored marker icon based on status
  */
-function createCustomIcon(status: DeviceStatus): L.DivIcon {
+function createCustomIcon(status: DeviceStatus): any {
+  if (typeof window === 'undefined' || !L) return null;
+  
   const colors = {
     online: '#10b981', // green
     warning: '#f59e0b', // yellow/orange
@@ -95,9 +96,17 @@ function createCustomIcon(status: DeviceStatus): L.DivIcon {
 }
 
 /**
- * Device popup content component
+ * Device popup content component with drill-down actions
  */
-function DevicePopupContent({ device }: { device: DeviceLocation }) {
+function DevicePopupContent({ 
+  device, 
+  onViewDetails, 
+  onViewDashboard 
+}: { 
+  device: DeviceLocation;
+  onViewDetails?: (deviceId: string) => void;
+  onViewDashboard?: (deviceId: string) => void;
+}) {
   const statusColors = {
     online: 'text-green-600',
     warning: 'text-yellow-600',
@@ -151,6 +160,28 @@ function DevicePopupContent({ device }: { device: DeviceLocation }) {
           <span>{new Date(device.lastSeen).toLocaleTimeString()}</span>
         </div>
       </div>
+      
+      {/* Action buttons */}
+      {(onViewDetails || onViewDashboard) && (
+        <div className="flex gap-2 mt-3 pt-2 border-t">
+          {onViewDetails && (
+            <button
+              onClick={() => onViewDetails(device.id)}
+              className="flex-1 px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+            >
+              View Details
+            </button>
+          )}
+          {onViewDashboard && (
+            <button
+              onClick={() => onViewDashboard(device.id)}
+              className="flex-1 px-3 py-1.5 text-xs font-medium bg-secondary text-secondary-foreground rounded hover:bg-secondary/90 transition-colors"
+            >
+              Dashboard
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -175,11 +206,16 @@ function useMapBounds(devices: DeviceLocation[], autoFit: boolean) {
 export interface MapWidgetProps extends Omit<BaseWidgetProps, 'children'> {
   /** Map widget configuration */
   config?: MapWidgetConfig;
+  /** Optional device click handler for drill-down */
+  onDeviceClick?: (deviceId: string) => void;
+  /** Optional dashboard view handler */
+  onViewDashboard?: (deviceId: string) => void;
 }
 
 export function MapWidget(baseProps: MapWidgetProps) {
-  const { config = {} } = baseProps;
+  const { config = {}, onDeviceClick, onViewDashboard } = baseProps;
   const [isMounted, setIsMounted] = useState(false);
+  const router = useRouter();
 
   // Default configuration
   const {
@@ -211,6 +247,24 @@ export function MapWidget(baseProps: MapWidgetProps) {
 
   const bounds = useMapBounds(filteredDevices, autoFitBounds);
 
+  // Drill-down handlers
+  const handleViewDetails = (deviceId: string) => {
+    if (onDeviceClick) {
+      onDeviceClick(deviceId);
+    } else {
+      router.push(`/devices/${deviceId}`);
+    }
+  };
+
+  const handleViewDashboard = (deviceId: string) => {
+    if (onViewDashboard) {
+      onViewDashboard(deviceId);
+    } else {
+      // Navigate to device detail dashboard if available, or device details page
+      router.push(`/devices/${deviceId}/dashboard`);
+    }
+  };
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -239,98 +293,68 @@ export function MapWidget(baseProps: MapWidgetProps) {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          <LayersControl position="topright">
-            {/* Device Markers Layer */}
-            <LayersControl.Overlay checked name="Devices">
-              <>
-                {enableClustering ? (
-                  <MarkerClusterGroup>
-                    {filteredDevices.map((device) => (
-                      <Marker
-                        key={device.id}
-                        position={[device.latitude, device.longitude]}
-                        icon={createCustomIcon(device.status)}
-                      >
-                        <Popup>
-                          <DevicePopupContent device={device} />
-                        </Popup>
-                      </Marker>
-                    ))}
-                  </MarkerClusterGroup>
-                ) : (
-                  <>
-                    {filteredDevices.map((device) => (
-                      <Marker
-                        key={device.id}
-                        position={[device.latitude, device.longitude]}
-                        icon={createCustomIcon(device.status)}
-                      >
-                        <Popup>
-                          <DevicePopupContent device={device} />
-                        </Popup>
-                      </Marker>
-                    ))}
-                  </>
-                )}
-              </>
-            </LayersControl.Overlay>
+          {/* Device Markers */}
+          {enableClustering ? (
+            <MarkerClusterGroup>
+              {filteredDevices.map((device) => (
+                <Marker
+                  key={device.id}
+                  position={[device.latitude, device.longitude]}
+                  icon={createCustomIcon(device.status)}
+                >
+                  <Popup>
+                    <DevicePopupContent 
+                      device={device}
+                      onViewDetails={handleViewDetails}
+                      onViewDashboard={handleViewDashboard}
+                    />
+                  </Popup>
+                </Marker>
+              ))}
+            </MarkerClusterGroup>
+          ) : (
+            <>
+              {filteredDevices.map((device) => (
+                <Marker
+                  key={device.id}
+                  position={[device.latitude, device.longitude]}
+                  icon={createCustomIcon(device.status)}
+                >
+                  <Popup>
+                    <DevicePopupContent 
+                      device={device}
+                      onViewDetails={handleViewDetails}
+                      onViewDashboard={handleViewDashboard}
+                    />
+                  </Popup>
+                </Marker>
+              ))}
+            </>
+          )}
 
-            {/* Geofences Layer */}
-            {showGeofences && (
-              <LayersControl.Overlay checked name="Geofences">
-                <>
-                  {geofences.map((geofence) => (
-                    <Circle
-                      key={geofence.id}
-                      center={geofence.center as [number, number]}
-                      radius={geofence.radius}
-                      pathOptions={{
-                        color: geofence.color || '#3b82f6',
-                        fillColor: geofence.color || '#3b82f6',
-                        fillOpacity: 0.1,
-                        weight: 2,
-                      }}
-                    >
-                      <Popup>
-                        <div className="p-2">
-                          <h3 className="font-semibold">{geofence.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Radius: {(geofence.radius / 1000).toFixed(1)} km
-                          </p>
-                        </div>
-                      </Popup>
-                    </Circle>
-                  ))}
-                </>
-              </LayersControl.Overlay>
-            )}
-
-            {/* Device Type Layers */}
-            {(['sensor', 'camera', 'gateway', 'controller', 'actuator'] as DeviceType[]).map(
-              (type) => {
-                const typeDevices = filteredDevices.filter((d) => d.deviceType === type);
-                if (typeDevices.length === 0) return null;
-
-                return (
-                  <LayersControl.Overlay key={type} name={`${type}s (${typeDevices.length})`}>
-                    <>
-                      {typeDevices.map((device) => (
-                        <Marker
-                          key={`${type}-${device.id}`}
-                          position={[device.latitude, device.longitude]}
-                          icon={createCustomIcon(device.status)}
-                        >
-                          <Popup>
-                            <DevicePopupContent device={device} />
-                          </Popup>
-                        </Marker>
-                      ))}
-                    </>
-                  </LayersControl.Overlay>
-                );
-              }
-            )}
-          </LayersControl>
+          {/* Geofences */}
+          {showGeofences && geofences.map((geofence) => (
+            <Circle
+              key={geofence.id}
+              center={geofence.center as [number, number]}
+              radius={geofence.radius}
+              pathOptions={{
+                color: geofence.color || '#3b82f6',
+                fillColor: geofence.color || '#3b82f6',
+                fillOpacity: 0.1,
+                weight: 2,
+              }}
+            >
+              <Popup>
+                <div className="p-2">
+                  <h3 className="font-semibold">{geofence.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Radius: {(geofence.radius / 1000).toFixed(1)} km
+                  </p>
+                </div>
+              </Popup>
+            </Circle>
+          ))}
         </MapContainer>
 
         {/* Device count badge */}

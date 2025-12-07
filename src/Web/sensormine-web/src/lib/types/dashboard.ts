@@ -14,7 +14,8 @@ export type WidgetType =
   | 'map' 
   | 'video' 
   | 'gauge' 
-  | 'kpi';
+  | 'kpi'
+  | 'device-list';
 
 /**
  * Grid layout item (compatible with react-grid-layout)
@@ -47,11 +48,31 @@ export interface LayoutItem {
 }
 
 /**
+ * Data source configuration for widgets
+ */
+export interface DataSourceConfig {
+  type: 'realtime' | 'historical' | 'aggregated';
+  fields: Array<{
+    deviceTypeId: string;
+    deviceTypeName: string;
+    fieldPath: string;
+    fieldName: string;
+    fieldType: string;
+  }>;
+  aggregation?: 'avg' | 'sum' | 'min' | 'max' | 'count';
+  timeRange?: {
+    value: number;
+    unit: 'minutes' | 'hours' | 'days' | 'weeks';
+  };
+  refreshInterval?: number;
+}
+
+/**
  * Widget configuration - extensible for different widget types
  */
 export interface WidgetConfig {
-  /** Data source identifier (device ID, metric name, etc.) */
-  dataSource?: string;
+  /** Data source configuration */
+  dataSource?: DataSourceConfig;
   /** Filter criteria */
   filters?: Record<string, unknown>;
   /** Visual styling options */
@@ -88,6 +109,28 @@ export interface Widget {
 }
 
 /**
+ * Dashboard type enum matching backend
+ */
+export enum DashboardType {
+  Root = 0,
+  DeviceDetail = 1,
+  DeviceTypeList = 2,
+  Custom = 3,
+}
+
+/**
+ * Summary info for subpages
+ */
+export interface SubPageSummary {
+  id: string;
+  name: string;
+  description?: string;
+  dashboardType: DashboardType;
+  displayOrder: number;
+  widgetCount: number;
+}
+
+/**
  * Complete dashboard definition
  */
 export interface Dashboard {
@@ -115,6 +158,16 @@ export interface Dashboard {
   sharedWith?: string[];
   /** Dashboard tags for organization */
   tags?: string[];
+  /** Parent dashboard ID for hierarchy */
+  parentDashboardId?: string;
+  /** Parent dashboard name */
+  parentDashboardName?: string;
+  /** Child dashboards/subpages */
+  subPages?: SubPageSummary[];
+  /** Display order within parent */
+  displayOrder: number;
+  /** Dashboard type */
+  dashboardType: DashboardType;
 }
 
 /**

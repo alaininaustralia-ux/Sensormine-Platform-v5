@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDashboardStore } from '@/lib/dashboard/store';
-import type { DashboardWidget, WidgetConfig } from '@/lib/dashboard/types';
+import type { DashboardWidget, WidgetConfig, WidgetDataConfig as WidgetDataConfigType } from '@/lib/dashboard/types';
+import { WidgetDataConfig } from './builder/widget-data-config';
 import { cn } from '@/lib/utils';
 
 interface WidgetConfigPanelProps {
@@ -48,6 +49,10 @@ export function WidgetConfigPanel({ className }: WidgetConfigPanelProps) {
     selectWidget(null);
   };
 
+  const handleDataConfigChange = (dataConfig: WidgetDataConfigType) => {
+    updateWidget(selectedWidget.id, { dataConfig });
+  };
+
   return (
     <Card className={cn('h-full overflow-hidden', className)}>
       <CardHeader className="py-4 flex flex-row items-start justify-between">
@@ -73,6 +78,24 @@ export function WidgetConfigPanel({ className }: WidgetConfigPanelProps) {
             />
           </div>
         </div>
+
+        {/* Data Configuration */}
+        {['chart', 'gauge', 'kpi', 'table', 'map'].includes(selectedWidget.type) && (
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium">Data Configuration</h4>
+            <WidgetDataConfig
+              config={selectedWidget.dataConfig || {
+                dataSource: {
+                  type: 'realtime',
+                  fields: [],
+                  refreshInterval: 5,
+                },
+              }}
+              onChange={handleDataConfigChange}
+              widgetType={selectedWidget.type as 'chart' | 'gauge' | 'kpi' | 'table' | 'map' | 'video'}
+            />
+          </div>
+        )}
 
         {/* Type-specific configuration */}
         <WidgetTypeConfig widget={selectedWidget} onConfigChange={updateWidgetConfig} />
