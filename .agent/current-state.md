@@ -1,10 +1,10 @@
 # Sensormine Platform v5 - Current State
 
-**Last Updated**: 2025-12-07 (Dashboard Backend Integration Complete)  
-**Current Sprint**: Dashboard Persistence & Multi-Tenant Support  
-**Active Story**: Dashboard.API - Database Backend Implementation  
-**Build Status**: ✅ All services built successfully, Dashboard.API fully implemented  
-**Architecture**: 🎯 Device Type-Centric + Dashboard Database Persistence + Multi-Tenant Isolation
+**Last Updated**: 2025-12-07 (MAUI Mobile App Requirements Added)  
+**Current Sprint**: Dashboard Persistence & Multi-Tenant Support + Mobile App Foundation  
+**Active Story**: .NET MAUI Mobile App - Foundation & Requirements Complete  
+**Build Status**: ✅ All services built successfully, Dashboard.API fully implemented, MAUI foundation created  
+**Architecture**: 🎯 Device Type-Centric + Dashboard Database Persistence + Multi-Tenant Isolation + Mobile MAUI with NFC
 
 ---
 
@@ -29,7 +29,8 @@ src/
 │   │   │   └── lib/       # API client, auth, utilities
 │   │   ├── __tests__/     # Vitest unit tests
 │   │   └── package.json
-│   └── Sensormine.Mobile/ # Mobile app (React Native/Flutter) - TODO
+│   ├── device-simulator/  # Device simulator for testing (Next.js + React)
+│   └── Sensormine.Mobile.Maui/ # ✅ Mobile app (.NET MAUI) - Foundation created
 │
 ├── Services/              # 11 Microservices (Backend - Foundation Ready)
 │   ├── ApiGateway/        # Entry point, rate limiting, auth
@@ -99,7 +100,127 @@ src/
   - Story 1.5: Alert Rule Templates for Device Type
 - **Epic 2 (UPDATED)**: Device Registration & Management
 
-### 🚀 Latest Session (Dec 6, 2025 - Evening)
+### 📱 MAUI Mobile App Foundation (Dec 7, 2025 - Latest)
+
+**Achievement:** Comprehensive .NET MAUI mobile application requirements and project foundation created.
+
+**What Was Added:**
+
+**Documentation (5 files updated/created):**
+1. ✅ **`docs/mobile-maui-requirements.md`** (22KB) - Complete MAUI mobile app requirements
+   - 6 new Epics (14-19) with 15 user stories (162 story points)
+   - Epic 14: Device Discovery & NFC Operations (2 stories, 26 points)
+   - Epic 15: Configuration & Provisioning (4 stories, 37 points)
+   - Epic 16: Custom Fields & Metadata (2 stories, 21 points)
+   - Epic 17: Device Lifecycle Management (3 stories, 26 points)
+   - Epic 18: Offline-First & Sync (2 stories, 21 points)
+   - Epic 19: Security & Audit (2 stories, 21 points)
+   - Complete NFC-based device configuration workflows
+   - Offline-first architecture design
+   - Technology stack (.NET MAUI, C# 12, SQLite, MSAL, Refit, Polly)
+   - Project structure and architecture diagrams
+   - Security, testing, and deployment strategy
+   - 8-month roadmap with 4 phases
+
+2. ✅ **`docs/user-stories.md`** - Added Epics 14-19
+   - Total stories increased from 122 to 138
+   - Total story points increased from ~1,520 to ~1,682
+   - Added MAUI overview section with technology rationale
+
+3. ✅ **`docs/architecture.md`** - Added Layer 6: Mobile Application Layer
+   - NFC module architecture (iOS CoreNFC, Android NFC API)
+   - Offline storage module (SQLite with EF Core)
+   - Sync service architecture (background sync, retry logic, conflict resolution)
+   - Configuration management (JSON schema validation, templates)
+   - Location services (GPS, maps, geocoding)
+   - Security module (MSAL, biometric auth, secure storage)
+   - Complete mobile app architecture diagram
+
+4. ✅ **`docs/technology-stack.md`** - Replaced generic mobile section with MAUI specifics
+   - .NET MAUI (.NET 8+) selected framework
+   - Rationale for choosing MAUI over React Native/Flutter:
+     - Team expertise (C# skills)
+     - Code sharing with backend
+     - Native performance
+     - Enterprise support from Microsoft
+     - Better NFC integration
+   - Complete technology stack (MVVM, SQLite, MSAL, Refit, Polly, ZXing.Net.Maui)
+   - Platform requirements (iOS 14+, Android 8+)
+
+5. ✅ **`docs/requirements.md`** - Added Section 2.1.4: Mobile App Requirements
+   - 9 core capabilities:
+     1. NFC-based device interaction
+     2. Configuration management
+     3. Location services
+     4. Custom field handling
+     5. Device lifecycle management
+     6. Offline-first architecture
+     7. Security & authentication
+     8. Audit & compliance
+     9. Additional features (QR scanning, photos, diagnostics)
+   - Performance targets (app startup < 3s, NFC scan < 2s, write < 5s)
+   - Platform requirements
+
+**Project Foundation Created:**
+6. ✅ **`src/Web/Sensormine.Mobile.Maui/`** - MAUI project structure
+   - `Sensormine.Mobile.Maui.csproj` - Project file with dependencies
+     - Microsoft.Maui.Controls 8.0.3
+     - CommunityToolkit.Mvvm 8.2.2
+     - sqlite-net-pcl 1.9.172
+     - Microsoft.Identity.Client 4.59.0 (MSAL)
+     - Refit 7.0.0
+     - Polly 8.2.1
+     - ZXing.Net.Maui 0.4.0
+     - Serilog 3.1.1
+   - Complete folder structure:
+     - Views/ (Devices, Diagnostics, Configuration, Settings)
+     - ViewModels/ (matching structure)
+     - Models/ (Device, DeviceType, Location, DiagnosticInfo)
+     - Services/ (Api, Nfc, Data, Location, Configuration)
+     - Platforms/ (Android, iOS)
+     - Resources/ (Images, Fonts, Styles)
+   - `README.md` - Complete MAUI project documentation
+   - `MauiProgram.cs` - Dependency injection and app startup
+   - **Models created:**
+     - `Device.cs` - Device instance model
+     - `DeviceType.cs` - Device type template with custom fields
+     - `Location.cs` - GPS location with DMS conversion
+     - `DiagnosticInfo.cs` - NFC diagnostic data
+
+7. ✅ **`README.md`** - Updated with MAUI build instructions
+   - Added MAUI to project structure
+   - Added mobile app to technology stack table
+   - Build and run instructions for iOS and Android
+   - Links to MAUI documentation
+
+8. ✅ **`.agent/current-state.md`** - Updated with MAUI additions
+   - Updated project structure
+   - Added 6 new mobile epics (14-19) to epic completion table
+   - Total stories: 138 (was 122)
+   - Total story points: ~1,682 (was ~1,520)
+
+**Benefits:**
+- ✅ Native iOS and Android apps from single C# codebase
+- ✅ Leverage existing .NET backend expertise and code sharing
+- ✅ NFC-based device configuration for field technicians
+- ✅ Offline-first architecture for remote locations
+- ✅ Secure authentication with Azure AD / Entra ID
+- ✅ Full audit trail of field actions
+- ✅ Dynamic custom fields based on device types
+- ✅ Location services with maps and geocoding
+- ✅ Background sync with conflict resolution
+
+**Next Steps:**
+- Implement NFC services (platform-specific for iOS and Android)
+- Build API clients using Refit
+- Create database context and repositories
+- Implement ViewModels and Views
+- Add authentication with MSAL
+- Test NFC functionality on physical devices
+
+---
+
+### 🚀 Previous Session (Dec 6, 2025 - Evening)
 
 **Simulation.API Message Logging:**
 - Added `SimulationLogEntry` class to track all published MQTT messages
@@ -1096,12 +1217,12 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 ## Completion Tracking
 
 ### Overall Progress
-- **Total Stories**: 123 (including Story 0.0)
-- **Total Points**: ~1,533
-- **Completed**: 12 (9.8%)
+- **Total Stories**: 138 (was 122, added 15 MAUI mobile stories + Story 0.0)
+- **Total Points**: ~1,682 (was ~1,520, added 162 MAUI story points)
+- **Completed**: 12 (8.7%)
 - **Completed Points**: 136 points
 - **In Progress**: 0
-- **Not Started**: 111
+- **Not Started**: 126 (includes 15 new MAUI stories)
 
 ### Epic Completion
 | Epic | Name | Stories | Completed | % | Priority |
@@ -1110,16 +1231,22 @@ dotnet ef database update --project src/Shared/Sensormine.Storage
 | 2 | Data Ingestion & Modeling | 10 | 2 | 20% | Backend |
 | 3 | Video Processing & AI/ML | 13 | 0 | 0% | Backend |
 | 0 | Frontend Foundation | 1 | 1 | 100% | **✅ Complete** |
-| 4 | Visualization & Dashboards | 10 | 4 | 40% | **🎯 Frontend - In Progress** |
+| 4 | Visualization & Dashboards | 12 | 5 | 42% | **🎯 Frontend - In Progress** |
 | 5 | LLM Interaction & Analytics | 6 | 0 | 0% | Frontend/Backend |
 | 6 | Alerting & Notifications | 12 | 0 | 0% | Backend |
 | 7 | Industrial Connectivity | 10 | 5 | 50% | Backend |
 | 8 | Administration & System Mgmt | 9 | 0 | 0% | Frontend/Backend |
 | 9 | Reporting & Data Export | 8 | 0 | 0% | Frontend/Backend |
-| 10 | Mobile Application | 6 | 0 | 0% | **Mobile - Later** |
+| 10 | Mobile Application (Web/Dashboard) | 6 | 0 | 0% | **Mobile - Later** |
 | 11 | Integration & APIs | 8 | 0 | 0% | Backend |
 | 12 | Billing, Metering & Payments | 12 | 0 | 0% | Frontend/Backend |
-| 13 | Performance & Scalability | 5 | 0 | 0% | Backend
+| 13 | Performance & Scalability | 5 | 0 | 0% | Backend |
+| 14 | **MAUI Mobile - NFC & Discovery** | 2 | 0 | 0% | **📱 NEW - .NET MAUI** |
+| 15 | **MAUI Mobile - Configuration** | 4 | 0 | 0% | **📱 NEW - .NET MAUI** |
+| 16 | **MAUI Mobile - Custom Fields** | 2 | 0 | 0% | **📱 NEW - .NET MAUI** |
+| 17 | **MAUI Mobile - Lifecycle** | 3 | 0 | 0% | **📱 NEW - .NET MAUI** |
+| 18 | **MAUI Mobile - Offline & Sync** | 2 | 0 | 0% | **📱 NEW - .NET MAUI** |
+| 19 | **MAUI Mobile - Security & Audit** | 2 | 0 | 0% | **📱 NEW - .NET MAUI** |
 
 ---
 
