@@ -17,7 +17,8 @@ A cloud-agnostic industrial IoT platform built with C# .NET 8 microservices arch
 
 | Category | Technology |
 |----------|-----------|
-| **Frontend** | React 18 + Next.js 14, shadcn/ui, Tailwind CSS |
+| **Frontend Web** | React 18 + Next.js 14, shadcn/ui, Tailwind CSS |
+| **Mobile App** | .NET MAUI (iOS/Android), NFC support |
 | **Backend Runtime** | .NET 8 (C# 12) |
 | **API Framework** | ASP.NET Core Web API |
 | **Messaging** | Apache Kafka, NATS, MQTT |
@@ -36,6 +37,10 @@ A cloud-agnostic industrial IoT platform built with C# .NET 8 microservices arch
 ```
 Sensormine/
 ├── src/
+│   ├── Web/                   # Frontend Applications
+│   │   ├── sensormine-web/    # React + Next.js web app
+│   │   ├── device-simulator/  # Device simulator for testing
+│   │   └── Sensormine.Mobile.Maui/ # .NET MAUI mobile app (iOS/Android)
 │   ├── Services/              # Microservices
 │   │   ├── Edge.Gateway/      # MQTT/OPC UA gateway
 │   │   ├── Ingestion.Service/ # Data ingestion pipeline
@@ -123,7 +128,34 @@ Sensormine/
    npm run dev
    ```
 
-7. **Access services**
+7. **Build Mobile App** (.NET MAUI - optional, requires MAUI workload)
+   ```bash
+   # Install MAUI workload (one-time)
+   dotnet workload install maui
+   
+   # Navigate to MAUI project
+   cd src/Web/Sensormine.Mobile.Maui
+   
+   # Restore dependencies
+   dotnet restore
+   
+   # Build for Android
+   dotnet build -f net8.0-android
+   
+   # Build for iOS (macOS only)
+   dotnet build -f net8.0-ios
+   
+   # Run on Android emulator
+   dotnet build -t:Run -f net8.0-android
+   ```
+   
+   > **📱 MAUI Requirements**:
+   > - See [src/Web/Sensormine.Mobile.Maui/README.md](src/Web/Sensormine.Mobile.Maui/README.md) for detailed setup
+   > - iOS development requires macOS and Xcode 15+
+   > - Android development requires Android SDK API 26+
+   > - For complete mobile app requirements, see [docs/mobile-maui-requirements.md](docs/mobile-maui-requirements.md)
+
+8. **Access services**
    - Frontend Web App: http://localhost:3020
    - Device API: http://localhost:5293/swagger
    - Schema Registry API: http://localhost:5021/swagger

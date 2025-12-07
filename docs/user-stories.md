@@ -2669,31 +2669,363 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
+## Epic 14: Mobile App - Device Discovery & NFC Operations (.NET MAUI)
+
+### Story 14.1: NFC Tap to Identify Device
+**As a** field technician  
+**I want to** tap a Nexus-enabled sensor with my mobile device via NFC  
+**So that** I can automatically identify the device and load its platform metadata
+
+**Acceptance Criteria:**
+- NFC tap reads device ID, device type, firmware version, and hardware info from NDEF tag
+- App retrieves device type definition and schema from SensorMine platform when authenticated
+- If offline or not authenticated, app can still read values directly from the device via NFC
+- Device information displayed in structured format (device ID, type, firmware, battery level)
+- Support for multiple NFC tag formats (NDEF, Mifare, ISO 15693)
+- Visual and haptic feedback when NFC scan is successful
+- Error handling for unreadable or corrupted NFC tags
+- Background NFC scanning when app is in foreground
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 14.2: NFC Tap to Read Diagnostics
+**As a** field technician  
+**I want to** tap a device and view diagnostics  
+**So that** I can confirm operational status without needing cloud connectivity
+
+**Acceptance Criteria:**
+- Reads battery level (percentage and voltage)
+- Reads last broadcast time (timestamp)
+- Reads sensor statuses (operational, error, offline)
+- Reads configuration integrity checksum
+- Displays any error codes or warnings stored on device
+- Shows signal strength and connectivity status
+- Works both online (with platform sync) and offline (direct NFC read)
+- Diagnostic data can be exported as JSON or CSV
+- Historical diagnostics stored locally for comparison
+- Color-coded status indicators (green/yellow/red)
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+## Epic 15: Mobile App - Device Configuration & Provisioning
+
+### Story 15.1: Load Device Schemas and Nexus Configuration
+**As a** field technician  
+**I want** the app to fetch device types, schemas, and Nexus capability definitions  
+**So that** I always work with up-to-date configuration formats
+
+**Acceptance Criteria:**
+- Retrieves device types and their JSON schema definitions from SensorMine platform
+- Retrieves Nexus configuration capabilities (radio settings, broadcast intervals, sensor interfaces)
+- Offline caching for previously downloaded schemas (stored in SQLite)
+- Cache expiration and refresh policies (24-hour default, manual refresh option)
+- Version checking to ensure schema compatibility
+- Visual indicator showing last sync time
+- Download schemas in batches for entire device type families
+- Schema validation before applying to devices
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+### Story 15.2: Apply Configuration from JSON
+**As a** field technician  
+**I want to** apply a configuration JSON to a device  
+**So that** I can standardize sensor setup across multiple sites
+
+**Acceptance Criteria:**
+- App verifies JSON configuration against the schema for that device type
+- Real-time validation with field-level error highlighting
+- Displays invalid or missing fields with specific error messages
+- Preview configuration before applying to device
+- Push configuration to device via NFC write operation
+- Confirmation dialog before writing to prevent accidental changes
+- Save a record of configuration changes when authenticated
+- Rollback to previous configuration if write fails
+- Configuration templates for common setups
+- Support for bulk configuration (multiple devices)
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 15.3: Configure Without Logging In ("Tabletop Configuration")
+**As a** technician  
+**I want to** load a configuration file locally without logging into the platform  
+**So that** I can prepare devices before deployment
+
+**Acceptance Criteria:**
+- Import configuration JSON via file picker, QR code scanner, clipboard paste, or Bluetooth/WiFi transfer
+- Validate against cached schema or embedded schema
+- Push configuration to device via NFC without cloud connection
+- No cloud API calls required for basic operations
+- Local logging of configuration changes (synced later when online)
+- Embedded schema library for common device types
+- Warning when using outdated schemas
+- Export configured device list for later cloud provisioning
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+### Story 15.4: Set Device Location
+**As a** technician  
+**I want to** set a device's location when configuring it  
+**So that** the device registers correctly when installed
+
+**Acceptance Criteria:**
+- App captures GPS location using the phone (latitude, longitude, altitude)
+- Option to override with manually entered coordinates
+- Location accuracy indicator (GPS, network, manual)
+- Map view showing device location
+- Support for different coordinate formats (decimal degrees, DMS, UTM)
+- Location written to device NFC tag (if supported)
+- Location written to platform device profile via API
+- Ability to adjust location on map by dragging pin
+- Address geocoding (convert GPS to street address)
+- Save locations as named waypoints for reuse
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+## Epic 16: Mobile App - Custom Fields & User-Defined Metadata
+
+### Story 16.1: Retrieve Custom Fields from Platform
+**As a** technician  
+**I want** the app to load custom fields defined for a device type  
+**So that** I can collect required data during installation
+
+**Acceptance Criteria:**
+- Custom fields are pulled from platform metadata (Device Type API)
+- Supported field types: text, numeric, boolean, dropdown, date/datetime, image capture, file attachments, barcode/QR code, signature
+- Field validation rules respected (required, min/max, regex patterns)
+- Conditional fields (show/hide based on other field values)
+- Field grouping and sections
+- Help text and tooltips for each field
+- User can complete mandatory custom fields before provisioning
+- Form auto-saves draft responses
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 16.2: Store and Sync Custom Field Data
+**As a** technician  
+**I want to** enter custom field values and sync them  
+**So that** the device has accurate context in SensorMine
+
+**Acceptance Criteria:**
+- Offline entry available (stored locally in SQLite)
+- Syncs values and attachments when back online
+- Validation for required fields before submission
+- Visual indicator showing sync status (pending, syncing, synced, failed)
+- Conflict resolution when same device edited on multiple devices
+- Attachment compression and upload optimization
+- Batch sync for multiple devices
+- Retry logic for failed syncs
+- Manual sync trigger
+- Last synced timestamp display
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+## Epic 17: Mobile App - Device Lifecycle Management
+
+### Story 17.1: Reconfigure Device
+**As a** technician  
+**I want to** reconfigure an existing device  
+**So that** I can update settings, change schemas, or adjust Nexus behaviour
+
+**Acceptance Criteria:**
+- App loads current configuration from platform or device (via NFC)
+- User can modify configuration fields
+- Re-push configuration to device via NFC
+- Change history logged on the platform
+- Side-by-side comparison of old vs new configuration
+- Warning if changes require firmware update
+- Rollback option to previous configuration
+- Test configuration before applying
+- Audit trail of all configuration changes
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 17.2: Deprovision Device
+**As a** technician  
+**I want to** deprovision a device  
+**So that** it can be safely removed from service or repurposed
+
+**Acceptance Criteria:**
+- Deprovision endpoint called on platform
+- Device flagged as inactive in platform
+- Optional wipe or reset pushed to device via NFC
+- Confirmation dialog before deprovisioning
+- Archive device data option
+- Deprovision reason capture (broken, relocated, replaced)
+- Audit log entry created
+- Device removed from active device list
+- Historical data retention policy applied
+
+**Priority:** Medium  
+**Story Points:** 8
+
+---
+
+### Story 17.3: Toggle Maintenance Mode
+**As a** technician  
+**I want to** put a device into maintenance mode  
+**So that** it stops broadcasting while temporarily removed or worked on
+
+**Acceptance Criteria:**
+- User can enable/disable maintenance mode from device detail page
+- App pushes the setting via NFC or platform API
+- Device configuration reflects broadcast state (enabled/disabled)
+- Platform visibility updated (device shown as "In Maintenance")
+- Alerts suspended during maintenance mode
+- Maintenance mode duration setting (indefinite or scheduled end time)
+- Automatic mode exit after duration expires
+- Notification when device returns to active mode
+- Audit log of maintenance mode changes
+
+**Priority:** Medium  
+**Story Points:** 5
+
+---
+
+## Epic 18: Mobile App - Offline-First Operation & Sync
+
+### Story 18.1: Offline Caching of Schemas and Configurations
+**As a** technician in the field  
+**I want to** access schemas and previous configurations offline  
+**So that** I can operate in remote Australian locations
+
+**Acceptance Criteria:**
+- App caches device schemas in local SQLite database
+- Caches Nexus configuration capabilities
+- Caches custom field definitions
+- Automatically updates cache when online
+- Manual "refresh metadata" option in settings
+- Cache size limit with intelligent eviction (LRU)
+- Offline indicator in UI
+- Pre-load cache for specific device types or regions
+- Export/import cache for sharing between technicians
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+### Story 18.2: Offline Queueing of Actions
+**As a** technician  
+**I want to** perform provisioning or updates offline  
+**So that** actions sync when connectivity returns
+
+**Acceptance Criteria:**
+- Local queue for create/update/deprovision actions
+- Automatic retry when network is available
+- Clear indication of pending vs completed actions
+- Queue status page showing pending operations
+- Manual retry for failed operations
+- Queue persistence across app restarts
+- Priority queue for critical operations
+- Conflict detection and resolution
+- Success/failure notifications after sync
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+## Epic 19: Mobile App - Security, Permissions & Auditability
+
+### Story 19.1: Secure Access to Platform
+**As a** user  
+**I want** secure authentication  
+**So that** only authorized staff can modify devices
+
+**Acceptance Criteria:**
+- Authentication via OAuth 2.0 / OpenID Connect
+- Support for Azure AD / Entra ID
+- Biometric authentication (fingerprint, Face ID) for app access
+- Role-based access controls respected (admin, technician, viewer)
+- Token refresh handled seamlessly
+- Multi-factor authentication support
+- Secure token storage (iOS Keychain, Android Keystore)
+- Automatic logout after inactivity
+- Session expiration handling with graceful re-authentication
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 19.2: Full Audit Trail of Field Actions
+**As a** system owner  
+**I want** an audit history of all field interactions  
+**So that** I can track configuration integrity across the network
+
+**Acceptance Criteria:**
+- Every push, read, or configuration change recorded
+- NFC-only changes stored locally and synced when authenticated
+- Audit log includes: timestamp (UTC), device ID, user ID, action type, old/new configuration, GPS location, result
+- Audit logs synced to platform when online
+- Local audit log viewer in app
+- Export audit logs as CSV or JSON
+- Platform audit log API integration
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
 ## Story Summary
 
-### Total Stories: 122
+### Total Stories: 138 (was 122, added 16 MAUI mobile stories)
 
 ### By Epic:
-1. **Device & Hardware Management**: 11 stories
-2. **Data Ingestion & Modeling**: 10 stories
-3. **Video Processing & AI/ML**: 13 stories
-4. **Visualization & Dashboards**: 10 stories
-5. **LLM Interaction & Analytics**: 6 stories
-6. **Alerting & Notifications**: 12 stories
-7. **Industrial Connectivity & Edge**: 10 stories
-8. **Administration & System Management**: 9 stories
-9. **Reporting & Data Export**: 6 stories
-10. **Mobile Application**: 6 stories
-11. **Integration & APIs**: 8 stories
-12. **Billing, Metering & Payments**: 12 stories (NEW)
-13. **Performance & Scalability**: 5 stories
+1. **Device Type Configuration**: 5 stories
+2. **Device Registration & Management**: 8 stories
+3. **Data Ingestion & Modeling**: 10 stories
+4. **Video Processing & AI/ML**: 13 stories
+5. **Visualization & Dashboards**: 12 stories
+6. **LLM Interaction & Analytics**: 6 stories
+7. **Alerting & Notifications**: 12 stories
+8. **Industrial Connectivity & Edge**: 10 stories
+9. **Administration & System Management**: 9 stories
+10. **Reporting & Data Export**: 8 stories
+11. **Mobile Application (Web/Dashboard Viewing)**: 6 stories
+12. **Integration & APIs**: 8 stories
+13. **Billing, Metering & Payments**: 12 stories
+14. **Performance & Scalability**: 5 stories
+15. **Mobile MAUI - Device Discovery & NFC**: 2 stories (NEW - .NET MAUI)
+16. **Mobile MAUI - Configuration & Provisioning**: 4 stories (NEW - .NET MAUI)
+17. **Mobile MAUI - Custom Fields & Metadata**: 2 stories (NEW - .NET MAUI)
+18. **Mobile MAUI - Device Lifecycle Management**: 3 stories (NEW - .NET MAUI)
+19. **Mobile MAUI - Offline-First & Sync**: 2 stories (NEW - .NET MAUI)
+20. **Mobile MAUI - Security & Audit**: 2 stories (NEW - .NET MAUI)
 
 ### By Priority:
-- **High**: 56 stories
-- **Medium**: 55 stories
+- **High**: 71 stories (was 56, added 15 MAUI high-priority stories)
+- **Medium**: 56 stories (was 55, added 1 MAUI medium-priority story)
 - **Low**: 11 stories
 
-### Total Story Points: ~1,520
+### Total Story Points: ~1,682 (was ~1,520, added 162 MAUI story points)
 
 **New Stories Added (27 total, 280 story points):**
 - Device firmware management, groups/tags, templates (29 pts)
@@ -2787,8 +3119,33 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-**Document Version:** 2.0  
-**Last Updated:** December 4, 2025  
-**Total Stories:** 122  
-**Total Story Points:** ~1,520  
-**New in v2.0:** Billing & metering (Epic 12), Enhanced multi-tenancy (8.7), Stripe payment integration
+**Document Version:** 3.0  
+**Last Updated:** December 7, 2025  
+**Total Stories:** 138 (was 122, added 16 MAUI mobile stories)  
+**Total Story Points:** ~1,682 (was ~1,520, added 162 MAUI story points)  
+**New in v3.0:** .NET MAUI mobile application with NFC device configuration (Epics 14-19), complete offline-first architecture, field technician workflows  
+**Previous updates (v2.0):** Billing & metering (Epic 12), Enhanced multi-tenancy (8.7), Stripe payment integration
+
+---
+
+## .NET MAUI Mobile App Overview (Epics 14-19)
+
+The SensorMine Mobile application is a cross-platform solution built with .NET MAUI for iOS and Android. It provides field technicians with:
+
+**Key Capabilities:**
+- **NFC-based device discovery** - Tap Nexus devices to read diagnostics and configuration
+- **Offline-first architecture** - Work in remote locations without connectivity
+- **Dynamic configuration** - Apply JSON configurations validated against device schemas
+- **Custom field collection** - Capture site-specific metadata during installation
+- **Security & audit** - Full audit trail of field actions with biometric authentication
+
+**Technology Stack:**
+- .NET MAUI (.NET 8+) for cross-platform development
+- NFC support (CoreNFC for iOS, Android.Nfc for Android)
+- SQLite for offline storage
+- Azure AD / Entra ID for authentication
+- Background sync with conflict resolution
+
+**Total MAUI Stories:** 15 stories across 6 epics (162 story points)
+
+For detailed MAUI requirements and architecture, see [mobile-maui-requirements.md](./mobile-maui-requirements.md)
