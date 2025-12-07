@@ -7,6 +7,7 @@
 'use client';
 
 import type { Widget } from '@/lib/types/dashboard';
+import type { ChartType } from '@/lib/types/chart';
 import { KPIWidget } from './kpi-widget';
 import { GaugeWidget } from './gauge-widget';
 import { TableWidget } from './table-widget';
@@ -61,18 +62,18 @@ const mockDataGenerators = {
     })),
     onRefresh: async () => {},
   }),
-  chart: () => ({
-    config: {
-      title: 'Sample Chart',
-      chartType: 'line' as const,
-      series: [{
-        seriesName: 'Sample Data',
-        data: Array.from({ length: 10 }, (_, i) => ({
-          timestamp: Date.now() - (9 - i) * 3600000,
-          value: Math.floor(Math.random() * 100)
-        }))
-      }]
-    },
+  chart: (config?: Widget['config']) => ({
+    chartType: (config?.chartType as ChartType) || 'line',
+    showToolbar: config?.showToolbar !== false,
+    series: [{
+      id: 'sample-1',
+      name: 'Sample Data',
+      data: Array.from({ length: 10 }, (_, i) => ({
+        timestamp: Date.now() - (9 - i) * 3600000,
+        value: Math.floor(Math.random() * 100)
+      })),
+      color: '#3b82f6'
+    }],
     onRefresh: async () => {},
   }),
   map: () => ({
@@ -108,21 +109,18 @@ export function WidgetFactory({
     onDelete: onDelete ? () => onDelete(widget.id) : undefined,
   };
   
-  // Get mock data based on widget type
-  const mockData = mockDataGenerators[widget.type]();
-  
   switch (widget.type) {
     case 'kpi':
-      return <KPIWidget {...baseProps} {...(mockData as ReturnType<typeof mockDataGenerators.kpi>)} />;
+      return <KPIWidget {...baseProps} {...mockDataGenerators.kpi()} />;
     
     case 'gauge':
-      return <GaugeWidget {...baseProps} {...(mockData as ReturnType<typeof mockDataGenerators.gauge>)} />;
+      return <GaugeWidget {...baseProps} {...mockDataGenerators.gauge()} />;
     
     case 'table':
-      return <TableWidget {...baseProps} {...(mockData as ReturnType<typeof mockDataGenerators.table>)} />;
+      return <TableWidget {...baseProps} {...mockDataGenerators.table()} />;
     
     case 'chart':
-      return <ChartWidget {...baseProps} {...(mockData as ReturnType<typeof mockDataGenerators.chart>)} />;
+      return <ChartWidget {...baseProps} {...mockDataGenerators.chart(widget.config)} />;
     
     case 'map':
       return <MapWidget {...baseProps} />;

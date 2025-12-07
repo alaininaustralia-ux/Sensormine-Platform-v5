@@ -26,3 +26,18 @@ vi.mock('next/link', () => ({
   default: ({ children, href }: { children: React.ReactNode; href: string }) => 
     React.createElement('a', { href }, children),
 }));
+
+// Mock ResizeObserver for chart tests
+class ResizeObserverMock {
+  callback: ResizeObserverCallback;
+  
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+  }
+  
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+global.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
