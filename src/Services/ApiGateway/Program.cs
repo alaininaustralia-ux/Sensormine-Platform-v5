@@ -19,6 +19,9 @@ builder.Services.AddCors(options =>
 // Add authentication (basic JWT configuration for development)
 builder.Services.AddAuthentication().AddJwtBearer();
 
+// Add HttpClient for calling Identity.API
+builder.Services.AddHttpClient();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
