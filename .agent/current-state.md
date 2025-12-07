@@ -1,26 +1,144 @@
 # Sensormine Platform v5 - Current State
 
-**Last Updated**: 2025-12-07 (Query API Enhanced + Frontend Integration Complete)  
-**Build Status**: ⚠️ Code fixed, needs rebuild & restart  
-**Active Work**: Query API Tier 2 Enhancements + Full Stack Integration + Bug Fixes  
-**Architecture**: Device Type-Centric + Dashboard Persistence + Multi-Tenant Isolation
+**Last Updated**: 2025-12-07 (Feature Branch Integration Complete)  
+**Build Status**: ✅ 4 Major Features Merged - Needs rebuild & npm install  
+**Active Work**: Feature branch consolidation - Alert Rules, User Management, Nexus Configuration, Time-Series Charts  
+**Architecture**: Device Type-Centric + Dashboard Persistence + Multi-Tenant Isolation + User Management + Alert System
 
 ---
 
 ## 📊 Quick Project Status
 
-**Completion**: 10 of 122 stories (8%)  
-**Current Epic**: Epic 4 - Frontend Dashboard (5 of 12 stories complete)  
-**Latest Achievement**: Query API Tier 2 implementation with full-stack integration
+**Completion**: 14+ of 122 stories (~12%)  
+**Current Epic**: Epic 4 - Frontend Dashboard + Epic 1 - Device Management  
+**Latest Achievement**: Successfully merged 4 major feature branches from parallel agent work sessions
+
+### 🎉 Recently Merged Features (Dec 7, 2025)
+1. **Alert Rules Management** - Alert.API enhancements with rules engine
+2. **User Management & SSO** - Identity.API microservice with RBAC
+3. **Nexus Configuration Builder** - NexusConfiguration.API with 4-step wizard
+4. **Time-Series Charts** - Complete Recharts integration with export capabilities
 
 **Key Documents**:
 - User Stories: `docs/user-stories.md` (122 stories, 13 epics)
 - Architecture: `docs/architecture.md`
 - Tech Stack: `docs/technology-stack.md`
+- Merge Summary: See below for details on merged features
 
 ---
 
-## 🚀 Latest Session: Query API Tier 2 + Frontend Integration (Dec 7, 2025)
+## 🎯 Recently Merged Features (Dec 7, 2025)
+
+This session successfully integrated 4 major feature branches developed in parallel agent sessions:
+
+### 1. ✅ Alert Rules Management System
+**Branch**: `copilot/add-custom-alert-capabilities` (7 commits)  
+**New Service**: Alerts.API enhanced with comprehensive rules engine
+
+**Backend Features**:
+- AlertRuleController: Create/update/delete/query alert rules
+- AlertInstanceController: Manage active alerts and history
+- Alert rule conditions: threshold, comparison, time-based
+- Escalation rules with multi-level notifications
+- Database schema: `alert_rules`, `alert_instances` tables
+- Full CRUD operations with multi-tenant isolation
+
+**Frontend Features**:
+- `/settings/alert-rules` page for rule management
+- Alert rule editor with visual condition builder
+- Alert instance dashboard with filtering
+- Real-time alert notifications (prepared)
+- Alert API client with TypeScript types
+
+**Migration**: `20251206230000_AddAlertRulesAndInstances.cs`
+
+### 2. ✅ User Management & SSO Integration
+**Branch**: `copilot/implement-user-management-sso` (5 commits)  
+**New Service**: Identity.API microservice for authentication/authorization
+
+**Backend Features**:
+- UserController: Full user CRUD with validation
+- InvitationController: User invitations and onboarding
+- Role-based access control (RBAC)
+- Multi-tenant user management
+- Database: `users`, `roles`, `permissions`, `tenant_users` tables
+- Middleware: Tenant context resolution
+
+**Frontend Integration**:
+- User management UI components (prepared)
+- SSO integration points defined
+- Authentication flows documented
+
+**Documentation**:
+- `docs/user-management-overview.md`
+- `docs/sso-integration.md`
+- `docs/permissions-matrix.md`
+
+**Migration**: User management schema
+
+### 3. ✅ Nexus Configuration Builder
+**Branch**: `copilot/build-nexus-configuration-builder` (9 commits)  
+**New Service**: NexusConfiguration.API for industrial device configuration
+
+**Backend Features**:
+- NexusConfigurationController: Configuration CRUD
+- DeploymentController: Deploy configs to devices
+- TemplatesController: Pre-built configuration templates
+- Document parsing: PDF/DOC/DOCX with AI extraction
+- Custom logic generation using AI
+- Configuration validation engine
+- Database: `nexus_configurations` table
+
+**Frontend Features**:
+- 4-step configuration wizard:
+  1. Basic Info (name, description, device selection)
+  2. Device Configuration (probes, communications, network)
+  3. Alert Rules (thresholds, conditions, notifications)
+  4. Review & Deploy (validation, preview, deployment)
+- `/nexus/configurations` - List and manage configurations
+- `/nexus/configurations/new` - Create new configuration
+- `/nexus/configurations/[id]` - View/edit details
+- Template library (Water, Oil & Gas, Manufacturing)
+
+**Templates**: Industry-specific pre-configured templates
+
+### 4. ✅ Time-Series Charts with Recharts
+**Branch**: `copilot/next-step-in-project` (2 commits)  
+**Story**: 4.2 - Time-Series Charts  
+**Library**: Recharts 3.5.1 integration
+
+**Frontend Components**:
+- **TimeSeriesChart**: Main chart component
+  - Line charts (smooth/linear)
+  - Bar charts (stacked/grouped)
+  - Area charts (gradients)
+  - Scatter plots
+  - Step charts
+- **ChartToolbar**: Interactive controls
+  - Time range selector (1h, 24h, 7d, 30d, custom)
+  - Aggregation selector (raw, 1m, 5m, 15m, 1h, 1d)
+  - Export: PNG, SVG, CSV, JSON
+  - Full-screen mode
+- **Chart Export**: Multi-format export module
+
+**Enhanced Widgets**:
+- ChartWidget updated with toolbar integration
+- WidgetFactory with proper chart mock data
+- Widget registry updated (chart now available)
+
+**Type Definitions**:
+- `lib/types/chart.ts` with comprehensive interfaces
+- ChartType, ChartConfig, ChartSeries, TimeRange
+- AggregationInterval, TimeSeriesDataPoint
+
+**Unit Tests**:
+- `chart-widget.test.tsx`
+- `time-series-chart.test.tsx`
+- `chart.test.ts`
+
+---
+
+## 🚀 Previous Session: Query API Tier 2 + Frontend Integration (Dec 7, 2025)
 
 ### ✅ Implemented Features
 
@@ -79,19 +197,76 @@
 - **Solution**: Changed `NEXT_PUBLIC_QUERY_API_URL` to `http://localhost:5079`
 - **Status**: ✅ Fixed, needs restart
 
-### 🔧 Next Steps (IMMEDIATE)
+### 🔧 Next Steps (IMMEDIATE - Post-Merge Actions)
 
-1. **Rebuild Query API**:
-   ```powershell
-   cd c:\Users\AlainBlanchette\code\Orion\src\Services\Query.API
-   dotnet build
-   dotnet run
-   ```
+#### 1. Rebuild Entire Solution
+All services need rebuild after merging 4 feature branches:
+```powershell
+cd c:\Users\AlainBlanchette\code\Orion
+dotnet restore Sensormine.sln
+dotnet build Sensormine.sln
+```
 
-2. **Restart Frontend**:
-   - Stop Next.js dev server (Ctrl+C)
-   - Restart: `npm run dev`
-   - Navigate to http://localhost:3020/dashboard/example
+**New Projects Added to Solution**:
+- Identity.API (User Management)
+- NexusConfiguration.API (Device Configuration)
+
+#### 2. Run Database Migrations
+New tables were added by merged features:
+```powershell
+# Alert Rules & Instances
+# Migration: 20251206230000_AddAlertRulesAndInstances.cs
+
+# User Management Schema  
+# Migration: TBD - Identity.API migrations
+
+# Nexus Configuration
+# Migration: TBD - NexusConfiguration.API migrations
+```
+
+#### 3. Install Frontend Dependencies
+New npm packages added (recharts, etc.):
+```powershell
+cd src\Web\sensormine-web
+npm install
+```
+
+#### 4. Start All New Services
+```powershell
+# Terminal 1: Identity.API (User Management)
+cd src\Services\Identity.API
+dotnet run  # Port: TBD
+
+# Terminal 2: NexusConfiguration.API  
+cd src\Services\NexusConfiguration.API
+dotnet run  # Port: TBD
+
+# Terminal 3: Alerts.API (if not already running)
+cd src\Services\Alerts.API
+dotnet run  # Port: TBD
+
+# Terminal 4: Query.API (existing)
+cd src\Services\Query.API
+dotnet run  # Port: 5079
+```
+
+#### 5. Restart Frontend
+```powershell
+cd src\Web\sensormine-web
+npm run dev  # Port: 3020
+```
+
+#### 6. Test New Features
+- **Alert Rules**: http://localhost:3020/settings/alert-rules
+- **Nexus Config**: http://localhost:3020/nexus/configurations  
+- **Time-Series Charts**: http://localhost:3020/dashboard/example
+- **User Management**: TBD (Identity.API UI pages)
+
+#### 7. Verify Integration Points
+- All API exports in `src/Web/sensormine-web/src/lib/api/index.ts`
+- Database connectivity for new services
+- Chart rendering with real data from Query API
+- Alert rule execution and notifications
 
 3. **Verify Data Flow**:
    - KPI widgets should show temperature ~60°F, humidity, pressure
