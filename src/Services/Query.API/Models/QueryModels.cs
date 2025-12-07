@@ -237,3 +237,132 @@ public class AggregatedDataPointResponse
     /// </summary>
     public Dictionary<string, string>? GroupValues { get; set; }
 }
+
+/// <summary>
+/// KPI data response with trend comparison
+/// </summary>
+public class KpiDataResponse
+{
+    /// <summary>
+    /// Field name being measured
+    /// </summary>
+    public string Field { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Aggregation function used
+    /// </summary>
+    public string Aggregation { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Current period value
+    /// </summary>
+    public decimal CurrentValue { get; set; }
+
+    /// <summary>
+    /// Number of data points in current period
+    /// </summary>
+    public long CurrentCount { get; set; }
+
+    /// <summary>
+    /// Current time period
+    /// </summary>
+    public TimeRangeInfo CurrentPeriod { get; set; } = new();
+
+    /// <summary>
+    /// Previous period value (for comparison)
+    /// </summary>
+    public decimal? PreviousValue { get; set; }
+
+    /// <summary>
+    /// Number of data points in previous period
+    /// </summary>
+    public long? PreviousCount { get; set; }
+
+    /// <summary>
+    /// Previous time period
+    /// </summary>
+    public TimeRangeInfo? PreviousPeriod { get; set; }
+
+    /// <summary>
+    /// Absolute change from previous period (current - previous)
+    /// </summary>
+    public decimal? Change { get; set; }
+
+    /// <summary>
+    /// Percentage change from previous period ((change / previous) * 100)
+    /// </summary>
+    public decimal? PercentChange { get; set; }
+}
+
+/// <summary>
+/// Time range information
+/// </summary>
+public class TimeRangeInfo
+{
+    /// <summary>
+    /// Start of time range
+    /// </summary>
+    public DateTimeOffset Start { get; set; }
+
+    /// <summary>
+    /// End of time range
+    /// </summary>
+    public DateTimeOffset End { get; set; }
+}
+
+/// <summary>
+/// Categorical aggregation response for pie/bar charts
+/// </summary>
+public class CategoricalDataResponse
+{
+    /// <summary>
+    /// Field used for grouping
+    /// </summary>
+    public string GroupByField { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Field being aggregated
+    /// </summary>
+    public string ValueField { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Aggregation function used
+    /// </summary>
+    public string Aggregation { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Categorical data points
+    /// </summary>
+    public List<CategoryDataPoint> Categories { get; set; } = new();
+
+    /// <summary>
+    /// Time range of data
+    /// </summary>
+    public TimeRangeInfo? TimeRange { get; set; }
+}
+
+/// <summary>
+/// Single category data point
+/// </summary>
+public class CategoryDataPoint
+{
+    /// <summary>
+    /// Category name/label
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Aggregated value for this category
+    /// </summary>
+    public decimal Value { get; set; }
+
+    /// <summary>
+    /// Number of data points in this category
+    /// </summary>
+    public long Count { get; set; }
+
+    /// <summary>
+    /// Percentage of total (if calculated)
+    /// </summary>
+    public decimal? Percentage { get; set; }
+}
