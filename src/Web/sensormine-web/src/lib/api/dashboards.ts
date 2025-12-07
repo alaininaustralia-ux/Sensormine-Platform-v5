@@ -20,6 +20,9 @@ export interface CreateDashboardRequest {
   templateCategory?: string;
   sharedWith?: string[];
   tags?: string[];
+  parentDashboardId?: string;
+  displayOrder?: number;
+  dashboardType?: number;
 }
 
 export interface UpdateDashboardRequest {
@@ -31,6 +34,16 @@ export interface UpdateDashboardRequest {
   templateCategory?: string;
   sharedWith?: string[];
   tags?: string[];
+  displayOrder?: number;
+}
+
+export interface SubPageSummary {
+  id: string;
+  name: string;
+  description?: string;
+  dashboardType: number;
+  displayOrder: number;
+  widgetCount: number;
 }
 
 export interface DashboardDto {
@@ -47,6 +60,11 @@ export interface DashboardDto {
   tags?: string[];
   createdAt: string;
   updatedAt: string;
+  parentDashboardId?: string;
+  parentDashboardName?: string;
+  subPages?: SubPageSummary[];
+  displayOrder: number;
+  dashboardType: number;
 }
 
 /**
@@ -247,6 +265,11 @@ export const dashboardApi = {
       updatedAt: new Date(dto.updatedAt),
       sharedWith: dto.sharedWith,
       tags: dto.tags,
+      parentDashboardId: dto.parentDashboardId,
+      parentDashboardName: dto.parentDashboardName,
+      subPages: dto.subPages,
+      displayOrder: dto.displayOrder ?? 0,
+      dashboardType: dto.dashboardType ?? 0,
     };
   },
 
@@ -263,6 +286,9 @@ export const dashboardApi = {
       templateCategory: dashboard.templateCategory,
       sharedWith: dashboard.sharedWith,
       tags: dashboard.tags,
+      parentDashboardId: dashboard.parentDashboardId,
+      displayOrder: dashboard.displayOrder,
+      dashboardType: dashboard.dashboardType,
     };
   },
 
@@ -279,6 +305,118 @@ export const dashboardApi = {
       templateCategory: dashboard.templateCategory,
       sharedWith: dashboard.sharedWith,
       tags: dashboard.tags,
+      displayOrder: dashboard.displayOrder,
     };
+  },
+
+  /**
+   * Get all root dashboards (dashboards without a parent)
+   */
+  async getRoots(userId: string, tenantId: string = DEFAULT_TENANT_ID): Promise<DashboardDto[]> {
+    try {
+      const response = await fetch(`${DASHBOARD_API_BASE}/api/Dashboards/roots`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': userId,
+          'X-Tenant-Id': tenantId,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch root dashboards: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data as DashboardDto[];
+    } catch (error) {
+      console.error('Error fetching root dashboards:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all subpages for a dashboard
+   */
+  async getSubPages(parentId: string, tenantId: string = DEFAULT_TENANT_ID): Promise<DashboardDto[]> {
+    try {
+      const response = await fetch(`${DASHBOARD_API_BASE}/api/Dashboards/${parentId}/subpages`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-Id': tenantId,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch subpages: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data as DashboardDto[];
+    } catch (error) {
+      console.error('Error fetching subpages:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new subpage under a parent dashboard
+   */
+  async createSubPage(
+    parentId: string,
+    request: CreateDashboardRequest,
+    userId: string,
+    tenantId: string = DEFAULT_TENANT_ID
+  ): Promise<DashboardDto> {
+    try {
+      const response = await fetch(`${DASHBOARD_API_BASE}/api/Dashboards/${parentId}/subpages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': userId,
+          'X-Tenant-Id': tenantId,
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create subpage: ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      return data as DashboardDto;
+    } catch (error) {
+      console.error('Error creating subpage:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Reorder subpages within a parent dashboard
+   */
+  async reorderSubPages(
+    parentId: string,
+    displayOrders: Record<string, number>,
+    tenantId: string = DEFAULT_TENANT_ID
+  ): Promise<void> {
+    try {
+      const response = await fetch(`${DASHBOARD_API_BASE}/api/Dashboards/${parentId}/subpages/reorder`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-Id': tenantId,
+        },
+        body: JSON.stringify(displayOrders),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to reorder subpages: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error reordering subpages:', error);
+      throw error;
+    }
   },
 };

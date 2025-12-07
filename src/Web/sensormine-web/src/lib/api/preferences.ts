@@ -40,8 +40,8 @@ export const userPreferencesApi = {
       const data = await response.json();
       return data as UserPreferences;
     } catch (error) {
-      console.error('Error fetching user preferences:', error);
-      throw error;
+      console.warn('Failed to fetch user preferences (service may not be available):', error);
+      return null;
     }
   },
 
@@ -137,8 +137,8 @@ export const siteConfigurationApi = {
       const data = await response.json();
       return data as SiteConfiguration;
     } catch (error) {
-      console.error('Error fetching site configuration:', error);
-      throw error;
+      console.warn('Failed to fetch site configuration (service may not be available):', error);
+      return null;
     }
   },
 

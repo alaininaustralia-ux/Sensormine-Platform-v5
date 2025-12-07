@@ -1,5 +1,6 @@
 /**
  * Dashboard Components Tests (Story 4.1)
+ * Updated to use consolidated WIDGET_REGISTRY
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -10,7 +11,7 @@ import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { WidgetConfigPanel } from '@/components/dashboard/WidgetConfigPanel';
 import { DashboardToolbar } from '@/components/dashboard/DashboardToolbar';
 import { useDashboardStore } from '@/lib/dashboard/store';
-import { WIDGET_LIBRARY } from '@/lib/dashboard/widget-library';
+import { getAvailableWidgets } from '@/lib/stores/widget-registry';
 
 describe('Dashboard Components', () => {
   beforeEach(() => {
@@ -26,10 +27,11 @@ describe('Dashboard Components', () => {
   });
 
   describe('WidgetPalette', () => {
-    it('renders all widget types from library', () => {
+    it('renders all widget types from registry', () => {
       render(<WidgetPalette />);
       
-      WIDGET_LIBRARY.forEach((widget) => {
+      const availableWidgets = getAvailableWidgets();
+      availableWidgets.forEach((widget) => {
         expect(screen.getByText(widget.name)).toBeInTheDocument();
       });
     });
@@ -38,13 +40,13 @@ describe('Dashboard Components', () => {
       render(<WidgetPalette />);
       
       // Check for a specific widget description
-      expect(screen.getByText(/Time-series line, bar/i)).toBeInTheDocument();
+      expect(screen.getByText(/time-series data visualization/i)).toBeInTheDocument();
     });
 
     it('renders draggable widget items', () => {
       render(<WidgetPalette />);
       
-      const chartItem = screen.getByText('Chart').closest('[draggable]');
+      const chartItem = screen.getByText('Time-Series Chart').closest('[draggable]');
       expect(chartItem).toHaveAttribute('draggable', 'true');
     });
   });
@@ -70,7 +72,7 @@ describe('Dashboard Components', () => {
       
       render(<DashboardGrid />);
       
-      expect(screen.getByText('Chart')).toBeInTheDocument();
+      expect(screen.getByText('Time-Series Chart')).toBeInTheDocument();
     });
 
     it('has testid for grid container', () => {

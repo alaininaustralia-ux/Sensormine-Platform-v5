@@ -240,3 +240,69 @@ export interface LoginResponse {
   user: User;
   expiresIn: number;
 }
+
+// Widget Data Query types
+export interface TimeRangeInfo {
+  start: string;
+  end: string;
+}
+
+export interface WidgetDataPoint {
+  deviceId: string;
+  timestamp: string;
+  values: Record<string, unknown>;
+}
+
+export interface WidgetDataResponse {
+  timestamp: string;
+  dataPoints: WidgetDataPoint[];
+  count: number;
+  timeRange?: TimeRangeInfo;
+}
+
+export interface AggregatedDataPoint {
+  timestamp: string;
+  value: number;
+  count: number;
+}
+
+export interface AggregatedSeries {
+  field: string;
+  dataPoints: AggregatedDataPoint[];
+}
+
+export interface AggregatedWidgetDataResponse {
+  timestamp: string;
+  aggregation: string;
+  interval: string;
+  series: AggregatedSeries[];
+  timeRange?: TimeRangeInfo;
+}
+
+export interface KpiDataResponse {
+  field: string;
+  aggregation: string;
+  currentValue: number;
+  currentCount: number;
+  currentPeriod: TimeRangeInfo;
+  previousValue?: number;
+  previousCount?: number;
+  previousPeriod?: TimeRangeInfo;
+  change?: number;
+  percentChange?: number;
+}
+
+export interface CategoryDataPoint {
+  name: string;
+  value: number;
+  count: number;
+  percentage?: number;
+}
+
+export interface CategoricalDataResponse {
+  groupByField: string;
+  valueField: string;
+  aggregation: string;
+  categories: CategoryDataPoint[];
+  timeRange?: TimeRangeInfo;
+}

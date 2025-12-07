@@ -1,56 +1,70 @@
 /**
- * Widget Library Tests (Story 4.1)
+ * Widget Registry Tests (Story 4.1)
+ * Updated to use consolidated WIDGET_REGISTRY
  */
 
 import { describe, it, expect } from 'vitest';
 import {
-  WIDGET_LIBRARY,
+  WIDGET_REGISTRY,
+  getWidgetDefinition,
+  getAvailableWidgets,
+} from '@/lib/stores/widget-registry';
+import {
   DASHBOARD_TEMPLATES,
   GRID_CONFIG,
-  getWidgetByType,
   getTemplateById,
 } from '@/lib/dashboard/widget-library';
 
-describe('Widget Library', () => {
-  describe('WIDGET_LIBRARY', () => {
+describe('Widget Registry', () => {
+  describe('WIDGET_REGISTRY', () => {
     it('contains expected widget types', () => {
-      const types = WIDGET_LIBRARY.map((w) => w.type);
+      const types = WIDGET_REGISTRY.map((w) => w.type);
       
       expect(types).toContain('chart');
       expect(types).toContain('table');
       expect(types).toContain('map');
-      expect(types).toContain('video');
       expect(types).toContain('gauge');
       expect(types).toContain('kpi');
-      expect(types).toContain('text');
+      expect(types).toContain('device-list');
     });
 
     it('all widgets have required properties', () => {
-      WIDGET_LIBRARY.forEach((widget) => {
+      WIDGET_REGISTRY.forEach((widget) => {
         expect(widget.type).toBeDefined();
         expect(widget.name).toBeDefined();
         expect(widget.description).toBeDefined();
         expect(widget.icon).toBeDefined();
-        expect(widget.defaultConfig).toBeDefined();
         expect(widget.defaultSize).toBeDefined();
-        expect(widget.defaultSize.width).toBeGreaterThan(0);
-        expect(widget.defaultSize.height).toBeGreaterThan(0);
+        expect(widget.minSize).toBeDefined();
+        expect(widget.category).toBeDefined();
+        expect(widget.defaultSize.w).toBeGreaterThan(0);
+        expect(widget.defaultSize.h).toBeGreaterThan(0);
       });
     });
 
-    it('chart widget has correct config type', () => {
-      const chartWidget = WIDGET_LIBRARY.find((w) => w.type === 'chart');
+    it('chart widget is available', () => {
+      const chartWidget = getWidgetDefinition('chart');
       
-      expect(chartWidget?.defaultConfig.type).toBe('chart');
-      expect(chartWidget?.defaultConfig.config).toHaveProperty('type');
+      expect(chartWidget).toBeDefined();
+      expect(chartWidget?.type).toBe('chart');
+      expect(chartWidget?.available).toBe(true);
     });
 
-    it('gauge widget has min/max config', () => {
-      const gaugeWidget = WIDGET_LIBRARY.find((w) => w.type === 'gauge');
+    it('gauge widget has correct properties', () => {
+      const gaugeWidget = getWidgetDefinition('gauge');
       
-      expect(gaugeWidget?.defaultConfig.type).toBe('gauge');
-      expect(gaugeWidget?.defaultConfig.config).toHaveProperty('min');
-      expect(gaugeWidget?.defaultConfig.config).toHaveProperty('max');
+      expect(gaugeWidget).toBeDefined();
+      expect(gaugeWidget?.type).toBe('gauge');
+      expect(gaugeWidget?.category).toBe('monitoring');
+    });
+
+    it('getAvailableWidgets returns only available widgets', () => {
+      const available = getAvailableWidgets();
+      
+      expect(available.length).toBeGreaterThan(0);
+      available.forEach(widget => {
+        expect(widget.available).toBe(true);
+      });
     });
   });
 
@@ -110,16 +124,16 @@ describe('Widget Library', () => {
     });
   });
 
-  describe('getWidgetByType', () => {
+  describe('getWidgetDefinition', () => {
     it('returns widget for valid type', () => {
-      const widget = getWidgetByType('chart');
+      const widget = getWidgetDefinition('chart');
       
       expect(widget).toBeDefined();
       expect(widget?.type).toBe('chart');
     });
 
     it('returns undefined for invalid type', () => {
-      const widget = getWidgetByType('invalid');
+      const widget = getWidgetDefinition('invalid');
       
       expect(widget).toBeUndefined();
     });

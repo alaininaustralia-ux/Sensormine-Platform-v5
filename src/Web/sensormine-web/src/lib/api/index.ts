@@ -71,3 +71,21 @@ export type {
   BulkDeviceRegistrationRequest,
   BulkDeviceRegistrationResult,
 } from './devices';
+
+export {
+  getRealtimeWidgetData,
+  getHistoricalWidgetData,
+  getAggregatedWidgetData,
+  getKpiData,
+  getCategoricalData,
+  getMultiSeriesData,
+  getKpiWithTrend,
+} from './widget-data';
+
+export type {
+  RealtimeQueryParams,
+  HistoricalQueryParams,
+  AggregatedQueryParams,
+  KpiQueryParams,
+  CategoricalQueryParams,
+} from './widget-data';

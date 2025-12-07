@@ -15,14 +15,16 @@ export const apiConfig = {
 /**
  * Service-specific base URLs for microservices architecture
  * Each service can have its own URL in local development
+ * NOTE: Service-specific env vars should be checked BEFORE NEXT_PUBLIC_API_BASE_URL
+ * to allow per-service overrides. NEXT_PUBLIC_API_BASE_URL serves as the API Gateway.
  */
 export const serviceUrls = {
-  device: process.env.NEXT_PUBLIC_DEVICE_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5293',
-  schema: process.env.NEXT_PUBLIC_SCHEMA_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5021',
-  query: process.env.NEXT_PUBLIC_QUERY_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5297',
-  alerts: process.env.NEXT_PUBLIC_ALERTS_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5295',
-  preferences: process.env.NEXT_PUBLIC_PREFERENCES_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5296',
-  dashboard: process.env.NEXT_PUBLIC_DASHBOARD_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5297',
+  device: process.env.NEXT_PUBLIC_DEVICE_API_URL || 'http://localhost:5293',
+  schema: process.env.NEXT_PUBLIC_SCHEMA_API_URL || 'http://localhost:5021',
+  query: process.env.NEXT_PUBLIC_QUERY_API_URL || 'http://localhost:5079',
+  alerts: process.env.NEXT_PUBLIC_ALERTS_API_URL || 'http://localhost:5295',
+  preferences: process.env.NEXT_PUBLIC_PREFERENCES_API_URL || 'http://localhost:5296',
+  dashboard: process.env.NEXT_PUBLIC_DASHBOARD_API_URL || 'http://localhost:5298',
 } as const;
 
 export const endpoints = {
