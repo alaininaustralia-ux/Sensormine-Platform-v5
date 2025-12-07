@@ -55,8 +55,9 @@ public static class MauiProgram
     {
         // API Clients
         // TODO: Register Refit API clients for Device.API, SchemaRegistry.API, etc.
+        // Note: API base URLs should be configured via appsettings.json for different environments (dev/staging/prod)
         // services.AddRefitClient<IDeviceApiClient>()
-        //     .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.sensormine.com"));
+        //     .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["ApiEndpoints:DeviceApi"]));
 
         // NFC Services (platform-specific)
         // TODO: Register platform-specific NFC services

@@ -45,7 +45,7 @@ Cross-platform mobile application for field technicians built with .NET MAUI. Pr
 - **.NET MAUI** (.NET 8+)
 - **C# 12**
 - **MVVM Pattern** (CommunityToolkit.Mvvm)
-- **SQLite** (sqlite-net-pcl, Entity Framework Core)
+- **SQLite** (Entity Framework Core 8, SQLitePCLRaw for native bindings)
 - **MSAL** (Microsoft Authentication Library)
 - **Refit** (Type-safe HTTP client)
 - **Polly** (Resilience patterns)
@@ -95,7 +95,7 @@ Sensormine.Mobile.Maui/
 
 ### iOS
 - **Minimum Version**: iOS 14.0+
-- **NFC Support**: iPhone 7+ with iOS 13+
+- **NFC Support**: iPhone 7+ (NFC hardware), iOS 14.0+ required for this app
 - **Entitlements**: CoreNFC in Info.plist
 - **Distribution**: App Store or Enterprise
 
@@ -244,8 +244,9 @@ dotnet build
 ```
 
 ### SQLite Errors
-- Ensure SQLitePCLRaw.bundle_green is referenced
+- Ensure SQLitePCLRaw.bundle_green is referenced (provides native SQLite bindings for Entity Framework Core)
 - Check database path permissions
+- Verify Entity Framework Core migrations are applied
 
 ## Documentation
 

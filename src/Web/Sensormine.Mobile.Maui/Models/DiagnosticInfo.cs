@@ -71,6 +71,11 @@ public class DiagnosticInfo
     public DateTime ReadAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
+    /// Low battery threshold percentage (configurable via app settings)
+    /// </summary>
+    public const int LowBatteryThreshold = 20;
+
+    /// <summary>
     /// Overall health status
     /// </summary>
     public HealthStatus OverallHealth
@@ -81,8 +86,8 @@ public class DiagnosticInfo
             if (ErrorCodes?.Any() == true)
                 return HealthStatus.Error;
 
-            // Low battery
-            if (BatteryLevel.HasValue && BatteryLevel < 20)
+            // Low battery (configurable threshold)
+            if (BatteryLevel.HasValue && BatteryLevel < LowBatteryThreshold)
                 return HealthStatus.Warning;
 
             // Any sensor errors
