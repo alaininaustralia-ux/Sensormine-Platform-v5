@@ -1,10 +1,11 @@
-# Story Plan: 4.2 - Time-Series Charts
+# Story Completion: 4.2 - Time-Series Charts
 
 **Story**: 4.2  
 **Epic**: Epic 4 - Visualization & Dashboards  
 **Priority**: High  
 **Story Points**: 13  
 **Started**: 2025-12-04  
+**Completed**: 2025-12-07  
 **Developer**: AI Agent
 
 ---
@@ -19,13 +20,110 @@
 
 ## Acceptance Criteria
 
-From user story:
-- [ ] Chart types: line, bar, area, scatter, step
-- [ ] Multiple series per chart
-- [ ] Time range selection and zooming
-- [ ] Aggregation intervals configurable
-- [ ] Chart legends and axis labels
-- [ ] Export chart as image or data
+✅ **All criteria met:**
+- ✅ Chart types: line, bar, area, scatter, step
+- ✅ Multiple series per chart
+- ✅ Time range selection and zooming
+- ✅ Aggregation intervals configurable
+- ✅ Chart legends and axis labels
+- ✅ Export chart as image or data
+- ✅ **ENHANCED**: Backend Query API Tier 2 integration
+- ✅ **ENHANCED**: Full-stack data flow from TimescaleDB to dashboard
+
+---
+
+## What Was Delivered
+
+### Phase 1: Frontend Components (Dec 4-5, 2025)
+**Chart Components**:
+- `TimeSeriesChart` - Multi-series line/bar/area charts with Recharts
+- `ChartWidget` - Dashboard widget wrapper for time-series charts
+- Zoom/pan capabilities using Recharts' RechartsWrapper
+- Multiple aggregation intervals (5m, 15m, 1h, 6h, 12h, 1d)
+- Export to PNG and CSV
+- Responsive design with Tailwind CSS
+
+**Files Created**:
+- `src/components/dashboard/widgets/charts/time-series-chart.tsx`
+- `src/components/dashboard/widgets/chart-widget.tsx`
+- `src/lib/types/chart-types.ts`
+
+### Phase 2: Backend Query API Tier 2 (Dec 7, 2025)
+**New API Endpoints**:
+
+1. **KpiDataController** (`/api/KpiData`):
+   - `GET /api/KpiData` - Single metric KPI with optional trend comparison
+   - Parameters: deviceId, field, startTime, endTime, aggregation, comparePreviousPeriod
+   - Returns: `{ value, previousValue, changePercent, timeRange }`
+
+2. **WidgetDataController** (`/api/WidgetData`):
+   - `POST /api/WidgetData/multi-field` - Multi-field time-series aggregation
+   - `POST /api/WidgetData/categorical` - Categorical grouping by device/location/tags
+   - `POST /api/WidgetData/percentiles` - Percentile calculations (P50, P90, P95, P99)
+   - Supports multiple aggregations per field (avg, sum, min, max, count)
+
+**Files Created/Modified**:
+- `src/Services/Query.API/Controllers/KpiDataController.cs` (NEW)
+- `src/Services/Query.API/Controllers/WidgetDataController.cs` (NEW)
+- `src/Services/Query.API/DTOs/WidgetDataDto.cs` (NEW)
+- `src/Shared/Sensormine.Storage/TimeSeries/TimescaleDbRepository.cs` (ENHANCED)
+
+### Phase 3: Frontend Integration (Dec 7, 2025)
+**API Client**:
+- `lib/api/widget-data.ts` - Type-safe TypeScript client for Query API
+- `queryApiClient.kpi()` - Fetch KPI data with trends
+- `queryApiClient.timeSeries()` - Multi-field time-series queries
+- `queryApiClient.categorical()` - Grouped categorical data
+
+**Enhanced Widgets**:
+- `KpiWidget` - Displays KPI with trend indicators (↑↓ with percentages)
+- `ChartWidget` - Multi-field time-series visualization
+- `PieChartWidget` - Categorical breakdowns by device/location
+
+**Example Dashboard**:
+- `/dashboard/example` - Comprehensive dashboard showcasing all widgets
+- KPI widgets for temperature, humidity, pressure
+- Time-series chart with multiple sensors
+- Device distribution pie chart
+
+**Files Created**:
+- `src/Web/sensormine-web/src/lib/api/widget-data.ts`
+- `src/Web/sensormine-web/src/app/dashboard/example/page.tsx`
+
+---
+
+## Critical Bugs Fixed (Dec 7, 2025)
+
+### Bug #1: Filter Key Mismatch
+**Symptom**: Backend returning zeros despite data existing in database  
+**Root Cause**: Controllers passed `filters["metric_name"]` but repository expected `filters["_field"]`  
+**Impact**: All queries returned no data  
+**Fix Applied**:
+- Changed `KpiDataController.cs` line 172: `query.Filters["_field"] = field;`
+- Changed `WidgetDataController.cs` line 222: `["_field"] = field`
+**Files Modified**:
+- `Query.API/Controllers/KpiDataController.cs`
+- `Query.API/Controllers/WidgetDataController.cs`
+
+### Bug #2: PostgreSQL Type Casting
+**Symptom**: `InvalidCastException: Reading as 'System.Decimal' is not supported for fields having DataTypeName 'double precision'`  
+**Root Cause**: TimescaleDB stores values as `double precision`, code tried to read as `decimal`  
+**Impact**: Query API crashed when reading telemetry data  
+**Fix Applied**:
+```csharp
+// OLD: var value = reader.GetDecimal(reader.GetOrdinal("value"));
+// NEW:
+var doubleValue = reader.GetDouble(reader.GetOrdinal("value"));
+var value = (decimal)doubleValue;
+```
+**File Modified**: `Sensormine.Storage/TimeSeries/TimescaleDbRepository.cs` line 136
+
+### Bug #3: Configuration Port Mismatch
+**Symptom**: Frontend calling wrong port (5297 instead of 5079)  
+**Root Cause**: `.env.local` file had incorrect Query API URL  
+**Impact**: ERR_CONNECTION_REFUSED errors in browser console  
+**Fix Applied**: Changed `NEXT_PUBLIC_QUERY_API_URL` from `http://localhost:5297` to `http://localhost:5079`  
+**File Modified**: `src/Web/sensormine-web/.env.local` line 11
 
 ---
 
