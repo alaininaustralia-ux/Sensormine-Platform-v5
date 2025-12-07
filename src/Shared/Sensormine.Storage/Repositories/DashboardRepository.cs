@@ -103,4 +103,59 @@ public class DashboardRepository : IDashboardRepository
             .OrderByDescending(d => d.UpdatedAt)
             .ToListAsync();
     }
+
+    public async Task<Dashboard?> GetWithSubPagesAsync(Guid id, string tenantId)
+    {
+        return await _context.Dashboards
+            .Where(d => d.Id == id && d.TenantId == tenantId && !d.IsDeleted)
+            .Include(d => d.SubPages.Where(sp => !sp.IsDeleted))
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<IEnumerable<Dashboard>> GetSubPagesAsync(Guid parentDashboardId, string tenantId)
+    {
+        return await _context.Dashboards
+            .Where(d => d.ParentDashboardId == parentDashboardId && d.TenantId == tenantId && !d.IsDeleted)
+            .OrderBy(d => d.DisplayOrder)
+            .ThenBy(d => d.Name)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Dashboard>> GetRootDashboardsAsync(string tenantId, string? userId = null)
+    {
+        var query = _context.Dashboards
+            .Where(d => d.ParentDashboardId == null && d.TenantId == tenantId && !d.IsDeleted);
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            query = query.Where(d => d.UserId == userId);
+        }
+
+        return await query
+            .OrderBy(d => d.DisplayOrder)
+            .ThenByDescending(d => d.UpdatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<bool> ReorderSubPagesAsync(Guid parentDashboardId, string tenantId, Dictionary<Guid, int> displayOrders)
+    {
+        var subPages = await _context.Dashboards
+            .Where(d => d.ParentDashboardId == parentDashboardId && d.TenantId == tenantId && !d.IsDeleted)
+            .ToListAsync();
+
+        if (!subPages.Any())
+            return false;
+
+        foreach (var subPage in subPages)
+        {
+            if (displayOrders.TryGetValue(subPage.Id, out var newOrder))
+            {
+                subPage.DisplayOrder = newOrder;
+                subPage.UpdatedAt = DateTimeOffset.UtcNow;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }

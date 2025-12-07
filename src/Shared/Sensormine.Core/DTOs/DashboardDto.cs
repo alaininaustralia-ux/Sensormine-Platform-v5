@@ -1,3 +1,5 @@
+using Sensormine.Core.Models;
+
 namespace Sensormine.Core.DTOs;
 
 /// <summary>
@@ -16,6 +18,11 @@ public class DashboardDto
     public string? TemplateCategory { get; set; }
     public string[]? SharedWith { get; set; }
     public string[]? Tags { get; set; }
+    public Guid? ParentDashboardId { get; set; }
+    public string? ParentDashboardName { get; set; }
+    public List<SubPageSummaryDto> SubPages { get; set; } = new();
+    public int DisplayOrder { get; set; }
+    public DashboardType DashboardType { get; set; } = DashboardType.Root;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }
@@ -33,6 +40,9 @@ public class CreateDashboardRequest
     public string? TemplateCategory { get; set; }
     public string[]? SharedWith { get; set; }
     public string[]? Tags { get; set; }
+    public Guid? ParentDashboardId { get; set; }
+    public int DisplayOrder { get; set; }
+    public DashboardType DashboardType { get; set; } = DashboardType.Root;
 }
 
 /// <summary>
@@ -48,4 +58,18 @@ public class UpdateDashboardRequest
     public string? TemplateCategory { get; set; }
     public string[]? SharedWith { get; set; }
     public string[]? Tags { get; set; }
+    public int? DisplayOrder { get; set; }
+}
+
+/// <summary>
+/// Summary DTO for subpages in dashboard list
+/// </summary>
+public class SubPageSummaryDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public DashboardType DashboardType { get; set; }
+    public int DisplayOrder { get; set; }
+    public int WidgetCount { get; set; }
 }

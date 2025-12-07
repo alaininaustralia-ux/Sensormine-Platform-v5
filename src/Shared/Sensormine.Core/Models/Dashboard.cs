@@ -56,7 +56,58 @@ public class Dashboard : BaseEntity
     public string? Tags { get; set; }
 
     /// <summary>
+    /// Parent dashboard ID for subpage hierarchy (null for root dashboards)
+    /// </summary>
+    public Guid? ParentDashboardId { get; set; }
+
+    /// <summary>
+    /// Navigation property to parent dashboard
+    /// </summary>
+    public Dashboard? ParentDashboard { get; set; }
+
+    /// <summary>
+    /// Navigation property to child dashboards (subpages)
+    /// </summary>
+    public ICollection<Dashboard> SubPages { get; set; } = new List<Dashboard>();
+
+    /// <summary>
+    /// Display order within parent dashboard (for subpage sorting)
+    /// </summary>
+    public int DisplayOrder { get; set; }
+
+    /// <summary>
+    /// Type of dashboard: Root, DeviceDetail, DeviceTypeList, Custom
+    /// </summary>
+    public DashboardType DashboardType { get; set; } = DashboardType.Root;
+
+    /// <summary>
     /// Soft delete flag
     /// </summary>
     public bool IsDeleted { get; set; }
+}
+
+/// <summary>
+/// Type of dashboard for navigation hierarchy
+/// </summary>
+public enum DashboardType
+{
+    /// <summary>
+    /// Top-level dashboard
+    /// </summary>
+    Root = 0,
+    
+    /// <summary>
+    /// Detail page for a single device
+    /// </summary>
+    DeviceDetail = 1,
+    
+    /// <summary>
+    /// List page for a device type
+    /// </summary>
+    DeviceTypeList = 2,
+    
+    /// <summary>
+    /// Custom subpage
+    /// </summary>
+    Custom = 3
 }

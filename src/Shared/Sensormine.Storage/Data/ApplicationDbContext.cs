@@ -702,6 +702,25 @@ public class ApplicationDbContext : DbContext
                 .HasColumnName("is_deleted")
                 .IsRequired();
 
+            entity.Property(e => e.ParentDashboardId)
+                .HasColumnName("parent_dashboard_id");
+
+            entity.Property(e => e.DisplayOrder)
+                .HasColumnName("display_order")
+                .HasDefaultValue(0)
+                .IsRequired();
+
+            entity.Property(e => e.DashboardType)
+                .HasColumnName("dashboard_type")
+                .HasConversion<int>()
+                .IsRequired();
+
+            // Self-referencing relationship for hierarchy
+            entity.HasOne(e => e.ParentDashboard)
+                .WithMany(e => e.SubPages)
+                .HasForeignKey(e => e.ParentDashboardId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
+
             // Indexes for performance
             entity.HasIndex(e => new { e.TenantId, e.UserId })
                 .HasDatabaseName("ix_dashboards_tenant_user");
@@ -714,6 +733,12 @@ public class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => e.IsTemplate)
                 .HasDatabaseName("ix_dashboards_is_template");
+
+            entity.HasIndex(e => e.ParentDashboardId)
+                .HasDatabaseName("ix_dashboards_parent");
+
+            entity.HasIndex(e => new { e.TenantId, e.ParentDashboardId })
+                .HasDatabaseName("ix_dashboards_tenant_parent");
         });
     }
 }

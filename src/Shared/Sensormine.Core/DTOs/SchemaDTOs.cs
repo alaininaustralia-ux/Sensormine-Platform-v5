@@ -24,7 +24,7 @@ public class CreateSchemaRequest
 }
 
 /// <summary>
-/// Request to update schema metadata
+/// Request to update schema metadata and optionally create a new version
 /// </summary>
 public class UpdateSchemaRequest
 {
@@ -37,6 +37,21 @@ public class UpdateSchemaRequest
     /// Schema description
     /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    /// JSON Schema definition (if provided, creates a new version)
+    /// </summary>
+    public string? JsonSchema { get; set; }
+
+    /// <summary>
+    /// Change log for the new version
+    /// </summary>
+    public string? ChangeLog { get; set; }
+
+    /// <summary>
+    /// Tags for the schema
+    /// </summary>
+    public List<string>? Tags { get; set; }
 }
 
 /// <summary>
@@ -110,6 +125,7 @@ public class SchemaDto
     public string CreatedBy { get; set; } = string.Empty;
     public DateTimeOffset? UpdatedAt { get; set; }
     public string? UpdatedBy { get; set; }
+    public SchemaVersionDetailDto? CurrentVersion { get; set; }
     public List<SchemaVersionDto> Versions { get; set; } = new();
 }
 

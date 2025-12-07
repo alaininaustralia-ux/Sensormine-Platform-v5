@@ -41,4 +41,24 @@ public interface IDashboardRepository
     /// Search dashboards by name or tags
     /// </summary>
     Task<IEnumerable<Dashboard>> SearchAsync(string tenantId, string? searchTerm = null, string[]? tags = null);
+
+    /// <summary>
+    /// Get dashboard by ID with subpages loaded
+    /// </summary>
+    Task<Dashboard?> GetWithSubPagesAsync(Guid id, string tenantId);
+
+    /// <summary>
+    /// Get all subpages for a dashboard
+    /// </summary>
+    Task<IEnumerable<Dashboard>> GetSubPagesAsync(Guid parentDashboardId, string tenantId);
+
+    /// <summary>
+    /// Get all root dashboards (dashboards without a parent)
+    /// </summary>
+    Task<IEnumerable<Dashboard>> GetRootDashboardsAsync(string tenantId, string? userId = null);
+
+    /// <summary>
+    /// Reorder subpages within a parent dashboard
+    /// </summary>
+    Task<bool> ReorderSubPagesAsync(Guid parentDashboardId, string tenantId, Dictionary<Guid, int> displayOrders);
 }

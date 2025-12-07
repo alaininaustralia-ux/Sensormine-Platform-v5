@@ -71,6 +71,16 @@ public class DashboardsController : ControllerBase
         userId ??= "demo-user";
         tenantId ??= "default";
 
+        // If ParentDashboardId is provided, verify parent exists
+        if (request.ParentDashboardId.HasValue)
+        {
+            var parent = await _repository.GetByIdAsync(request.ParentDashboardId.Value, tenantId);
+            if (parent == null)
+            {
+                return BadRequest(new { message = "Parent dashboard not found" });
+            }
+        }
+
         var dashboard = new Sensormine.Core.Models.Dashboard
         {
             Id = Guid.NewGuid(),
@@ -83,7 +93,10 @@ public class DashboardsController : ControllerBase
             IsTemplate = request.IsTemplate,
             TemplateCategory = request.TemplateCategory,
             SharedWith = request.SharedWith != null ? JsonSerializer.Serialize(request.SharedWith) : null,
-            Tags = request.Tags != null ? JsonSerializer.Serialize(request.Tags) : null
+            Tags = request.Tags != null ? JsonSerializer.Serialize(request.Tags) : null,
+            ParentDashboardId = request.ParentDashboardId,
+            DisplayOrder = request.DisplayOrder,
+            DashboardType = request.DashboardType
         };
 
         var created = await _repository.CreateAsync(dashboard);
@@ -139,6 +152,9 @@ public class DashboardsController : ControllerBase
         
         if (request.Tags != null)
             dashboard.Tags = JsonSerializer.Serialize(request.Tags);
+        
+        if (request.DisplayOrder.HasValue)
+            dashboard.DisplayOrder = request.DisplayOrder.Value;
 
         var updated = await _repository.UpdateAsync(dashboard);
         
@@ -185,8 +201,117 @@ public class DashboardsController : ControllerBase
         return Ok(dashboards.Select(MapToDto));
     }
 
+    /// <summary>
+    /// Get all root dashboards (dashboards without a parent)
+    /// </summary>
+    [HttpGet("roots")]
+    public async Task<ActionResult<IEnumerable<DashboardDto>>> GetRootDashboards(
+        [FromHeader(Name = "X-User-Id")] string? userId,
+        [FromHeader(Name = "X-Tenant-Id")] string? tenantId)
+    {
+        userId ??= "demo-user";
+        tenantId ??= "default";
+
+        var dashboards = await _repository.GetRootDashboardsAsync(tenantId, userId);
+        return Ok(dashboards.Select(MapToDto));
+    }
+
+    /// <summary>
+    /// Get all subpages for a dashboard
+    /// </summary>
+    [HttpGet("{id:guid}/subpages")]
+    public async Task<ActionResult<IEnumerable<DashboardDto>>> GetSubPages(
+        Guid id,
+        [FromHeader(Name = "X-Tenant-Id")] string? tenantId)
+    {
+        tenantId ??= "default";
+
+        var subPages = await _repository.GetSubPagesAsync(id, tenantId);
+        return Ok(subPages.Select(MapToDto));
+    }
+
+    /// <summary>
+    /// Create a new subpage under a parent dashboard
+    /// </summary>
+    [HttpPost("{parentId:guid}/subpages")]
+    public async Task<ActionResult<DashboardDto>> CreateSubPage(
+        Guid parentId,
+        [FromBody] CreateDashboardRequest request,
+        [FromHeader(Name = "X-User-Id")] string? userId,
+        [FromHeader(Name = "X-Tenant-Id")] string? tenantId)
+    {
+        userId ??= "demo-user";
+        tenantId ??= "default";
+
+        // Verify parent exists
+        var parent = await _repository.GetByIdAsync(parentId, tenantId);
+        if (parent == null)
+        {
+            return NotFound(new { message = "Parent dashboard not found" });
+        }
+
+        var dashboard = new Sensormine.Core.Models.Dashboard
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            TenantId = tenantId,
+            Name = request.Name,
+            Description = request.Description,
+            Layout = JsonSerializer.Serialize(request.Layout ?? new object[] {}),
+            Widgets = JsonSerializer.Serialize(request.Widgets ?? new object[] {}),
+            IsTemplate = request.IsTemplate,
+            TemplateCategory = request.TemplateCategory,
+            SharedWith = request.SharedWith != null ? JsonSerializer.Serialize(request.SharedWith) : null,
+            Tags = request.Tags != null ? JsonSerializer.Serialize(request.Tags) : null,
+            ParentDashboardId = parentId,
+            DisplayOrder = request.DisplayOrder,
+            DashboardType = request.DashboardType
+        };
+
+        var created = await _repository.CreateAsync(dashboard);
+        
+        _logger.LogInformation("Subpage {DashboardId} created under parent {ParentId} by user {UserId}", 
+            created.Id, parentId, userId);
+        
+        return CreatedAtAction(
+            nameof(GetDashboard), 
+            new { id = created.Id }, 
+            MapToDto(created));
+    }
+
+    /// <summary>
+    /// Reorder subpages within a parent dashboard
+    /// </summary>
+    [HttpPut("{parentId:guid}/subpages/reorder")]
+    public async Task<ActionResult> ReorderSubPages(
+        Guid parentId,
+        [FromBody] Dictionary<Guid, int> displayOrders,
+        [FromHeader(Name = "X-Tenant-Id")] string? tenantId)
+    {
+        tenantId ??= "default";
+
+        var success = await _repository.ReorderSubPagesAsync(parentId, tenantId, displayOrders);
+        
+        if (!success)
+        {
+            return NotFound(new { message = "Parent dashboard or subpages not found" });
+        }
+
+        _logger.LogInformation("Subpages reordered for parent {ParentId}", parentId);
+        
+        return NoContent();
+    }
+
     private static DashboardDto MapToDto(Sensormine.Core.Models.Dashboard dashboard)
     {
+        // Count widgets if SubPages is loaded
+        var widgetCount = 0;
+        if (dashboard.Widgets != null)
+        {
+            var widgets = JsonSerializer.Deserialize<object[]>(dashboard.Widgets);
+            widgetCount = widgets?.Length ?? 0;
+        }
+
         return new DashboardDto
         {
             Id = dashboard.Id,
@@ -205,7 +330,22 @@ public class DashboardsController : ControllerBase
                 ? JsonSerializer.Deserialize<string[]>(dashboard.Tags) 
                 : null,
             CreatedAt = dashboard.CreatedAt,
-            UpdatedAt = dashboard.UpdatedAt ?? dashboard.CreatedAt
+            UpdatedAt = dashboard.UpdatedAt ?? dashboard.CreatedAt,
+            ParentDashboardId = dashboard.ParentDashboardId,
+            ParentDashboardName = dashboard.ParentDashboard?.Name,
+            DisplayOrder = dashboard.DisplayOrder,
+            DashboardType = dashboard.DashboardType,
+            SubPages = dashboard.SubPages?.Select(sp => new SubPageSummaryDto
+            {
+                Id = sp.Id,
+                Name = sp.Name,
+                Description = sp.Description,
+                DashboardType = sp.DashboardType,
+                DisplayOrder = sp.DisplayOrder,
+                WidgetCount = sp.Widgets != null 
+                    ? (JsonSerializer.Deserialize<object[]>(sp.Widgets)?.Length ?? 0) 
+                    : 0
+            }).OrderBy(sp => sp.DisplayOrder).ToList()
         };
     }
 }
