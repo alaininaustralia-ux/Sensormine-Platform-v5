@@ -95,3 +95,27 @@ public record UserListResponse
     public int PageSize { get; init; }
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 }
+
+/// <summary>
+/// DTO for authentication request
+/// </summary>
+public record AuthenticateRequest
+{
+    public string Email { get; init; } = string.Empty;
+    public string Password { get; init; } = string.Empty;
+    public string? TenantId { get; init; }
+}
+
+/// <summary>
+/// DTO for authentication response
+/// </summary>
+public record AuthenticateResponse
+{
+    public string UserId { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string FullName { get; init; } = string.Empty;
+    public string Role { get; init; } = string.Empty;
+    public string TenantId { get; init; } = string.Empty;
+    public bool IsSuperAdmin { get; init; }
+    public bool MustChangePassword { get; init; }
+}

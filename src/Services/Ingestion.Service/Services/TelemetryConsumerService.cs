@@ -111,24 +111,58 @@ public class TelemetryConsumerService : BackgroundService
             //     return;
             // }
 
-            // Create time-series data
-            var timeSeriesData = new TimeSeriesData
+            // TODO: Get device type and schema for validation
+            // For now, use empty string for device type
+            var deviceType = "";
+            
+            // Separate system fields from custom fields
+            var systemFields = new HashSet<string>
             {
+                "timestamp", "time", "device_id", "deviceId",
+                "battery_level", "batteryLevel", "battery",
+                "signal_strength", "signalStrength", "rssi",
+                "latitude", "lat", "longitude", "lng", "lon",
+                "altitude", "alt"
+            };
+            
+            // Create telemetry data with JSONB custom fields
+            var telemetry = new TelemetryData
+            {
+                Time = ExtractTimestamp(telemetryData),
                 DeviceId = deviceId,
-                TenantId = tenantId,
-                Timestamp = ExtractTimestamp(telemetryData),
-                Values = telemetryData.ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => ConvertValue(kvp.Value)
-                )
+                TenantId = Guid.Parse(tenantId),
+                DeviceType = deviceType,
+                
+                // Extract system fields
+                BatteryLevel = ExtractDouble(telemetryData, "battery_level") 
+                    ?? ExtractDouble(telemetryData, "batteryLevel")
+                    ?? ExtractDouble(telemetryData, "battery"),
+                SignalStrength = ExtractDouble(telemetryData, "signal_strength")
+                    ?? ExtractDouble(telemetryData, "signalStrength")
+                    ?? ExtractDouble(telemetryData, "rssi"),
+                Latitude = ExtractDouble(telemetryData, "latitude")
+                    ?? ExtractDouble(telemetryData, "lat"),
+                Longitude = ExtractDouble(telemetryData, "longitude")
+                    ?? ExtractDouble(telemetryData, "lng")
+                    ?? ExtractDouble(telemetryData, "lon"),
+                Altitude = ExtractDouble(telemetryData, "altitude")
+                    ?? ExtractDouble(telemetryData, "alt"),
+                
+                // Everything else goes into custom_fields
+                CustomFields = telemetryData
+                    .Where(kvp => !systemFields.Contains(kvp.Key, StringComparer.OrdinalIgnoreCase))
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => ConvertValue(kvp.Value)
+                    )
             };
 
             // Write to TimescaleDB using scoped repository
             var repository = scope.ServiceProvider.GetRequiredService<ITimeSeriesRepository>();
-            await repository.WriteAsync("telemetry", timeSeriesData, cancellationToken);
+            await repository.WriteAsync("telemetry", telemetry, cancellationToken);
 
             _logger.LogInformation("Stored telemetry data for device {DeviceId} at {Timestamp}", 
-                deviceId, timeSeriesData.Timestamp);
+                deviceId, telemetry.Time);
         }
         catch (Exception ex)
         {
@@ -151,27 +185,78 @@ public class TelemetryConsumerService : BackgroundService
         }
     }
 
-    private DateTimeOffset ExtractTimestamp(Dictionary<string, object> data)
+    private static DateTimeOffset ExtractTimestamp(Dictionary<string, object> data)
     {
-        if (data.TryGetValue("timestamp", out var timestampObj))
+        // Try multiple timestamp field names
+        var timestampFields = new[] { "timestamp", "time", "ts", "datetime" };
+        
+        foreach (var field in timestampFields)
         {
-            if (timestampObj is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.String)
+            if (data.TryGetValue(field, out var timestampObj))
             {
-                if (DateTimeOffset.TryParse(jsonElement.GetString(), out var timestamp))
+                if (timestampObj is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.String)
                 {
-                    return timestamp;
+                    if (DateTimeOffset.TryParse(jsonElement.GetString(), out var timestamp))
+                    {
+                        return timestamp;
+                    }
                 }
-            }
-            else if (timestampObj is string timestampStr)
-            {
-                if (DateTimeOffset.TryParse(timestampStr, out var timestamp))
+                else if (timestampObj is string timestampStr)
                 {
-                    return timestamp;
+                    if (DateTimeOffset.TryParse(timestampStr, out var timestamp))
+                    {
+                        return timestamp;
+                    }
+                }
+                else if (timestampObj is DateTimeOffset dto)
+                {
+                    return dto;
+                }
+                else if (timestampObj is DateTime dt)
+                {
+                    return new DateTimeOffset(dt);
+                }
+                else if (timestampObj is JsonElement jsonNum && jsonNum.ValueKind == JsonValueKind.Number)
+                {
+                    if (jsonNum.TryGetInt64(out var unixMs))
+                    {
+                        return DateTimeOffset.FromUnixTimeMilliseconds(unixMs);
+                    }
                 }
             }
         }
 
         return DateTimeOffset.UtcNow;
+    }
+    
+    private static double? ExtractDouble(Dictionary<string, object> data, string key)
+    {
+        if (!data.TryGetValue(key, out var value))
+            return null;
+        
+        if (value is JsonElement jsonElement)
+        {
+            if (jsonElement.ValueKind == JsonValueKind.Number)
+            {
+                return jsonElement.GetDouble();
+            }
+            if (jsonElement.ValueKind == JsonValueKind.String && double.TryParse(jsonElement.GetString(), out var parsed))
+            {
+                return parsed;
+            }
+            return null;
+        }
+            
+        return value switch
+        {
+            double d => d,
+            float f => f,
+            int i => i,
+            long l => l,
+            decimal dec => (double)dec,
+            string s when double.TryParse(s, out var parsed) => parsed,
+            _ => null
+        };
     }
 
     private object ConvertValue(object value)

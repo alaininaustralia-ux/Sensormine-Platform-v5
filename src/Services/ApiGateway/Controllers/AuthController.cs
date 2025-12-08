@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using System.Net.Http.Json;
 
 namespace ApiGateway.Controllers;
 
@@ -41,38 +42,81 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "Email and password are required" });
         }
 
-        // For development: Accept demo credentials or authenticate via Identity.API
-        // TODO: Implement actual authentication with Identity.API
-        // For now, generate token with mock user data
-        
-        // Mock user data (will be replaced with actual Identity.API call)
-        var userId = Guid.NewGuid().ToString();
-        var tenantId = "00000000-0000-0000-0000-000000000001";
-        var userRole = "Administrator";
-        var userName = request.Email.Split('@')[0];
-
-        // Generate JWT token with proper claims
-        var token = GenerateJwtToken(userId, request.Email, userName, tenantId, userRole, false);
-        var refreshToken = Guid.NewGuid().ToString();
-
-        var response = new
+        try
         {
-            token,
-            refreshToken,
-            user = new
+            // Call Identity.API to authenticate user
+            var identityApiUrl = _configuration["Services:IdentityApi"] ?? "http://localhost:5003";
+            var httpClient = _httpClientFactory.CreateClient();
+            
+            var authRequest = new
             {
-                id = userId,
                 email = request.Email,
-                name = userName,
-                role = userRole,
-                tenantId,
-                isSuperAdmin = false,
-                permissions = GetPermissionsForRole(userRole)
-            },
-            expiresIn = 3600
-        };
+                password = request.Password,
+                tenantId = (string?)null // Will use email to find tenant
+            };
 
-        return Ok(response);
+            var response = await httpClient.PostAsJsonAsync(
+                $"{identityApiUrl}/api/user/authenticate",
+                authRequest,
+                cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Authentication failed for email: {Email}, Status: {Status}", 
+                    request.Email, response.StatusCode);
+                return Unauthorized(new { message = "Invalid email or password" });
+            }
+
+            var authResponse = await response.Content.ReadFromJsonAsync<AuthenticateResponse>(cancellationToken: cancellationToken);
+            
+            if (authResponse == null)
+            {
+                _logger.LogError("Failed to deserialize authentication response for email: {Email}", request.Email);
+                return StatusCode(500, new { message = "Authentication failed" });
+            }
+
+            // Generate JWT token with user data from Identity.API
+            var token = GenerateJwtToken(
+                authResponse.UserId,
+                authResponse.Email,
+                authResponse.FullName,
+                authResponse.TenantId,
+                authResponse.Role,
+                authResponse.IsSuperAdmin);
+            
+            var refreshToken = Guid.NewGuid().ToString();
+
+            var loginResponse = new
+            {
+                token,
+                refreshToken,
+                user = new
+                {
+                    id = authResponse.UserId,
+                    email = authResponse.Email,
+                    name = authResponse.FullName,
+                    role = authResponse.Role,
+                    tenantId = authResponse.TenantId,
+                    isSuperAdmin = authResponse.IsSuperAdmin,
+                    mustChangePassword = authResponse.MustChangePassword,
+                    permissions = GetPermissionsForRole(authResponse.Role)
+                },
+                expiresIn = 3600
+            };
+
+            _logger.LogInformation("User {UserId} authenticated successfully", authResponse.UserId);
+            return Ok(loginResponse);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Failed to connect to Identity.API for email: {Email}", request.Email);
+            return StatusCode(503, new { message = "Authentication service unavailable" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during authentication for email: {Email}", request.Email);
+            return StatusCode(500, new { message = "Internal server error" });
+        }
     }
 
     /// <summary>
@@ -187,5 +231,26 @@ public class AuthController : ControllerBase
     }
 }
 
+/// <summary>
+/// Login request model
+/// </summary>
 public record LoginRequest(string Email, string Password);
+
+/// <summary>
+/// Refresh token request model
+/// </summary>
 public record RefreshRequest(string RefreshToken);
+
+/// <summary>
+/// Authentication response from Identity.API
+/// </summary>
+public record AuthenticateResponse
+{
+    public string UserId { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string FullName { get; init; } = string.Empty;
+    public string Role { get; init; } = string.Empty;
+    public string TenantId { get; init; } = string.Empty;
+    public bool IsSuperAdmin { get; init; }
+    public bool MustChangePassword { get; init; }
+}

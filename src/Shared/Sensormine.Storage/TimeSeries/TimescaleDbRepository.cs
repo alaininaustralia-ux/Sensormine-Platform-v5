@@ -174,40 +174,57 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
     private async Task WriteTimeSeriesDataAsync(string measurement, TimeSeriesData data, CancellationToken cancellationToken)
     {
         var tableName = GetTableName(measurement);
+        
+        // Set tenant context for Row Level Security
+        await SetTenantContextAsync(_tenantId, isServiceAccount: true, cancellationToken);
+        
         var sql = TimeSeriesQueryBuilder.BuildInsertQuery(tableName);
 
         EnsureConnectionOpen();
 
-        // Write one row per metric
-        foreach (var kvp in data.Values)
-        {
-            using var command = _connection.CreateCommand();
-            command.CommandText = sql;
+        // Write single row with JSONB custom_fields
+        using var command = _connection.CreateCommand();
+        command.CommandText = sql;
 
-            AddParameter(command, "@timestamp", data.Timestamp.UtcDateTime);
-            AddParameter(command, "@deviceId", data.DeviceId);
-            AddParameter(command, "@tenantId", _tenantId);
-            AddParameter(command, "@metricName", kvp.Key);
-            
-            // Convert value to double
-            double value = kvp.Value switch
-            {
-                double d => d,
-                float f => f,
-                int i => i,
-                long l => l,
-                decimal dec => (double)dec,
-                string s when double.TryParse(s, out var parsed) => parsed,
-                _ => 0.0
-            };
-            
-            AddParameter(command, "@value", value);
-            AddParameter(command, "@unit", null);  // TODO: Extract unit from schema
-            AddParameter(command, "@tags", data.Tags != null ? JsonSerializer.Serialize(data.Tags, _jsonOptions) : null);
-            AddParameter(command, "@metadata", data.Quality != null ? JsonSerializer.Serialize(data.Quality, _jsonOptions) : null);
+        // Convert TimeSeriesData to TelemetryData for new JSONB schema
+        var telemetryData = ConvertToTelemetryData(data);
 
-            await ExecuteNonQueryAsync(command, cancellationToken);
-        }
+        AddParameter(command, "@timestamp", telemetryData.Time.UtcDateTime);
+        AddParameter(command, "@deviceId", telemetryData.DeviceId);
+        AddParameter(command, "@tenantId", telemetryData.TenantId.ToString());
+        AddParameter(command, "@deviceType", telemetryData.DeviceType);
+        
+        // System fields
+        AddParameter(command, "@batteryLevel", telemetryData.BatteryLevel);
+        AddParameter(command, "@signalStrength", telemetryData.SignalStrength);
+        AddParameter(command, "@latitude", telemetryData.Latitude);
+        AddParameter(command, "@longitude", telemetryData.Longitude);
+        AddParameter(command, "@altitude", telemetryData.Altitude);
+        
+        // JSONB fields
+        AddParameter(command, "@customFields", 
+            telemetryData.CustomFields.Count > 0 
+                ? JsonSerializer.Serialize(telemetryData.CustomFields, _jsonOptions) 
+                : "{}");
+        AddParameter(command, "@quality", 
+            telemetryData.Quality != null 
+                ? JsonSerializer.Serialize(telemetryData.Quality, _jsonOptions) 
+                : null);
+
+        await ExecuteNonQueryAsync(command, cancellationToken);
+    }
+    
+    private async Task SetTenantContextAsync(string tenantId, bool isServiceAccount, CancellationToken cancellationToken)
+    {
+        EnsureConnectionOpen();
+        
+        // Set PostgreSQL session variables for Row Level Security
+        using var command = _connection.CreateCommand();
+        command.CommandText = $@"
+            SET app.current_tenant_id = '{tenantId}';
+            SET app.is_service_account = '{isServiceAccount}';
+        ";
+        await ExecuteNonQueryAsync(command, cancellationToken);
     }
 
     private static string GetTableName(string measurement)
@@ -382,6 +399,67 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
         }
 
         _disposed = true;
+    }
+
+    /// <summary>
+    /// Convert TimeSeriesData to TelemetryData for JSONB schema
+    /// </summary>
+    private static TelemetryData ConvertToTelemetryData(TimeSeriesData data)
+    {
+        var telemetry = new TelemetryData
+        {
+            Time = data.Timestamp,
+            DeviceId = data.DeviceId,
+            TenantId = Guid.TryParse(data.TenantId, out var tenantGuid) 
+                ? tenantGuid 
+                : Guid.Parse("00000000-0000-0000-0000-000000000001"),
+            DeviceType = data.Tags?.GetValueOrDefault("device_type") ?? "unknown",
+            CustomFields = new Dictionary<string, object>()
+        };
+
+        // Extract system fields from values if they exist
+        if (data.Values.TryGetValue("battery_level", out var batteryLevel) && batteryLevel is double battery)
+        {
+            telemetry.BatteryLevel = battery;
+        }
+        if (data.Values.TryGetValue("signal_strength", out var signalStrength) && signalStrength is double signal)
+        {
+            telemetry.SignalStrength = signal;
+        }
+        if (data.Values.TryGetValue("latitude", out var latitude) && latitude is double lat)
+        {
+            telemetry.Latitude = lat;
+        }
+        if (data.Values.TryGetValue("longitude", out var longitude) && longitude is double lng)
+        {
+            telemetry.Longitude = lng;
+        }
+        if (data.Values.TryGetValue("altitude", out var altitude) && altitude is double alt)
+        {
+            telemetry.Altitude = alt;
+        }
+
+        // Add all non-system fields to CustomFields
+        var systemFields = new HashSet<string> 
+        { 
+            "battery_level", "signal_strength", "latitude", "longitude", "altitude" 
+        };
+
+        foreach (var kvp in data.Values.Where(kvp => !systemFields.Contains(kvp.Key)))
+        {
+            telemetry.CustomFields[kvp.Key] = kvp.Value;
+        }
+
+        // Copy quality metadata
+        if (data.Quality != null)
+        {
+            foreach (var kvp in data.Quality)
+            {
+                telemetry.CustomFields[$"quality_{kvp.Key}"] = kvp.Value;
+            }
+        }
+
+        return telemetry;
     }
 }
 

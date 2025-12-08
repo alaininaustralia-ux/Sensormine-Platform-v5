@@ -253,4 +253,61 @@ public class UserController : ControllerBase
             tenantId
         });
     }
+
+    /// <summary>
+    /// Authenticate user with email and password
+    /// </summary>
+    [HttpPost("authenticate")]
+    public async Task<ActionResult<AuthenticateResponse>> Authenticate(
+        [FromBody] AuthenticateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Authentication attempt for email: {Email}", request.Email);
+
+        if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+        {
+            return BadRequest(new { message = "Email and password are required" });
+        }
+
+        // Find user by email (try all tenants for login - tenant will be enforced by actual email uniqueness)
+        var user = await _userRepository.GetByEmailAsync(request.Email, request.TenantId ?? "00000000-0000-0000-0000-000000000001", cancellationToken);
+
+        if (user == null)
+        {
+            _logger.LogWarning("Login failed: User not found for email {Email}", request.Email);
+            return Unauthorized(new { message = "Invalid email or password" });
+        }
+
+        if (!user.IsActive)
+        {
+            _logger.LogWarning("Login failed: User account is inactive for email {Email}", request.Email);
+            return Unauthorized(new { message = "User account is inactive" });
+        }
+
+        // Verify password
+        if (user.PasswordHash == null || !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
+        {
+            _logger.LogWarning("Login failed: Invalid password for email {Email}", request.Email);
+            return Unauthorized(new { message = "Invalid email or password" });
+        }
+
+        // Update last login timestamp
+        user.LastLoginAt = DateTimeOffset.UtcNow;
+        await _userRepository.UpdateAsync(user, cancellationToken);
+
+        _logger.LogInformation("User {UserId} authenticated successfully", user.Id);
+
+        var response = new AuthenticateResponse
+        {
+            UserId = user.Id.ToString(),
+            Email = user.Email,
+            FullName = user.FullName,
+            Role = user.Role.ToString(),
+            TenantId = user.TenantId,
+            IsSuperAdmin = user.IsSuperAdmin,
+            MustChangePassword = user.MustChangePassword
+        };
+
+        return Ok(response);
+    }
 }

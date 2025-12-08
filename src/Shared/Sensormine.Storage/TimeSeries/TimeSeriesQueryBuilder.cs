@@ -214,13 +214,21 @@ WHERE tenant_id = @tenantId::uuid
     }
 
     /// <summary>
-    /// Builds an INSERT statement for time-series data
+    /// Builds an INSERT statement for time-series data (JSONB schema)
     /// </summary>
     public static string BuildInsertQuery(string tableName)
     {
         return $@"
-INSERT INTO {tableName} (time, device_id, tenant_id, metric_name, value, unit, tags, metadata)
-VALUES (@timestamp, @deviceId, @tenantId::uuid, @metricName, @value, @unit, @tags::jsonb, @metadata::jsonb)";
+INSERT INTO {tableName} (
+    time, device_id, tenant_id, device_type,
+    battery_level, signal_strength, latitude, longitude, altitude,
+    custom_fields, quality
+)
+VALUES (
+    @timestamp, @deviceId, @tenantId::uuid, @deviceType,
+    @batteryLevel, @signalStrength, @latitude, @longitude, @altitude,
+    @customFields::jsonb, @quality::jsonb
+)";
     }
 
     private static string GetSqlAggregateFunction(string function)
