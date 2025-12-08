@@ -32,6 +32,7 @@ import {
   TableWidgetConfig,
   MapWidgetConfig,
   DeviceListWidgetConfig,
+  DeviceDataTableWidgetConfig,
 } from './widget-configs';
 import {
   KpiFieldSelection,
@@ -166,10 +167,10 @@ function WidgetConfigFormInternal({
       description,
       config: {
         ...widget.config,
-        ...dataConfig,
         widgetSpecific: widgetSpecificConfig,
         fieldConfig: fieldConfig,
       },
+      dataConfig: dataConfig,
     });
 
     onOpenChange(false);
@@ -279,7 +280,15 @@ function WidgetConfigFormInternal({
               </div>
             )}
 
-            {!['kpi', 'chart', 'gauge', 'table', 'map', 'device-list'].includes(widget.type) && (
+            {widget.type === 'device-data-table' && (
+              <DeviceDataTableWidgetConfig
+                config={widgetSpecificConfig}
+                onChange={setWidgetSpecificConfig}
+                mode="data"
+              />
+            )}
+
+            {!['kpi', 'chart', 'gauge', 'table', 'map', 'device-list', 'device-data-table'].includes(widget.type) && (
               <WidgetDataConfig
                 config={dataConfig}
                 onChange={setDataConfig}
@@ -331,7 +340,15 @@ function WidgetConfigFormInternal({
               />
             )}
 
-            {!['kpi', 'chart', 'gauge', 'table', 'map', 'device-list'].includes(widget.type) && (
+            {widget.type === 'device-data-table' && (
+              <DeviceDataTableWidgetConfig
+                config={widgetSpecificConfig}
+                onChange={setWidgetSpecificConfig}
+                mode="display"
+              />
+            )}
+
+            {!['kpi', 'chart', 'gauge', 'table', 'map', 'device-list', 'device-data-table'].includes(widget.type) && (
               <div className="text-sm text-muted-foreground">
                 Widget-specific display options coming soon.
               </div>

@@ -7,7 +7,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { DashboardWidgetComponent } from './DashboardWidget';
-import { useDashboardStore } from '@/lib/dashboard/store';
+import { useDashboardStore } from '@/lib/stores/dashboard-store';
 import { GRID_CONFIG } from '@/lib/dashboard/widget-library';
 import type { WidgetDragData, WidgetPosition } from '@/lib/dashboard/types';
 import { cn } from '@/lib/utils';
@@ -23,15 +23,17 @@ export function DashboardGrid({ className, deviceId, onWidgetConfigure }: Dashbo
   const [dropPosition, setDropPosition] = useState<{ x: number; y: number } | null>(null);
 
   const {
-    dashboard,
-    selectedWidgetId,
-    isEditing,
-    addWidget,
-    removeWidget,
-    selectWidget,
-    moveWidget,
-    resizeWidget,
+    currentDashboard: dashboard,
+    isEditMode: isEditing,
   } = useDashboardStore();
+  
+  // For view mode, we don't need these interactive functions
+  const selectedWidgetId = null;
+  const addWidget = () => {};
+  const removeWidget = () => {};
+  const selectWidget = () => {};
+  const moveWidget = () => {};
+  const resizeWidget = () => {};
 
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
@@ -144,7 +146,10 @@ export function DashboardGrid({ className, deviceId, onWidgetConfigure }: Dashbo
 
   // Calculate max rows needed
   const maxRow = dashboard.widgets.reduce(
-    (max, w) => Math.max(max, w.position.y + w.position.height),
+    (max, w) => {
+      if (!w.position) return max;
+      return Math.max(max, w.position.y + w.position.height);
+    },
     4 // Minimum 4 rows
   );
 
@@ -202,6 +207,7 @@ export function DashboardGrid({ className, deviceId, onWidgetConfigure }: Dashbo
             key={widget.id}
             widget={widget}
             deviceId={deviceId}
+            dashboardId={dashboard.id}
             isSelected={selectedWidgetId === widget.id}
             isEditing={isEditing}
             onSelect={() => handleWidgetSelect(widget.id)}

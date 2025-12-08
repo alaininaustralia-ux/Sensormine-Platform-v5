@@ -10,7 +10,7 @@ import { DashboardToolbar } from './DashboardToolbar';
 import { WidgetPalette } from './WidgetPalette';
 import { DashboardGrid } from './DashboardGrid';
 import { WidgetConfigPanel } from './WidgetConfigPanel';
-import { useDashboardStore } from '@/lib/dashboard/store';
+import { useDashboardStore } from '@/lib/stores/dashboard-store';
 import { DASHBOARD_TEMPLATES } from '@/lib/dashboard/widget-library';
 import type { DashboardTemplate } from '@/lib/dashboard/types';
 import { cn } from '@/lib/utils';

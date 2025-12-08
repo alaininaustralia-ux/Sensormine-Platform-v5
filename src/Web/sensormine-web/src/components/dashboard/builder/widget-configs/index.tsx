@@ -12,6 +12,7 @@ export { GaugeWidgetConfig } from './gauge-widget-config';
 export { TableWidgetConfig } from './table-widget-config';
 export { MapWidgetConfig } from './map-widget-config';
 export { DeviceListWidgetConfig } from './device-list-widget-config';
+export { DeviceDataTableWidgetConfig } from './device-data-table-widget-config';
 
 export type { WidgetConfigComponentProps } from './types';
 

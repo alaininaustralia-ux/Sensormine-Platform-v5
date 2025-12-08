@@ -29,6 +29,7 @@ class ApiClient {
   private baseUrl: string;
   private timeout: number;
   private authToken: string | null = null;
+  private tenantId: string | null = null;
 
   constructor(baseUrl: string, timeout: number) {
     this.baseUrl = baseUrl;
@@ -47,6 +48,20 @@ class ApiClient {
    */
   getAuthToken(): string | null {
     return this.authToken;
+  }
+
+  /**
+   * Set tenant ID (automatically added to all requests)
+   */
+  setTenantId(tenantId: string | null) {
+    this.tenantId = tenantId;
+  }
+
+  /**
+   * Get tenant ID
+   */
+  getTenantId(): string | null {
+    return this.tenantId;
   }
 
   /**
@@ -69,6 +84,11 @@ class ApiClient {
     
     if (this.authToken && !headers.has('Authorization')) {
       headers.set('Authorization', `Bearer ${this.authToken}`);
+    }
+
+    // Automatically add tenant ID header if set (for multi-tenancy)
+    if (this.tenantId && !headers.has('X-Tenant-Id')) {
+      headers.set('X-Tenant-Id', this.tenantId);
     }
 
     return headers;

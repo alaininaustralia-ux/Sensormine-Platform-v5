@@ -15,6 +15,7 @@ import { ChartWidget } from './chart-widget';
 import { MapWidget } from './map-widget';
 import { VideoWidget } from './video-widget';
 import { DeviceListWidget } from './device-list-widget';
+import { DeviceDataTableWidget } from './device-data-table-widget';
 import type { BaseWidgetProps } from './base-widget';
 
 export interface WidgetFactoryProps {
@@ -135,6 +136,17 @@ export function WidgetFactory({
           {...baseProps}
           config={deviceListConfig}
           dashboardId={dashboardId || 'unknown'}
+        />
+      );
+    }
+    
+    case 'device-data-table': {
+      const deviceDataTableConfig = widget.config || {};
+      return (
+        <DeviceDataTableWidget
+          {...baseProps}
+          dashboardId={dashboardId || 'unknown'}
+          config={deviceDataTableConfig}
         />
       );
     }

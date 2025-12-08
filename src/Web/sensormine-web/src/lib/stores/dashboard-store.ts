@@ -326,9 +326,10 @@ export const useDashboardStore = create<DashboardState>()(
         // Sync to server (fire and forget)
         const dashboard = get().getDashboard(dashboardId);
         if (dashboard) {
+          const request = dashboardApi.toUpdateRequest({ widgets: dashboard.widgets, layout: dashboard.layout });
           dashboardApi.update(
             dashboardId,
-            { widgets: dashboard.widgets, layout: dashboard.layout },
+            request,
             userId
           ).catch(error => {
             console.error('Failed to sync widget addition:', error);
@@ -375,9 +376,10 @@ export const useDashboardStore = create<DashboardState>()(
         // Sync to server (fire and forget)
         const dashboard = get().getDashboard(dashboardId);
         if (dashboard) {
+          const request = dashboardApi.toUpdateRequest({ widgets: dashboard.widgets });
           dashboardApi.update(
             dashboardId,
-            { widgets: dashboard.widgets },
+            request,
             userId
           ).catch(error => {
             console.error('Failed to sync widget update:', error);
@@ -416,9 +418,10 @@ export const useDashboardStore = create<DashboardState>()(
         // Sync to server (fire and forget)
         const dashboard = get().getDashboard(dashboardId);
         if (dashboard) {
+          const request = dashboardApi.toUpdateRequest({ widgets: dashboard.widgets, layout: dashboard.layout });
           dashboardApi.update(
             dashboardId,
-            { widgets: dashboard.widgets, layout: dashboard.layout },
+            request,
             userId
           ).catch(error => {
             console.error('Failed to sync widget deletion:', error);
@@ -445,9 +448,10 @@ export const useDashboardStore = create<DashboardState>()(
         }));
         
         // Sync to server (fire and forget)
+        const request = dashboardApi.toUpdateRequest({ layout });
         dashboardApi.update(
           dashboardId,
-          { layout },
+          request,
           userId
         ).catch(error => {
           console.error('Failed to sync layout update:', error);

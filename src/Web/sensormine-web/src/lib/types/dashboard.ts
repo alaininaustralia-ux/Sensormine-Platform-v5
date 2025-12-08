@@ -5,6 +5,8 @@
  * These types align with react-grid-layout and our dashboard requirements.
  */
 
+import type { WidgetDataConfig } from '@/components/dashboard/builder/widget-data-config';
+
 /**
  * Widget types available in the dashboard builder
  */
@@ -15,7 +17,8 @@ export type WidgetType =
   | 'video' 
   | 'gauge' 
   | 'kpi'
-  | 'device-list';
+  | 'device-list'
+  | 'device-data-table';
 
 /**
  * Grid layout item (compatible with react-grid-layout)
@@ -102,6 +105,8 @@ export interface Widget {
   description?: string;
   /** Widget configuration */
   config: WidgetConfig;
+  /** Widget data configuration (field bindings, data sources) */
+  dataConfig?: WidgetDataConfig;
   /** Creation timestamp */
   createdAt: Date;
   /** Last update timestamp */
@@ -237,7 +242,7 @@ export interface DashboardTemplate {
   /** Template description */
   description: string;
   /** Template category */
-  category: 'operations' | 'maintenance' | 'security' | 'custom';
+  category: 'operations' | 'maintenance' | 'security' | 'analytics' | 'custom';
   /** Template icon */
   icon: string;
   /** Pre-configured widgets */

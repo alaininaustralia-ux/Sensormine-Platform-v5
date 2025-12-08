@@ -8,14 +8,14 @@
 
 import { useEffect } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { useDashboardStore } from '@/lib/dashboard/store';
+import { useDashboardStore } from '@/lib/stores/dashboard-store';
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { DeviceContextBanner } from '@/components/dashboard/DeviceContextBanner';
 import { Button } from '@/components/ui/button';
 import { Edit, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { dashboardApi } from '@/lib/api/dashboards';
-import type { Dashboard, DashboardWidget } from '@/lib/dashboard/types';
+import type { Dashboard, Widget as DashboardWidget } from '@/lib/types/dashboard';
 
 export default function DashboardViewPage() {
   const params = useParams();
@@ -27,10 +27,32 @@ export default function DashboardViewPage() {
   const deviceId = searchParams.get('deviceId');
   const deviceName = searchParams.get('deviceName');
   
-  const { dashboard, loadDashboard } = useDashboardStore();
+  const { currentDashboard: dashboard, setCurrentDashboard, getDashboard } = useDashboardStore();
   
   useEffect(() => {
-    // Load dashboard from API
+    // First check if dashboard is already in store
+    const storedDashboard = getDashboard(dashboardId);
+    if (storedDashboard) {
+      // Merge layout positions into widgets so DashboardGrid can render them
+      const enrichedWidgets = storedDashboard.widgets.map((widget) => {
+        const layoutItem = storedDashboard.layout.find((l) => l.i === widget.id);
+        return {
+          ...widget,
+          position: layoutItem
+            ? {
+                x: layoutItem.x,
+                y: layoutItem.y,
+                width: layoutItem.w,
+                height: layoutItem.h,
+              }
+            : { x: 0, y: 0, width: 6, height: 4 },
+        };
+      });
+      setCurrentDashboard({ ...storedDashboard, widgets: enrichedWidgets });
+      return;
+    }
+    
+    // Load dashboard from API if not in store
     const fetchDashboard = async () => {
       try {
         const dashboardData = await dashboardApi.get(dashboardId, 'demo-user');
@@ -72,24 +94,27 @@ export default function DashboardViewPage() {
           
           // Transform to internal Dashboard format
           const transformedDashboard: Dashboard = {
-            ...dashboardData,
+            id: dashboardData.id,
+            name: dashboardData.name,
+            description: dashboardData.description,
             widgets: enrichedWidgets,
-            layoutType: 'grid',
+            layout: (dashboardData.layout as LayoutItem[]) || [],
             createdBy: dashboardData.userId || 'demo-user',
-            isShared: false,
-            tags: [],
+            createdAt: new Date(dashboardData.createdAt),
+            updatedAt: new Date(dashboardData.updatedAt),
+            isTemplate: dashboardData.isTemplate || false,
             displayOrder: 0,
             dashboardType: 3, // Custom
-          } as Dashboard;
+          };
           
-          loadDashboard(transformedDashboard);
+          setCurrentDashboard(transformedDashboard);
         }
       } catch (error) {
         console.error('Failed to load dashboard:', error);
       }
     };
     fetchDashboard();
-  }, [dashboardId, loadDashboard]);
+  }, [dashboardId, getDashboard, setCurrentDashboard]);
   
   if (!dashboard) {
     return (

@@ -6,19 +6,31 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDashboardStore } from '@/lib/stores/dashboard-store';
 import { usePreferencesStore } from '@/lib/stores/preferences-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2, LayoutDashboard, Star, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, LayoutDashboard, Star, Loader2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function DashboardListPage() {
   const router = useRouter();
   const { dashboards, deleteDashboard, setCurrentDashboard, loadFromServer, isLoading } = useDashboardStore();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [dashboardToDelete, setDashboardToDelete] = useState<{ id: string; name: string } | null>(null);
   const { 
     isFavoriteDashboard, 
     addFavoriteDashboard, 
@@ -62,11 +74,18 @@ export default function DashboardListPage() {
     router.push('/dashboard/builder');
   };
   
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this dashboard?')) {
+  const handleDelete = (id: string, name: string) => {
+    setDashboardToDelete({ id, name });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (dashboardToDelete) {
       // TODO: Get userId from auth context when available
       const userId = 'demo-user';
-      deleteDashboard(id, userId);
+      deleteDashboard(dashboardToDelete.id, userId);
+      setDeleteDialogOpen(false);
+      setDashboardToDelete(null);
     }
   };
   
@@ -157,7 +176,7 @@ export default function DashboardListPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive"
-                        onClick={() => handleDelete(dashboard.id)}
+                        onClick={() => handleDelete(dashboard.id, dashboard.name)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -182,6 +201,39 @@ export default function DashboardListPage() {
           })}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete Dashboard
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Are you sure you want to delete{' '}
+                <span className="font-semibold text-foreground">
+                  {dashboardToDelete?.name}
+                </span>
+                ?
+              </p>
+              <p className="text-sm">
+                This action cannot be undone. All widgets and configurations will be permanently removed.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Dashboard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

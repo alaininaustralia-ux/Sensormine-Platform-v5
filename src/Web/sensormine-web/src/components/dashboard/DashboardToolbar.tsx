@@ -27,7 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useDashboardStore } from '@/lib/dashboard/store';
+import { useDashboardStore } from '@/lib/stores/dashboard-store';
 import { DASHBOARD_TEMPLATES } from '@/lib/dashboard/widget-library';
 import { cn } from '@/lib/utils';
 

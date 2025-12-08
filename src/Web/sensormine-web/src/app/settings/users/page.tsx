@@ -34,49 +34,66 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-
-interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  role: string;
-  isActive: boolean;
-  lastLoginAt?: string;
-  createdAt: string;
-}
+import { usersApi, type ApiUser } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<ApiUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [stats, setStats] = useState({ totalUsers: 0, administrators: 0 });
+  const { toast } = useToast();
 
   useEffect(() => {
     loadUsers();
+    loadStatistics();
   }, []);
 
   const loadUsers = async () => {
     try {
-      // TODO: Replace with actual API call to Identity.API
-      // const response = await fetch('http://localhost:5300/api/users');
-      // const data = await response.json();
-      // setUsers(data.items);
-      
-      // Mock data for now
-      setUsers([
-        {
-          id: '1',
-          email: 'admin@sensormine.com',
-          fullName: 'System Administrator',
-          role: 'Administrator',
-          isActive: true,
-          lastLoginAt: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      const response = await usersApi.getAll({ page: 1, pageSize: 100 });
+      setUsers(response.items);
+      setStats(prev => ({ ...prev, totalUsers: response.totalCount }));
     } catch (error) {
       console.error('Failed to load users:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load users. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadStatistics = async () => {
+    try {
+      const statistics = await usersApi.getStatistics();
+      setStats(prev => ({ ...prev, totalUsers: statistics.totalUsers }));
+    } catch (error) {
+      console.error('Failed to load statistics:', error);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to delete user ${userName}?`)) {
+      return;
+    }
+
+    try {
+      await usersApi.delete(userId);
+      toast({
+        title: 'Success',
+        description: `User ${userName} has been deleted.`,
+      });
+      loadUsers();
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete user. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -85,11 +102,13 @@ export default function UsersPage() {
     user.fullName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getRoleBadgeVariant = (role: string) => {
+  const administrators = users.filter(u => u.role === 'Administrator').length;
+
+  const getRoleBadgeVariant = (role: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (role.toLowerCase()) {
       case 'administrator':
         return 'destructive';
-      case 'operator':
+      case 'dashboardeditor':
         return 'default';
       case 'viewer':
         return 'secondary';
@@ -120,7 +139,7 @@ export default function UsersPage() {
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{users.length}</div>
+            <div className="text-2xl font-bold">{stats.totalUsers}</div>
             <p className="text-xs text-muted-foreground">
               Active in your organization
             </p>
@@ -133,9 +152,7 @@ export default function UsersPage() {
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {users.filter(u => u.role === 'Administrator').length}
-            </div>
+            <div className="text-2xl font-bold">{administrators}</div>
             <p className="text-xs text-muted-foreground">
               With full access
             </p>
@@ -226,11 +243,14 @@ export default function UsersPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>
+                          <DropdownMenuItem disabled>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => handleDeleteUser(user.id, user.fullName)}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>

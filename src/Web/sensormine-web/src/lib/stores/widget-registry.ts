@@ -71,6 +71,26 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'monitoring',
     available: true,
   },
+  {
+    type: 'device-list',
+    name: 'Device List',
+    description: 'Searchable list of devices with drill-down navigation',
+    icon: 'List',
+    defaultSize: { w: 6, h: 4 },
+    minSize: { w: 4, h: 3 },
+    category: 'monitoring',
+    available: true,
+  },
+  {
+    type: 'device-data-table',
+    name: 'Device Data Table',
+    description: 'Filtered device list by type with custom fields and detail navigation',
+    icon: 'Database',
+    defaultSize: { w: 6, h: 4 },
+    minSize: { w: 4, h: 3 },
+    category: 'data-visualization',
+    available: true,
+  },
 ];
 
 /**

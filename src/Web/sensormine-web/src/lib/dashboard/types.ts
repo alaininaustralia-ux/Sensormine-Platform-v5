@@ -14,7 +14,8 @@ export type WidgetType =
   | 'gauge'
   | 'kpi'
   | 'text'
-  | 'device-list';
+  | 'device-list'
+  | 'device-data-table';
 
 /**
  * Dashboard layout type
@@ -100,6 +101,31 @@ export interface TextConfig {
 }
 
 /**
+ * Device Data Table configuration for device-data-table widgets
+ */
+export interface DeviceDataTableConfig {
+  deviceTypeId?: string;
+  deviceTypeName?: string;
+  fields?: Array<{
+    fieldPath: string;
+    fieldName: string;
+    fieldType: string;
+    width?: string; // Column width (e.g., '150px', '20%', 'auto')
+  }>;
+  detailDashboardId?: string;
+  maxRows?: number;
+  enableNavigation?: boolean;
+  // Display options
+  enablePagination?: boolean;
+  pageSize?: number;
+  compactMode?: boolean;
+  stripedRows?: boolean;
+  showBorders?: boolean;
+  enableSearch?: boolean;
+  enableExport?: boolean;
+}
+
+/**
  * Widget configuration union type
  */
 export type WidgetConfig =
@@ -109,7 +135,8 @@ export type WidgetConfig =
   | { type: 'video'; config: VideoConfig }
   | { type: 'gauge'; config: GaugeConfig }
   | { type: 'kpi'; config: KpiConfig }
-  | { type: 'text'; config: TextConfig };
+  | { type: 'text'; config: TextConfig }
+  | { type: 'device-data-table'; config: DeviceDataTableConfig };
 
 /**
  * Data source configuration for widgets

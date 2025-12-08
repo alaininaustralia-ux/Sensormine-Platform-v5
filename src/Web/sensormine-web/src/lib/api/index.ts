@@ -129,3 +129,13 @@ export type {
   DeployConfigurationRequest,
   DeployConfigurationResponse,
 } from './nexusConfiguration';
+
+export { usersApi } from './users';
+export type {
+  User as ApiUser,
+  CreateUserRequest,
+  UpdateUserRequest,
+  ChangePasswordRequest,
+  UserListResponse,
+  UserStatistics,
+} from './users';

@@ -40,6 +40,7 @@ const iconMap: Record<string, React.ElementType> = {
 interface DashboardWidgetComponentProps {
   widget: DashboardWidget;
   deviceId?: string | null;
+  dashboardId?: string;
   isSelected: boolean;
   isEditing: boolean;
   onSelect: () => void;
@@ -52,6 +53,7 @@ interface DashboardWidgetComponentProps {
 export function DashboardWidgetComponent({
   widget,
   deviceId,
+  dashboardId,
   isSelected,
   isEditing,
   onSelect,
@@ -156,6 +158,11 @@ export function DashboardWidgetComponent({
   };
 
   const renderWidgetContent = () => {
+    // Device list and device data table widgets always render through WidgetDataRenderer (they fetch their own data)
+    if (widget.type === 'device-list' || widget.type === 'device-data-table') {
+      return <WidgetDataRenderer widget={widget} deviceId={deviceId} dashboardId={dashboardId} />;
+    }
+
     // Check if widget has data configuration
     const hasDataConfig = widget.dataConfig && 
                            widget.dataConfig.dataSource && 
@@ -163,7 +170,7 @@ export function DashboardWidgetComponent({
 
     // If configured, use WidgetDataRenderer
     if (hasDataConfig) {
-      return <WidgetDataRenderer widget={widget} deviceId={deviceId} />;
+      return <WidgetDataRenderer widget={widget} deviceId={deviceId} dashboardId={dashboardId} />;
     }
 
     // Show configuration placeholder

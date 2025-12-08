@@ -36,7 +36,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const storedUser = tokenStorage.getUser();
 
       if (token && storedUser) {
+        // Restore auth token and tenant ID from storage
         apiClient.setAuthToken(token);
+        apiClient.setTenantId((storedUser as User).tenantId);
+        
         setState({
           user: storedUser as User,
           token,
@@ -71,7 +74,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       tokenStorage.setToken(token);
       tokenStorage.setRefreshToken(refreshToken);
       tokenStorage.setUser(user);
+      
+      // Set auth token and tenant ID for all API requests
       apiClient.setAuthToken(token);
+      apiClient.setTenantId(user.tenantId);
 
       setState({
         user,
@@ -106,6 +112,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Clear local state
     tokenStorage.clear();
     apiClient.setAuthToken(null);
+    apiClient.setTenantId(null);
 
     setState({
       user: null,
@@ -139,6 +146,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       tokenStorage.setRefreshToken(newRefreshToken);
       tokenStorage.setUser(user);
       apiClient.setAuthToken(token);
+      apiClient.setTenantId(user.tenantId);
 
       setState({
         user,

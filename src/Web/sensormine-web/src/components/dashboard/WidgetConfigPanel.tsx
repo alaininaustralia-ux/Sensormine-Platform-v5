@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useDashboardStore } from '@/lib/dashboard/store';
+import { useDashboardStore } from '@/lib/stores/dashboard-store';
 import type { DashboardWidget, WidgetConfig, WidgetDataConfig as WidgetDataConfigType } from '@/lib/dashboard/types';
 import { WidgetDataConfig } from './builder/widget-data-config';
 import { cn } from '@/lib/utils';

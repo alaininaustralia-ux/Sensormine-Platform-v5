@@ -33,8 +33,15 @@ export default function DashboardEditPage() {
   
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [configureWidgetId, setConfigureWidgetId] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
   
   const dashboard = getDashboard(dashboardId);
+  
+  // Handle client-side mounting to prevent hydration mismatch
+  // This is the recommended pattern for avoiding hydration mismatches
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   
   useEffect(() => {
     if (dashboard) {
@@ -121,10 +128,13 @@ export default function DashboardEditPage() {
     router.push(`/dashboard/${dashboard.id}`);
   };
   
-  if (!dashboard) {
+  // Prevent hydration mismatch by showing loading state until mounted
+  if (!isClient || !dashboard) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-muted-foreground">Dashboard not found</div>
+        <div className="text-muted-foreground">
+          {!isClient ? 'Loading...' : 'Dashboard not found'}
+        </div>
       </div>
     );
   }

@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Type,
   GripVertical,
+  List,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { WIDGET_REGISTRY } from '@/lib/stores/widget-registry';
@@ -42,6 +43,7 @@ const iconMap: Record<string, React.ElementType> = {
   Gauge,
   TrendingUp,
   Type,
+  List,
 };
 
 interface WidgetPaletteItemProps {

@@ -19,6 +19,7 @@ import { GaugeWidget } from './widgets/gauge-widget';
 import { KPIWidget } from './widgets/kpi-widget';
 import { MapWidget } from './widgets/map-widget';
 import { DeviceListWidget } from './widgets/device-list-widget';
+import { DeviceDataTableWidget } from './widgets/device-data-table-widget';
 
 // Re-use types from useWidgetData hook
 interface WidgetDataPoint {
@@ -47,10 +48,41 @@ interface WidgetDataRendererProps {
   widget: DashboardWidget;
   /** Device ID from URL context for filtering data */
   deviceId?: string | null;
+  /** Dashboard ID for navigation context */
+  dashboardId?: string;
 }
 
-export function WidgetDataRenderer({ widget, deviceId }: WidgetDataRendererProps) {
+export function WidgetDataRenderer({ widget, deviceId, dashboardId }: WidgetDataRendererProps) {
+  // Always call hooks at the top level (React rules)
   const { data, isLoading, error } = useWidgetData(widget, { deviceId });
+
+  // Device list widget fetches its own data, render it directly
+  if (widget.type === 'device-list') {
+    const widgetConfig = widget.config as Record<string, unknown>;
+    const deviceListConfig = (widgetConfig?.deviceList || {}) as Record<string, unknown>;
+    return (
+      <DeviceListWidget 
+        id={widget.id}
+        title={widget.title}
+        dashboardId={dashboardId || ''}
+        config={deviceListConfig}
+      />
+    );
+  }
+
+  // Device data table widget fetches its own data, render it directly
+  if (widget.type === 'device-data-table') {
+    const widgetConfig = widget.config as Record<string, unknown>;
+    const deviceDataTableConfig = (widgetConfig?.deviceDataTable || widgetConfig) as Record<string, unknown>;
+    return (
+      <DeviceDataTableWidget 
+        id={widget.id}
+        title={widget.title}
+        dashboardId={dashboardId || ''}
+        config={deviceDataTableConfig}
+      />
+    );
+  }
 
   // Loading state
   if (isLoading) {
@@ -92,15 +124,6 @@ export function WidgetDataRenderer({ widget, deviceId }: WidgetDataRendererProps
       return renderKPI(widget, data);
     case 'map':
       return renderMap(widget);
-    case 'device-list':
-      return (
-        <DeviceListWidget 
-          id={widget.id}
-          title={widget.title}
-          dashboardId=""
-          config={(widget.config as any)?.widgetSpecific || {}}
-        />
-      );
     default:
       return (
         <div className="flex items-center justify-center h-full text-muted-foreground">
