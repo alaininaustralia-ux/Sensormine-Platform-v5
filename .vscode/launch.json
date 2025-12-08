@@ -38,10 +38,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/ApiGateway",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -55,10 +51,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/SchemaRegistry.API",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -72,10 +64,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/Device.API",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -89,10 +77,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/Alerts.API",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -106,10 +90,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/DigitalTwin.API",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -123,10 +103,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/Edge.Gateway",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -140,10 +116,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/Ingestion.Service",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -157,10 +129,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/Query.API",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -174,10 +142,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/StreamProcessing.Service",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -191,10 +155,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/VideoMetadata.API",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -208,10 +168,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/Billing.API",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -225,10 +181,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/Simulation.API",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -242,10 +194,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/Preferences.API",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -259,10 +207,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/Dashboard.API",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -276,10 +220,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/Identity.API",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -293,10 +233,6 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/NexusConfiguration.API",
       "stopAtEntry": false,
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
