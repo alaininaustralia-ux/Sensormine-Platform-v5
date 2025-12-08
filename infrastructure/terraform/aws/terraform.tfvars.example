@@ -1,0 +1,48 @@
+# Example Terraform Variables File for AWS Infrastructure
+# Copy this file to terraform.tfvars and customize for your environment
+
+# Project Configuration
+project_name = "sensormine"
+environment  = "dev"  # dev, staging, or prod
+aws_region   = "us-east-1"
+
+# Network Configuration
+vpc_cidr           = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
+
+# EKS Configuration
+eks_cluster_version     = "1.28"
+eks_node_instance_types = ["t3.large"]
+eks_node_desired_size   = 3
+eks_node_min_size       = 2
+eks_node_max_size       = 10
+
+# RDS PostgreSQL Configuration
+db_instance_class         = "db.t3.large"
+db_allocated_storage      = 100
+db_max_allocated_storage  = 1000
+db_admin_username         = "sensormineadmin"
+# db_admin_password - Set via environment variable: export TF_VAR_db_admin_password="your-password"
+
+# ElastiCache Redis Configuration
+redis_node_type       = "cache.t3.medium"
+redis_num_cache_nodes = 2
+
+# MSK Kafka Configuration
+msk_kafka_version        = "3.5.1"
+msk_broker_instance_type = "kafka.m5.large"
+msk_number_of_brokers    = 3
+msk_storage_per_broker   = 100
+
+# S3 Configuration
+s3_versioning_enabled = true
+
+# IoT Core Configuration
+iot_thing_type_name = "SensorDevice"
+
+# Additional Tags
+additional_tags = {
+  Owner       = "DevOps Team"
+  CostCenter  = "Engineering"
+  Compliance  = "HIPAA"
+}
