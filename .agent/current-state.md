@@ -1,37 +1,178 @@
 # Sensormine Platform v5 - Current State
 
-**Last Updated**: 2025-12-07 (5 Feature Branches Merged + MAUI Mobile App - Build Validated)  
-**Build Status**: ✅ All 21 projects compiled successfully (2.1s) - Ready for testing  
-**Active Work**: Service startup and integration testing of merged features  
+**Last Updated**: 2025-12-08 (Telemetry Refactor + Dashboard Templates + Tests)  
+**Build Status**: ✅ Solution compiles - Some services have build issues to resolve  
+**Active Work**: Story 4.8 completed - Dashboard templates and telemetry architecture refactored  
 **Architecture**: Device Type-Centric + Dashboard Persistence + Multi-Tenant + User Management + Alert System + Mobile MAUI with NFC
 
 ---
 
 ## 📊 Quick Project Status
 
-**Completion**: 14+ of 138 stories (~10%)  
+**Completion**: 15+ of 138 stories (~11%)  
 **Total Story Points**: ~1,682 (added 162 points from mobile epics)  
-**Current Epic**: Epic 4 - Frontend Dashboard + Epic 14-19 - Mobile App  
-**Latest Achievement**: 5 major features merged, all migrations executed, solution rebuilt successfully
+**Current Epic**: Epic 4 - Frontend Dashboard (Story 4.8 ✅ Complete)  
+**Latest Achievement**: Dashboard templates expanded to 9+ industry templates, telemetry architecture refactored to JSONB schema
 
-### 🎉 Recently Merged Features (Dec 7, 2025)
-1. **Alert Rules Management** - Alerts.API enhancements with rules engine
-2. **User Management & SSO** - Identity.API microservice with RBAC
-3. **Nexus Configuration Builder** - NexusConfiguration.API with 4-step wizard
-4. **Time-Series Charts** - Complete Recharts integration with export capabilities
-5. **MAUI Mobile App** - .NET MAUI foundation with NFC device discovery (6 new epics, 15 stories)
+### 🎉 Recently Completed (Dec 8, 2025)
+1. **Story 4.8 - Dashboard Templates** ✅ - 9+ industry-specific templates with export/import
+2. **Telemetry Architecture Refactor** - Migrated to JSONB custom_fields schema with RLS
+3. **Authentication Enhancements** - Improved login/register with validation
+4. **Widget Ecosystem** - Added DeviceDataTableWidget and enhanced registry
+5. **Testing Infrastructure** - Added Vitest tests for dashboard templates
 
 **Key Documents**:
 - User Stories: `docs/user-stories.md` (122 stories, 13 epics)
 - Architecture: `docs/architecture.md`
 - Tech Stack: `docs/technology-stack.md`
-- Merge Summary: See below for details on merged features
+- Telemetry Refactor: `docs/telemetry-architecture-update-completed.md`
 
 ---
 
-## 🎯 Recently Merged Features (Dec 7, 2025)
+## 🎯 Latest Commits (Dec 8, 2025)
 
-This session successfully integrated 4 major feature branches developed in parallel agent sessions:
+### Commit 1: [Story 4.8+] Refactor telemetry architecture and enhance authentication
+
+**Backend Updates**:
+- **TimescaleDB Schema Migration**: Migrated from metric-per-row to JSONB `custom_fields` schema
+  - New `telemetry_data` table with device_type, system fields, and flexible JSONB
+  - Row Level Security (RLS) policies for multi-tenant data isolation
+  - Tenant context setting for service account access
+- **TelemetryData Model**: Added comprehensive model with device type and system fields
+  - BatteryLevel, SignalStrength, GPS coordinates (lat/lon/alt)
+  - CustomFields JSONB for device-specific measurements
+  - Quality metadata for data validation
+- **Ingestion Service**: Refactored TelemetryConsumerService for new schema
+  - Converts TimeSeriesData to TelemetryData format
+  - Sets tenant context before writes for RLS compliance
+  - Single-row writes with JSONB instead of metric-per-row
+- **Identity.API Enhancements**:
+  - User profile updates (name, email, password)
+  - CORS configuration for frontend integration
+  - Improved validation and error handling
+- **AuthController Improvements**:
+  - Enhanced login with email validation and proper JWT responses
+  - Register endpoint with user creation and token generation
+  - Better error messages and status codes
+- **Storage Layer Updates**:
+  - TimeSeriesQueryBuilder: Updated INSERT queries for JSONB schema
+  - TimescaleDbRepository: Refactored write methods with RLS support
+- **Core Models**: Added DTOs and models
+  - Annotation, AnnotationDto for time-series annotations
+  - DeviceTypeSchema for dynamic device schemas
+  - TelemetryData for unified telemetry model
+
+**Infrastructure**:
+- Complete SQL schema in `init-timeseries-schema.sql` with RLS policies
+- Superadmin creation script in `add-superadmin.sql`
+
+**Benefits**:
+- Better scalability with JSONB vs many rows per reading
+- Proper multi-tenant security with RLS at database level
+- Flexible device schemas supporting any device type
+- Reduced storage overhead and improved query performance
+
+### Commit 2: [Story 4.8] Complete dashboard templates and widget enhancements
+
+**Dashboard Templates** (9+ Industry Templates):
+1. **Operations Overview** - KPIs, device status, active alerts
+2. **Real-Time Monitoring** - Live charts, gauges, device maps
+3. **Manufacturing Dashboard** - OEE, production rates, quality metrics
+4. **Energy Monitoring** - Power consumption, efficiency, cost analysis
+5. **Environmental Monitoring** - Air quality, weather, compliance
+6. **Facility Management** - HVAC, occupancy, maintenance
+7. **Fleet Management** - Vehicle tracking, fuel, maintenance
+8. **Warehouse Operations** - Inventory, picking, shipping
+9. **Mining Operations** - Equipment monitoring, safety, production
+
+**Template Features**:
+- Export/import functionality with JSON serialization
+- Pre-configured widget layouts for each template
+- Industry-specific KPIs and metrics
+- Metadata: category, icon, description, widget count
+
+**New Widgets**:
+- **DeviceDataTableWidget**: Tabular display of device telemetry
+  - Column selection and configuration
+  - Sorting, filtering, pagination
+  - Export to CSV/Excel
+- **DeviceDataTableWidgetConfig**: Configuration panel
+  - Device selection
+  - Column chooser with field types
+  - Display options (pagination, row height)
+
+**Widget System Enhancements**:
+- Updated widget registry with new table widget
+- Enhanced widget factory with proper initialization
+- Improved widget data renderer for table binding
+- Widget palette includes new table option
+
+**Dashboard Features**:
+- Template selection dropdown in toolbar
+- Template gallery page at `/dashboard/templates`
+- Template preview modal with widget visualization
+- Import/export dialogs for custom templates
+- Template application to existing dashboards
+
+**Dashboard Store Updates**:
+- `importTemplate()` - Load template from JSON
+- `exportTemplate()` - Serialize dashboard to JSON
+- `applyTemplate()` - Apply template to current dashboard
+- Template metadata management
+
+**UI Improvements**:
+- Enhanced dashboard grid with better layout management
+- Improved drag-and-drop widget positioning
+- Dashboard toolbar with template controls
+- Dashboard pages with navigation and state sync
+
+**API Client**:
+- Added `/api/users` endpoint for user management
+- Enhanced error handling with typed responses
+- Tenant context in all API calls
+- User profile caching in AuthProvider
+
+**User Management UI**:
+- Improved users page layout
+- Role management interface
+- User filtering and search
+- Better form validation
+
+**Testing**:
+- Template library tests with Vitest
+- Dashboard component tests
+- Widget config validation tests
+
+### Commit 3: [Epic 14-19] Add MAUI mobile app foundation and documentation
+
+**MAUI Mobile App** (.NET MAUI):
+- Complete project structure with iOS, Android, Windows targets
+- Solution file: `src/Web/Sensormine.Mobile.Maui/Sensormine.Mobile.Maui.sln`
+- NFC device discovery and pairing
+- Dashboard viewing on mobile
+- User authentication integration
+- Alert notifications
+- Settings and preferences
+
+**Documentation**:
+- `telemetry-architecture-refactor.md` - Migration planning document
+- `telemetry-architecture-update-completed.md` - Refactor completion status
+
+**Testing & Tools**:
+- Dashboard template tests (Vitest)
+- Template library validation
+- Widget config tests
+- Playwright MCP integration for E2E testing
+- Device list verification screenshots
+
+**Story Planning**:
+- Story 4.10 planning document for next iteration
+
+---
+
+## 🎯 Previously Merged Features (Dec 7, 2025)
+
+These features were merged in the previous session:
 
 ### 1. ✅ Alert Rules Management System
 **Branch**: `copilot/add-custom-alert-capabilities` (7 commits)  
