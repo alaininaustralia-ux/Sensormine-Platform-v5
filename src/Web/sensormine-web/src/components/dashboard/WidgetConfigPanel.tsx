@@ -15,6 +15,12 @@ import { useDashboardStore } from '@/lib/stores/dashboard-store';
 import type { DashboardWidget, WidgetConfig, WidgetDataConfig as WidgetDataConfigType } from '@/lib/dashboard/types';
 import { WidgetDataConfig } from './builder/widget-data-config';
 import { cn } from '@/lib/utils';
+import {
+  ChartWithAssetConfig,
+  KPIWithAssetConfig,
+  GaugeWithAssetConfig,
+  DeviceListWithAssetConfig,
+} from './config';
 
 interface WidgetConfigPanelProps {
   className?: string;
@@ -162,6 +168,48 @@ interface WidgetTypeConfigProps {
 function WidgetTypeConfig({ widget, onConfigChange }: WidgetTypeConfigProps) {
   const config = widget.config;
 
+  // Check for asset-based widgets using widget.type
+  if (widget.type === 'chart' && config.assetId !== undefined) {
+    // ChartWidgetWithAsset
+    return (
+      <ChartWithAssetConfig
+        config={config as any}
+        onChange={(newConfig) => onConfigChange(widget.id, newConfig as any)}
+      />
+    );
+  }
+
+  if (widget.type === 'kpi' && config.assetId !== undefined) {
+    // KPIWidgetWithAsset
+    return (
+      <KPIWithAssetConfig
+        config={config as any}
+        onChange={(newConfig) => onConfigChange(widget.id, newConfig as any)}
+      />
+    );
+  }
+
+  if (widget.type === 'gauge' && config.assetId !== undefined) {
+    // GaugeWidgetWithAsset
+    return (
+      <GaugeWithAssetConfig
+        config={config as any}
+        onChange={(newConfig) => onConfigChange(widget.id, newConfig as any)}
+      />
+    );
+  }
+
+  if (widget.type === 'device-list') {
+    // DeviceListWidget with optional asset filtering
+    return (
+      <DeviceListWithAssetConfig
+        config={config as any}
+        onChange={(newConfig) => onConfigChange(widget.id, newConfig as any)}
+      />
+    );
+  }
+
+  // Fall back to standard configuration components
   switch (config.type) {
     case 'chart':
       return (

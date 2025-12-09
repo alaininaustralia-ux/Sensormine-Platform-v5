@@ -1,8 +1,13 @@
 # Development Guide
 
+**Last Updated**: December 10, 2025  
+**Platform Version**: v5.0  
+**Status**: Production-ready development environment
+
 > **See also**: 
 > - [`technology-stack.md`](technology-stack.md) for complete technology choices and architecture decisions
 > - [`local-infrastructure.md`](local-infrastructure.md) for detailed container configuration and troubleshooting
+> - [`PLATFORM-STATUS.md`](PLATFORM-STATUS.md) for current implementation status and completed features
 
 ## Prerequisites
 
