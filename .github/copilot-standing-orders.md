@@ -175,6 +175,95 @@ When recommending next story, prioritize:
 
 ---
 
+## 🌐 Service Ports Reference
+
+### Frontend Applications
+- **Sensormine Web** (Production): `http://localhost:3000`
+- **Sensormine Web** (Debug/Development): `http://localhost:3020`
+- **Device Simulator**: `http://localhost:3021`
+
+### Backend Microservices
+- **API Gateway**: `http://localhost:5000`
+- **Device.API**: `http://localhost:5293` (HTTP), `https://localhost:7042` (HTTPS)
+- **SchemaRegistry.API**: `http://localhost:5021`
+- **Query.API**: `http://localhost:5079`
+- **Alerts.API**: `http://localhost:5295`
+- **Preferences.API**: `http://localhost:5296`
+- **DigitalTwin.API**: `http://localhost:5297`
+- **Dashboard.API**: `http://localhost:5298`
+- **Identity.API**: `http://localhost:5299`
+- **Edge.Gateway** (MQTT): `mqtt://localhost:1883`
+
+### Infrastructure Services
+- **PostgreSQL/TimescaleDB**: `localhost:5432`
+- **Kafka**: `localhost:9092`
+- **Redis**: `localhost:6379`
+- **MQTT Broker (Mosquitto)**: `localhost:1883`
+
+---
+
+## 🗄️ Database Architecture Standards
+
+### Multi-Tenancy Pattern (Mandatory)
+**All domain entities MUST use UUID for tenant_id**:
+
+1. **C# Entity Models**:
+   ```csharp
+   public class YourEntity : BaseEntity  // Inherits Guid TenantId
+   {
+       // Your properties
+   }
+   ```
+
+2. **Database Schema**:
+   ```sql
+   CREATE TABLE your_table (
+       id uuid PRIMARY KEY,
+       tenant_id uuid NOT NULL,  -- Must be uuid, never TEXT
+       -- other columns
+   );
+   CREATE INDEX ix_your_table_tenant ON your_table(tenant_id);
+   ```
+
+3. **Repository Pattern**:
+   ```csharp
+   public async Task<Entity?> GetByIdAsync(Guid id, string tenantId)
+   {
+       var tenantGuid = Guid.Parse(tenantId);  // Always parse string to Guid
+       return await _context.Entities
+           .FirstOrDefaultAsync(e => e.Id == id && e.TenantId == tenantGuid);
+   }
+   ```
+
+4. **Controller Pattern**:
+   ```csharp
+   private string GetTenantId()
+   {
+       // TODO: Extract from JWT claims
+       return "00000000-0000-0000-0000-000000000001";
+   }
+   ```
+
+### Exception: Identity Subsystem
+Only User, UserInvitation, and Tenant entities use property shadowing:
+```csharp
+public class User : BaseEntity
+{
+    public new string TenantId { get; set; } = string.Empty;  // Shadow Guid with string
+}
+```
+
+### Database Separation (Option C - Hybrid)
+- **PostgreSQL (Port 5433)**: OLTP - devices, schemas, users, assets, configurations
+- **TimescaleDB (Port 5452)**: OLAP - telemetry, time-series data
+
+**See Documentation**:
+- `docs/database-tenant-id-migration.md` - UUID migration guide
+- `docs/option-c-implementation-summary.md` - Database separation details
+- `docs/database-architecture.md` - Overall database design
+
+---
+
 ## 📁 Essential File Locations
 
 - **Project State**: `.agent/current-state.md` (READ FIRST!)

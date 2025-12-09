@@ -41,7 +41,7 @@ public class SchemasController : ControllerBase
         [FromQuery] int take = 50)
     {
         // TODO: Extract tenant ID from authentication context
-        var tenantId = "default-tenant";
+        var tenantId = GetTenantId();
 
         try
         {
@@ -72,7 +72,7 @@ public class SchemasController : ControllerBase
     public async Task<ActionResult<SchemaDto>> GetSchema(Guid id)
     {
         // TODO: Extract tenant ID from authentication context
-        var tenantId = "default-tenant";
+        var tenantId = GetTenantId();
 
         try
         {
@@ -100,7 +100,7 @@ public class SchemasController : ControllerBase
     public async Task<ActionResult<SchemaDto>> GetSchemaByName(string name)
     {
         // TODO: Extract tenant ID from authentication context
-        var tenantId = "default-tenant";
+        var tenantId = GetTenantId();
 
         try
         {
@@ -128,7 +128,7 @@ public class SchemasController : ControllerBase
     public async Task<ActionResult<SchemaDto>> CreateSchema([FromBody] CreateSchemaRequest request)
     {
         // TODO: Extract tenant ID from authentication context
-        var tenantId = "default-tenant";
+        var tenantId = GetTenantId();
         var userId = "system"; // TODO: Extract from authentication context
 
         try
@@ -146,7 +146,7 @@ public class SchemasController : ControllerBase
                 Id = Guid.NewGuid(),
                 Name = request.Name,
                 Description = request.Description,
-                TenantId = tenantId,
+                TenantId = Guid.Parse(tenantId),
                 CreatedBy = userId,
                 CreatedAt = DateTimeOffset.UtcNow
             };
@@ -163,7 +163,7 @@ public class SchemasController : ControllerBase
                 Status = SchemaStatus.Draft,
                 IsDefault = true, // First version is always default
                 DeviceTypes = request.InitialVersion.DeviceTypes ?? new List<string>(),
-                TenantId = tenantId,
+                TenantId = Guid.Parse(tenantId),
                 CreatedBy = userId,
                 CreatedAt = DateTimeOffset.UtcNow
             };
@@ -197,7 +197,7 @@ public class SchemasController : ControllerBase
     public async Task<ActionResult<SchemaDto>> UpdateSchema(Guid id, [FromBody] UpdateSchemaRequest request)
     {
         // TODO: Extract tenant ID from authentication context
-        var tenantId = "default-tenant";
+        var tenantId = GetTenantId();
         var userId = "system"; // TODO: Extract from authentication context
 
         try
@@ -279,7 +279,7 @@ public class SchemasController : ControllerBase
     public async Task<IActionResult> DeleteSchema(Guid id)
     {
         // TODO: Extract tenant ID from authentication context
-        var tenantId = "default-tenant";
+        var tenantId = GetTenantId();
 
         try
         {
@@ -306,7 +306,7 @@ public class SchemasController : ControllerBase
             Id = schema.Id,
             Name = schema.Name,
             Description = schema.Description,
-            TenantId = schema.TenantId,
+            TenantId = schema.TenantId.ToString(),
             CreatedAt = schema.CreatedAt,
             UpdatedAt = schema.UpdatedAt,
             CreatedBy = schema.CreatedBy,
@@ -404,5 +404,12 @@ public class SchemasController : ControllerBase
                 Status = StatusCodes.Status500InternalServerError
             });
         }
+    }
+
+    private string GetTenantId()
+    {
+        // TODO: Extract from JWT claims when authentication is implemented
+        // Using a fixed tenant ID for the default tenant until auth is implemented
+        return "00000000-0000-0000-0000-000000000001";
     }
 }

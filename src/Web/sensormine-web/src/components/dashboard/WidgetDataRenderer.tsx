@@ -73,7 +73,7 @@ export function WidgetDataRenderer({ widget, deviceId, dashboardId }: WidgetData
   // Device data table widget fetches its own data, render it directly
   if (widget.type === 'device-data-table') {
     const widgetConfig = widget.config as Record<string, unknown>;
-    const deviceDataTableConfig = (widgetConfig?.deviceDataTable || widgetConfig) as Record<string, unknown>;
+    const deviceDataTableConfig = (widgetConfig?.widgetSpecific || widgetConfig?.deviceDataTable || widgetConfig) as Record<string, unknown>;
     return (
       <DeviceDataTableWidget 
         id={widget.id}

@@ -15,7 +15,7 @@ public class DeviceTypeResponse
     /// <summary>
     /// Tenant identifier
     /// </summary>
-    public Guid TenantId { get; set; }
+    public string TenantId { get; set; } = string.Empty;
 
     /// <summary>
     /// Name of the device type
@@ -85,7 +85,7 @@ public class DeviceTypeResponse
         return new DeviceTypeResponse
         {
             Id = entity.Id,
-            TenantId = entity.TenantId,
+            TenantId = entity.TenantId.ToString(),
             Name = entity.Name,
             Description = entity.Description,
             Protocol = entity.Protocol,

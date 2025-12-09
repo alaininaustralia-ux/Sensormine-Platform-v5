@@ -58,8 +58,9 @@ public class AlertRuleRepository : IAlertRuleRepository
 
     public async Task<(List<AlertRule> Rules, int TotalCount)> GetAllAsync(string tenantId, int page, int pageSize, string? searchTerm = null)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var query = _context.AlertRules
-            .Where(r => r.TenantId == tenantId)
+            .Where(r => r.TenantId == tenantGuid)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -84,8 +85,9 @@ public class AlertRuleRepository : IAlertRuleRepository
 
     public async Task<List<AlertRule>> GetByDeviceTypeIdAsync(string tenantId, Guid deviceTypeId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.AlertRules
-            .Where(r => r.TenantId == tenantId &&
+            .Where(r => r.TenantId == tenantGuid &&
                        r.TargetType == AlertTargetType.DeviceType &&
                        r.DeviceTypeIds.Contains(deviceTypeId) &&
                        r.IsEnabled)
@@ -94,8 +96,9 @@ public class AlertRuleRepository : IAlertRuleRepository
 
     public async Task<List<AlertRule>> GetByDeviceIdAsync(string tenantId, Guid deviceId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.AlertRules
-            .Where(r => r.TenantId == tenantId &&
+            .Where(r => r.TenantId == tenantGuid &&
                        r.TargetType == AlertTargetType.Device &&
                        r.DeviceIds.Contains(deviceId) &&
                        r.IsEnabled)
@@ -104,9 +107,10 @@ public class AlertRuleRepository : IAlertRuleRepository
 
     public async Task<List<AlertRule>> SearchAsync(string tenantId, string searchTerm)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var lowerSearch = searchTerm.ToLower();
         return await _context.AlertRules
-            .Where(r => r.TenantId == tenantId &&
+            .Where(r => r.TenantId == tenantGuid &&
                        (r.Name.ToLower().Contains(lowerSearch) ||
                         (r.Description != null && r.Description.ToLower().Contains(lowerSearch)) ||
                         r.Tags.Any(t => t.ToLower().Contains(lowerSearch))))
@@ -116,14 +120,16 @@ public class AlertRuleRepository : IAlertRuleRepository
 
     public async Task<List<AlertRule>> GetEnabledRulesAsync(string tenantId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.AlertRules
-            .Where(r => r.TenantId == tenantId && r.IsEnabled)
+            .Where(r => r.TenantId == tenantGuid && r.IsEnabled)
             .ToListAsync();
     }
 
     public async Task<bool> ExistsAsync(Guid id, string tenantId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.AlertRules
-            .AnyAsync(r => r.Id == id && r.TenantId == tenantId);
+            .AnyAsync(r => r.Id == id && r.TenantId == tenantGuid);
     }
 }

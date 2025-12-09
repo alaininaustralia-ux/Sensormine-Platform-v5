@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Search, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BaseWidget, type BaseWidgetProps } from './base-widget';
 import { serviceUrls } from '@/lib/api/config';
+import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -65,6 +66,7 @@ export function DeviceDataTableWidget({
   ...baseProps
 }: DeviceDataTableWidgetProps) {
   const router = useRouter();
+  const { token } = useAuth();
   const [devices, setDevices] = useState<DeviceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,32 +101,47 @@ export function DeviceDataTableWidget({
         setIsLoading(true);
         setError(null);
 
+        // Use the new Query API endpoint that returns devices with telemetry
         const params = new URLSearchParams();
         params.append('deviceTypeId', deviceTypeId);
-        if (maxRows) {
-          params.append('pageSize', maxRows.toString());
-        }
+        params.append('limit', (maxRows || 100).toString());
 
-        const url = `${serviceUrls.device}/api/Device?${params.toString()}`;
-        const response = await fetch(url);
+        const url = `${serviceUrls.query}/api/devices-with-telemetry?${params.toString()}`;
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
+        
+        // Include JWT token if available
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const response = await fetch(url, { headers });
 
         if (!response.ok) {
           throw new Error(`Failed to fetch devices: ${response.statusText}`);
         }
 
-        const data = await response.json();
-        const deviceArray = Array.isArray(data) ? data : (data.devices || data.data || data.items || []);
+        const deviceArray = await response.json();
         
-        const deviceList: DeviceItem[] = deviceArray.map((device: any) => ({
-          id: device.id || device.deviceId,
-          deviceId: device.deviceId,
-          name: device.name || device.deviceId,
-          deviceTypeId: device.deviceTypeId,
-          deviceTypeName: device.deviceTypeName || config.deviceTypeName || 'Unknown',
-          status: device.status || 'Unknown',
-          lastSeen: device.lastSeen,
-          metadata: device.metadata,
-        }));
+        const deviceList: DeviceItem[] = deviceArray.map((device: any) => {
+          // Combine device metadata with telemetry custom fields
+          const combinedMetadata = {
+            ...(device.metadata || {}),
+            ...(device.latestTelemetry?.customFields || {}),
+          };
+
+          return {
+            id: device.id || device.deviceId,
+            deviceId: device.deviceId,
+            name: device.name || device.deviceId,
+            deviceTypeId: device.deviceTypeId,
+            deviceTypeName: device.deviceTypeName || config.deviceTypeName || 'Unknown',
+            status: device.status || 'Unknown',
+            lastSeen: device.latestTelemetry?.timestamp || device.lastSeenAt,
+            metadata: combinedMetadata,
+          };
+        });
 
         setDevices(deviceList);
       } catch (err) {
@@ -136,7 +153,7 @@ export function DeviceDataTableWidget({
     };
 
     fetchDevices();
-  }, [deviceTypeId, maxRows, config.deviceTypeName]);
+  }, [deviceTypeId, maxRows, config.deviceTypeName, token]);
 
   const handleSort = (key: string) => {
     if (sortKey === key) {

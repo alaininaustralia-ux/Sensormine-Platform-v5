@@ -94,7 +94,7 @@ public class UpdateDeviceRequest
 public class DeviceResponse
 {
     public Guid Id { get; set; }
-    public Guid TenantId { get; set; }
+    public string TenantId { get; set; } = string.Empty;
     public string DeviceId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public Guid DeviceTypeId { get; set; }

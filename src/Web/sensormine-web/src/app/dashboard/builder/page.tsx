@@ -143,11 +143,14 @@ export default function DashboardBuilderPage() {
     updateLayout(currentDashboard.id, newLayout, userId);
   };
   
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentDashboard) return;
     
     // Exit edit mode
     setIsEditMode(false);
+    
+    // Allow state updates to propagate before navigating
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     // Navigate to dashboard view
     router.push(`/dashboard/${currentDashboard.id}`);
@@ -189,6 +192,7 @@ export default function DashboardBuilderPage() {
         
         <div className="flex-1 overflow-auto p-6 bg-muted/10">
           <DashboardGrid
+            key={`dashboard-${currentDashboard?.id}-${currentDashboard?.widgets?.length || 0}`}
             dashboard={currentDashboard}
             isEditMode={isEditMode}
             onLayoutChange={handleLayoutChange}

@@ -157,9 +157,9 @@ export function DeviceDataTableWidgetConfig({
                     : schema.currentVersion.jsonSchema;
                   
                   if (jsonSchema.properties) {
-                    const schemaFields = Object.entries(jsonSchema.properties).map(([path, prop]: [string, any]) => ({
-                      path,
-                      name: prop.title || prop.description || path,
+                    const schemaFields = Object.entries(jsonSchema.properties).map(([key, prop]: [string, any]) => ({
+                      path: key,
+                      name: prop.title || key,
                       type: prop.type || 'string',
                     }));
                     extractedFields.push(...schemaFields);

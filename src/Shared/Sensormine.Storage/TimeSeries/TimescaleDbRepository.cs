@@ -79,12 +79,58 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
             var item = new TimeSeriesData
             {
                 DeviceId = reader.GetString(reader.GetOrdinal("DeviceId")),
-                TenantId = reader.GetGuid(reader.GetOrdinal("TenantId")).ToString(),
+                TenantId = reader.GetGuid(reader.GetOrdinal("TenantId")),
                 Timestamp = reader.GetDateTime(reader.GetOrdinal("Timestamp")),
-                Values = DeserializeJson<Dictionary<string, object>>(reader, "Values") ?? new(),
-                Quality = DeserializeJson<Dictionary<string, string>>(reader, "Quality"),
-                Tags = DeserializeJson<Dictionary<string, string>>(reader, "Tags")
+                Values = new Dictionary<string, object>()
             };
+
+            // Read JSONB custom_fields as Values
+            var valuesJson = DeserializeJson<Dictionary<string, object>>(reader, "Values");
+            if (valuesJson != null)
+            {
+                foreach (var kvp in valuesJson)
+                {
+                    item.Values[kvp.Key] = kvp.Value;
+                }
+            }
+
+            // Add system fields to Values if present
+            try
+            {
+                var batteryOrdinal = reader.GetOrdinal("battery_level");
+                if (!reader.IsDBNull(batteryOrdinal))
+                {
+                    item.Values["battery_level"] = reader.GetDouble(batteryOrdinal);
+                }
+            }
+            catch { /* Field doesn't exist */ }
+
+            try
+            {
+                var signalOrdinal = reader.GetOrdinal("signal_strength");
+                if (!reader.IsDBNull(signalOrdinal))
+                {
+                    item.Values["signal_strength"] = reader.GetDouble(signalOrdinal);
+                }
+            }
+            catch { /* Field doesn't exist */ }
+
+            item.Quality = DeserializeJson<Dictionary<string, string>>(reader, "Quality");
+            
+            // Add device_type as tag
+            try
+            {
+                var deviceTypeOrdinal = reader.GetOrdinal("device_type");
+                if (!reader.IsDBNull(deviceTypeOrdinal))
+                {
+                    item.Tags = new Dictionary<string, string>
+                    {
+                        ["device_type"] = reader.GetString(deviceTypeOrdinal)
+                    };
+                }
+            }
+            catch { /* Field doesn't exist */ }
+
             results.Add(item);
         }
 
@@ -175,8 +221,11 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
     {
         var tableName = GetTableName(measurement);
         
-        // Set tenant context for Row Level Security
-        await SetTenantContextAsync(_tenantId, isServiceAccount: true, cancellationToken);
+        // Convert TimeSeriesData to TelemetryData for new JSONB schema
+        var telemetryData = ConvertToTelemetryData(data);
+        
+        // Set tenant context for Row Level Security using the tenant ID from the data
+        await SetTenantContextAsync(telemetryData.TenantId.ToString(), isServiceAccount: true, cancellationToken);
         
         var sql = TimeSeriesQueryBuilder.BuildInsertQuery(tableName);
 
@@ -185,9 +234,6 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
         // Write single row with JSONB custom_fields
         using var command = _connection.CreateCommand();
         command.CommandText = sql;
-
-        // Convert TimeSeriesData to TelemetryData for new JSONB schema
-        var telemetryData = ConvertToTelemetryData(data);
 
         AddParameter(command, "@timestamp", telemetryData.Time.UtcDateTime);
         AddParameter(command, "@deviceId", telemetryData.DeviceId);
@@ -283,7 +329,7 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
 
         var result = new TimeSeriesData
         {
-            TenantId = _tenantId,
+            TenantId = Guid.Parse(_tenantId), // Default, will be overwritten if provided in data
             Timestamp = DateTimeOffset.UtcNow
         };
 
@@ -301,7 +347,10 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
                             result.Timestamp = ts;
                         break;
                     case "tenantid":
-                        // Use the injected tenant ID
+                        // Preserve the tenant ID from the data if provided
+                        var tenantIdStr = kvp.Value.GetString();
+                        if (!string.IsNullOrEmpty(tenantIdStr) && Guid.TryParse(tenantIdStr, out var tenantGuid))
+                            result.TenantId = tenantGuid;
                         break;
                     case "quality":
                         result.Quality = JsonSerializer.Deserialize<Dictionary<string, string>>(kvp.Value.GetRawText(), _jsonOptions);
@@ -410,9 +459,7 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
         {
             Time = data.Timestamp,
             DeviceId = data.DeviceId,
-            TenantId = Guid.TryParse(data.TenantId, out var tenantGuid) 
-                ? tenantGuid 
-                : Guid.Parse("00000000-0000-0000-0000-000000000001"),
+            TenantId = data.TenantId,
             DeviceType = data.Tags?.GetValueOrDefault("device_type") ?? "unknown",
             CustomFields = new Dictionary<string, object>()
         };
@@ -460,6 +507,61 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
         }
 
         return telemetry;
+    }
+
+    /// <inheritdoc />
+    public async Task<Dictionary<string, LatestTelemetryData>> GetLatestTelemetryForDevicesAsync(
+        IEnumerable<string> deviceIds, 
+        CancellationToken cancellationToken = default)
+    {
+        var result = new Dictionary<string, LatestTelemetryData>();
+        var deviceIdList = deviceIds.ToList();
+
+        if (!deviceIdList.Any())
+            return result;
+
+        // Build SQL to get the latest telemetry for each device using DISTINCT ON
+        var sql = @"
+            SELECT DISTINCT ON (device_id) 
+                device_id,
+                time,
+                custom_fields
+            FROM telemetry
+            WHERE tenant_id = @tenantId
+                AND device_id = ANY(@deviceIds)
+            ORDER BY device_id, time DESC";
+
+        using var command = _connection.CreateCommand();
+        command.CommandText = sql;
+
+        var tenantParam = command.CreateParameter();
+        tenantParam.ParameterName = "@tenantId";
+        tenantParam.Value = Guid.Parse(_tenantId);
+        command.Parameters.Add(tenantParam);
+
+        var deviceIdsParam = command.CreateParameter();
+        deviceIdsParam.ParameterName = "@deviceIds";
+        deviceIdsParam.Value = deviceIdList.ToArray();
+        command.Parameters.Add(deviceIdsParam);
+
+        EnsureConnectionOpen();
+
+        using var reader = await ExecuteReaderAsync(command, cancellationToken);
+        while (await ReadAsync(reader, cancellationToken))
+        {
+            var deviceId = reader.GetString(reader.GetOrdinal("device_id"));
+            var timestamp = reader.GetDateTime(reader.GetOrdinal("time"));
+            var customFields = DeserializeJson<Dictionary<string, object>>(reader, "custom_fields") 
+                ?? new Dictionary<string, object>();
+
+            result[deviceId] = new LatestTelemetryData
+            {
+                Timestamp = timestamp,
+                CustomFields = customFields
+            };
+        }
+
+        return result;
     }
 }
 

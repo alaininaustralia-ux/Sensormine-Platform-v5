@@ -6,6 +6,11 @@ namespace Sensormine.Core.Models;
 public class UserInvitation : BaseEntity
 {
     /// <summary>
+    /// Override TenantId as string (Identity tables use TEXT not UUID)
+    /// </summary>
+    public new string TenantId { get; set; } = string.Empty;
+
+    /// <summary>
     /// Email address of the invited user
     /// </summary>
     public string Email { get; set; } = string.Empty;

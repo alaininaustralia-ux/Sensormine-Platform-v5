@@ -126,11 +126,17 @@ class ApiClient {
         await this.handleErrorResponse(response);
       }
 
-      // Parse JSON response
-      const data = await response.json();
+      // Parse JSON response only if there is content
+      let data: T;
+      if (response.status === 204 || response.headers.get('content-length') === '0') {
+        // No content response (e.g., DELETE requests)
+        data = undefined as T;
+      } else {
+        data = await response.json();
+      }
 
       return {
-        data: data as T,
+        data,
         status: response.status,
       };
     } catch (error) {

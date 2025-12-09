@@ -3119,12 +3119,369 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-**Document Version:** 3.0  
-**Last Updated:** December 7, 2025  
-**Total Stories:** 138 (was 122, added 16 MAUI mobile stories)  
-**Total Story Points:** ~1,682 (was ~1,520, added 162 MAUI story points)  
-**New in v3.0:** .NET MAUI mobile application with NFC device configuration (Epics 14-19), complete offline-first architecture, field technician workflows  
+**Document Version:** 3.1  
+**Last Updated:** December 8, 2025  
+**Total Stories:** 143 (was 138, added 5 Digital Twin stories)  
+**Total Story Points:** ~1,697 (was ~1,682, added 15 Digital Twin Phase 1 points)  
+**New in v3.1:** Digital Twin Asset Hierarchy (Epic 13) with Phase 1 complete - Core API with hierarchical asset management, LTREE-based queries, and data point mapping foundation  
+**Previous updates (v3.0):** .NET MAUI mobile application with NFC device configuration (Epics 14-19), complete offline-first architecture, field technician workflows  
 **Previous updates (v2.0):** Billing & metering (Epic 12), Enhanced multi-tenancy (8.7), Stripe payment integration
+
+---
+
+## Epic 13: Digital Twin Asset Hierarchy (NEW - Dec 8, 2025)
+
+The Digital Twin system enables hierarchical asset management and telemetry data point mapping to physical assets. **Phase 1 Complete** with core API and database foundation.
+
+**Key Capabilities:**
+- **Hierarchical asset structure** - Create multi-level asset hierarchies (Site → Building → Area → Equipment → Component)
+- **LTREE-based queries** - O(log n) performance for ancestor/descendant queries using PostgreSQL LTREE extension
+- **Data point mapping** - Map schema JSON paths ($.temperature) to specific assets with labels and descriptions
+- **Real-time state tracking** - Maintain current state of each asset with alarm status
+- **Hierarchical aggregation** - Roll up metrics from child assets to parents automatically
+- **Asset-based dashboards** - Build dashboards focused on specific assets or asset groups
+
+**Implementation Status:**
+- ✅ Phase 1: Core Digital Twin API (26 endpoints, 6 database tables, LTREE hierarchies) - **Complete**
+- 🔴 Phase 2: Frontend UI Integration (asset tree, device assignment, mapping editor) - **In Progress**
+- 📋 Phase 3-8: State management, aggregation, advanced UI, optimization
+
+**Technology Stack:**
+- **Backend:** PostgreSQL LTREE extension, TimescaleDB continuous aggregates, EF Core with raw SQL, RESTful API (26 endpoints)
+- **Frontend:** React 19, Next.js 14, react-arborist (tree visualization), Zustand (state management), Tailwind CSS
+
+**Total Digital Twin Stories:** 10 stories (~101 story points)
+- Phase 1 (Backend API): 1 story - ✅ Complete (15 points)
+- Phase 2 (Frontend UI): 4 stories - 🔴 Not Started (26 points)
+- Phases 3-8 (Advanced Features): 5 stories - 📋 Planned (60 points)
+
+**Documentation:**
+- Requirements: `docs/digital-twin-ui-requirements.md` (NEW - Dec 9, 2025)
+- Database schema: `infrastructure/timescaledb/init-digital-twin-schema.sql`
+- API implementation: `docs/digital-twin-phase1-complete.md`
+- Session notes: `docs/digital-twin-session-2025-12-09.md`
+
+**API Endpoints:**
+- AssetsController: `/api/assets` (CRUD, hierarchy queries, state management)
+- MappingsController: `/api/mappings` (data point to asset mapping)
+
+### Story 13.1: Digital Twin Core API ✅
+**As a** backend developer  
+**I want** a Digital Twin API with hierarchical asset management  
+**So that** I can store and query asset hierarchies efficiently
+
+**Status:** ✅ Complete (Dec 8, 2025)  
+**Story Points:** 15
+
+**Acceptance Criteria:**
+- ✅ Database schema with LTREE support for hierarchical paths
+- ✅ Asset CRUD operations with automatic path maintenance
+- ✅ Hierarchical queries (children, descendants, ancestors)
+- ✅ Data point mapping from schema JSON paths to assets
+- ✅ Asset state tracking with real-time updates
+- ✅ Multi-tenant row-level security (RLS)
+- ✅ 26 REST API endpoints fully implemented
+- ✅ Repository pattern with EF Core and raw SQL for LTREE
+
+---
+
+### Story 13.2: Asset Tree Visualization UI 🔴
+**As a** facility manager  
+**I want** to view and navigate my asset hierarchy as an interactive tree  
+**So that** I can understand my site structure and quickly find assets
+
+**Status:** 🔴 Not Started  
+**Story Points:** 8  
+**Priority:** High  
+**Dependencies:** Story 13.1 ✅
+
+**Acceptance Criteria:**
+- [ ] Display assets in expandable/collapsible tree structure using react-arborist
+- [ ] Show asset name, type icon, and status indicator on each node
+- [ ] Support multiple root assets (different sites/facilities)
+- [ ] Navigate up to 10 levels deep in hierarchy
+- [ ] Color-code nodes by asset type (site, building, equipment, sensor, etc.)
+- [ ] Display asset count badges (e.g., "Equipment (5)")
+- [ ] Search/filter assets by name, type, or status in real-time
+- [ ] Keyboard navigation (arrow keys, Enter to expand, Escape to close)
+- [ ] Click asset to select and show details in right panel
+- [ ] Tree state persists in session storage (expanded nodes)
+- [ ] Responsive layout (sidebar on desktop, full-screen on mobile)
+- [ ] Loading skeleton while fetching data
+- [ ] Empty state when no assets exist ("Create your first asset")
+- [ ] Multi-tenant isolation (only show current tenant's assets)
+
+**Technical Implementation:**
+- API client: `src/lib/api/digital-twin.ts` with methods for `getAssets()`, `getAssetTree()`, `getAssetChildren()`
+- Zustand store: `src/stores/digital-twin-store.ts` for asset state, selection, expansion
+- Tree component: `src/components/digital-twin/AssetTree.tsx` using react-arborist
+- Node component: `src/components/digital-twin/AssetTreeNode.tsx` with custom rendering
+- Search bar: `src/components/digital-twin/AssetSearchBar.tsx` with debounced filtering
+- Page route: `src/app/digital-twin/page.tsx` (main tree view)
+
+**Dependencies:**
+- `npm install react-arborist` - Tree visualization library
+- Existing Zustand setup in project
+- Existing shadcn/ui components (Input, Button, Badge, etc.)
+
+---
+
+### Story 13.3: Asset CRUD Management UI 🔴
+**As a** facility manager  
+**I want** to create, edit, move, and delete assets in the tree  
+**So that** I can maintain an accurate digital twin of my facilities
+
+**Status:** 🔴 Not Started  
+**Story Points:** 8  
+**Priority:** High  
+**Dependencies:** Story 13.2
+
+**Acceptance Criteria:**
+**Create Asset:**
+- [ ] "Add Asset" button opens modal dialog with form
+- [ ] Form fields: Name (required), Type (dropdown), Parent (tree picker), Description, Status, Location (GPS + address), Metadata (JSON), Tags
+- [ ] Validation: Name required, type logical (can't put Site under Sensor), GPS format validation
+- [ ] Parent tree picker shows only valid parent assets
+- [ ] Preview shows where asset will be placed in tree
+- [ ] Success: Asset appears in tree immediately, toast notification
+- [ ] Error handling: User-friendly messages, form highlights invalid fields
+
+**Edit Asset:**
+- [ ] Click asset → "Edit" button opens modal with pre-populated form
+- [ ] Can change all fields except ID and Path (auto-maintained)
+- [ ] Warn if changing type affects children
+- [ ] Show last updated timestamp and user
+- [ ] Changes reflect immediately in tree (optimistic UI update)
+- [ ] Rollback on error
+
+**Move Asset:**
+- [ ] Drag asset node to new parent with visual feedback
+- [ ] Validation: Can't move to own descendant, target parent accepts type
+- [ ] Confirmation dialog shows old → new path and # of descendants affected
+- [ ] Progress indicator for large moves
+- [ ] Alternative: "Move Asset" button opens parent picker dialog
+- [ ] Tree refreshes after move completes
+
+**Delete Asset:**
+- [ ] "Delete" button on asset detail or context menu
+- [ ] Confirmation dialog lists children count, active devices, mappings
+- [ ] Option: "Delete children" (cascade) or "Cancel"
+- [ ] Soft delete option (marks as Decommissioned) vs hard delete
+- [ ] Tree updates immediately, toast notification
+- [ ] Audit log entry created
+
+**Technical Implementation:**
+- Dialogs: `AssetCreateDialog.tsx`, `AssetEditDialog.tsx`, `AssetDeleteDialog.tsx`, `AssetMoveDialog.tsx`
+- Forms: react-hook-form + zod validation schemas
+- API calls: `createAsset()`, `updateAsset()`, `moveAsset()`, `deleteAsset()`
+- Store actions: Optimistic updates with rollback
+- Location picker: react-leaflet map component with geocoding
+- Parent picker: Tree select component (reuse AssetTree with selection mode)
+
+---
+
+### Story 13.4: Device-to-Asset Assignment UI 🔴
+**As a** facility manager  
+**I want** to assign physical devices/sensors to assets in the hierarchy  
+**So that** I can see which devices monitor which assets
+
+**Status:** 🔴 Not Started  
+**Story Points:** 5  
+**Priority:** High  
+**Dependencies:** Story 13.3
+
+**Acceptance Criteria:**
+**Assign Device:**
+- [ ] Two assignment methods:
+  - Drag device from device list → drop on asset node in tree
+  - Click "Assign Device" button on asset detail → opens selection dialog
+- [ ] Selection dialog shows:
+  - Table of available devices (name, serial, type, schema, status)
+  - Filter by device type, connection status
+  - Search by name or serial number
+  - "Currently Assigned" badge if device already assigned to another asset
+- [ ] Validation:
+  - Device exists and user has access
+  - Asset-device type compatibility check (configurable rules)
+  - Confirmation if reassigning device from another asset
+- [ ] Assignment updates `device.asset_id` field via Device.API
+- [ ] Multiple devices can be assigned to one asset
+- [ ] Success: Device appears in asset's "Devices" tab, toast notification
+
+**View Assigned Devices:**
+- [ ] Asset detail page "Devices" tab shows table of assigned devices
+- [ ] Table columns: Name, Serial, Type, Schema, Status (online/offline), Last Seen, Actions
+- [ ] Quick stats: "5 devices assigned, 4 online, 1 offline"
+- [ ] Click device row → navigates to device detail page
+- [ ] "Unassign" button removes device from asset (confirmation dialog)
+- [ ] Filter devices by type or status
+- [ ] Export device list to CSV
+- [ ] Real-time status updates via WebSocket or polling
+
+**Technical Implementation:**
+- Dialog: `DeviceAssignDialog.tsx` with device selection table
+- Component: `AssetDeviceList.tsx` for displaying assigned devices
+- API integration: Device.API `updateDevice({ assetId })` endpoint
+- Drag-and-drop: `@dnd-kit/core` for device assignment gesture
+- Store: Add `assignedDevices` to asset object, `fetchAssetDevices()` action
+- WebSocket: Subscribe to device status changes for real-time updates
+
+**Dependencies:**
+- Device.API must support `assetId` field (✅ Complete - added in Dec 9 session)
+- `npm install @dnd-kit/core @dnd-kit/sortable` - Drag-and-drop library
+
+---
+
+### Story 13.5: Data Point Mapping Editor UI 🔴
+**As a** data engineer  
+**I want** to map schema data points (JSON paths) to specific assets  
+**So that** telemetry data is correctly attributed to physical assets
+
+**Status:** 🔴 Not Started  
+**Story Points:** 8  
+**Priority:** High  
+**Dependencies:** Story 13.4
+
+**Acceptance Criteria:**
+**Mapping Editor:**
+- [ ] Two-panel layout:
+  - Left: Schema tree view (expandable JSON structure from SchemaRegistry.API)
+  - Right: Asset tree view (from Digital Twin)
+- [ ] Schema tree shows JSON paths: `$.temperature`, `$.humidity`, nested like `$.location.lat`
+- [ ] Drag JSON path from schema tree → drop on asset node to create mapping
+- [ ] Alternatively, click "Add Mapping" button opens form:
+  - Schema selector (dropdown with search)
+  - JSON path input (with autocomplete from schema)
+  - Asset picker (tree select)
+  - Label (user-friendly name, e.g., "Boiler Temperature")
+  - Description (optional)
+  - Unit (text input, e.g., "°C", "PSI")
+  - Aggregation method (dropdown: Last, Average, Sum, Min, Max, Count)
+  - Enable rollup (checkbox)
+  - Transform expression (optional formula, e.g., "value * 1.8 + 32")
+- [ ] Validation:
+  - JSON path format (must start with `$.`)
+  - Asset exists
+  - Schema exists
+  - No duplicate JSON path → asset mapping
+- [ ] Preview: "$.temperature → Site A / Building 1 / HVAC / Boiler #3"
+- [ ] Success: Mapping created, toast notification
+
+**Mappings List:**
+- [ ] Table showing all mappings with columns:
+  - Schema Name, JSON Path
+  - Asset Name and Path (breadcrumb)
+  - Label, Unit, Aggregation Method
+  - Rollup Enabled (checkmark icon)
+  - Actions: Edit, Delete
+- [ ] Filter by schema, asset, or search by label
+- [ ] Pagination (50 mappings per page)
+- [ ] Sort by any column
+- [ ] "Export Mappings" button downloads CSV
+- [ ] "Import Mappings" button uploads CSV for bulk creation
+
+**Edit/Delete Mapping:**
+- [ ] Edit button opens same form as create, pre-populated
+- [ ] Can change label, unit, aggregation, transform, rollup
+- [ ] Cannot change schema, JSON path, or asset (delete and recreate instead)
+- [ ] Delete button shows confirmation: "Delete mapping $.temperature → Boiler #3?"
+- [ ] Audit log entry on delete
+
+**Bulk Import:**
+- [ ] CSV format: `schema_id,json_path,asset_id,label,unit,aggregation_method,enable_rollup`
+- [ ] Validates all rows before import, shows preview with validation results
+- [ ] "Apply All" or "Apply Selected" buttons
+- [ ] Progress bar during import
+- [ ] Error report downloadable for failed rows
+
+**Technical Implementation:**
+- Editor: `src/components/digital-twin/MappingEditor.tsx` with split panels
+- Schema tree: Fetch from SchemaRegistry.API, render as collapsible JSON tree
+- Form: `MappingForm.tsx` with react-hook-form + zod
+- Table: `MappingList.tsx` with sorting, filtering, pagination
+- API calls: `getMappings()`, `createMapping()`, `updateMapping()`, `deleteMapping()`
+- Drag-drop: react-arborist supports custom drop handlers
+- Page route: `src/app/digital-twin/mappings/page.tsx`
+- CSV import: Parse with `papaparse`, validate, batch create
+
+**Dependencies:**
+- SchemaRegistry.API must expose schema details endpoint
+- `npm install papaparse` - CSV parsing library
+
+---
+
+### Story 13.6: Asset State Dashboard 🔴
+**As an** operations manager  
+**I want** to view real-time state and historical data for assets  
+**So that** I can monitor asset health and troubleshoot issues
+
+**Status:** 🔴 Not Started  
+**Story Points:** 5  
+**Priority:** Medium  
+**Dependencies:** Story 13.5
+
+**Acceptance Criteria:**
+**Real-Time State:**
+- [ ] Asset detail page "State" tab displays:
+  - Current state dictionary (key-value pairs)
+  - Calculated metrics (averages, totals, min/max)
+  - Alarm status badge (Normal=green, Warning=yellow, Critical=red)
+  - Alarm count (# of active alarms)
+  - Last updated timestamp (relative time, e.g., "2 minutes ago")
+  - "Refresh" button for manual update
+- [ ] Data auto-refreshes every 5 seconds (configurable)
+- [ ] Click metric → drill down to raw telemetry chart
+- [ ] Empty state when no mappings exist ("Configure data point mappings to see state")
+
+**State History:**
+- [ ] "History" button opens timeline view in modal or separate tab
+- [ ] Timeline shows:
+  - State changes over time (line chart or event list)
+  - Alarm transitions (Normal → Warning → Critical)
+  - User actions (state manually updated, config changed)
+  - System events (device offline, connection lost)
+- [ ] Filter by date range, event type, alarm status
+- [ ] Export history to CSV
+- [ ] Zoom/pan controls on chart
+
+**Aggregated Data (Rollup):**
+- [ ] "Aggregated Data" section on asset detail page
+- [ ] Shows rollup metrics from child assets:
+  - Average temperature across all child sensors
+  - Total power consumption across all equipment
+  - Min/max values with timestamps
+  - Sample counts
+- [ ] Configurable rollup intervals (dropdown):
+  - 1 minute, 5 minutes, 15 minutes, 1 hour, 1 day
+- [ ] Chart showing rollup values over time (last 24 hours)
+- [ ] Click child asset in legend → drills down to its detail page
+- [ ] Empty state when no rollup configs exist
+
+**Technical Implementation:**
+- Component: `AssetStateView.tsx` for real-time state display
+- API calls: `getAssetState()`, `updateAssetState()`, `getAssetRollupData()`
+- Polling: Use `setInterval()` or `useSWR` with `refreshInterval` option
+- WebSocket: Alternative to polling for true real-time (requires backend support)
+- Charts: Use existing Recharts library for rollup visualization
+- Timeline: Custom component or use `react-chrono` library
+- Store: Add `assetState` to store, `fetchAssetState()` action with auto-refresh
+
+**Dependencies:**
+- Backend must populate `asset_states` table from telemetry (StreamProcessing.Service)
+- Rollup data must be pre-computed in `asset_rollup_data` hypertable
+
+---
+
+### Stories 13.7-13.10: Advanced Features (Planned)
+**Status:** 📋 Planned for future phases  
+**Total Points:** ~60
+
+- **Story 13.7:** Asset Templates & Import (Phase 3) - 10 points
+- **Story 13.8:** Asset Relationships (Non-hierarchical) (Phase 4) - 13 points
+- **Story 13.9:** 3D Asset Visualization (Phase 5) - 20 points
+- **Story 13.10:** Performance Optimization & Caching (Phase 6-8) - 17 points
+
+*Detailed requirements to be defined when Phase 2 nears completion.*
 
 ---
 

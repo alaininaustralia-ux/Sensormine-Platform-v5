@@ -23,5 +23,5 @@ public abstract class BaseEntity
     /// <summary>
     /// Tenant identifier for multi-tenancy support
     /// </summary>
-    public string TenantId { get; set; } = string.Empty;
+    public Guid TenantId { get; set; }
 }

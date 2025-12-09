@@ -18,19 +18,21 @@ public class DeviceTypeRepository : IDeviceTypeRepository
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    public async Task<DeviceType?> GetByIdAsync(Guid id, Guid tenantId)
+    public async Task<DeviceType?> GetByIdAsync(Guid id, string tenantId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.DeviceTypes
-            .FirstOrDefaultAsync(dt => dt.Id == id && dt.TenantId == tenantId);
+            .FirstOrDefaultAsync(dt => dt.Id == id && dt.TenantId == tenantGuid);
     }
 
     public async Task<(IEnumerable<DeviceType> Items, int TotalCount)> GetAllAsync(
-        Guid tenantId,
+        string tenantId,
         int page = 1,
         int pageSize = 20)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var query = _context.DeviceTypes
-            .Where(dt => dt.TenantId == tenantId)
+            .Where(dt => dt.TenantId == tenantGuid)
             .OrderBy(dt => dt.Name);
 
         var totalCount = await query.CountAsync();
@@ -109,10 +111,11 @@ public class DeviceTypeRepository : IDeviceTypeRepository
         return deviceType;
     }
 
-    public async Task<bool> DeleteAsync(Guid id, Guid tenantId)
+    public async Task<bool> DeleteAsync(Guid id, string tenantId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var deviceType = await _context.DeviceTypes
-            .FirstOrDefaultAsync(dt => dt.Id == id && dt.TenantId == tenantId);
+            .FirstOrDefaultAsync(dt => dt.Id == id && dt.TenantId == tenantGuid);
 
         if (deviceType == null)
             return false;
@@ -126,10 +129,11 @@ public class DeviceTypeRepository : IDeviceTypeRepository
         return true;
     }
 
-    public async Task<bool> ExistsAsync(string name, Guid tenantId, Guid? excludeId = null)
+    public async Task<bool> ExistsAsync(string name, string tenantId, Guid? excludeId = null)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var query = _context.DeviceTypes
-            .Where(dt => dt.TenantId == tenantId && dt.Name == name);
+            .Where(dt => dt.TenantId == tenantGuid && dt.Name == name);
 
         if (excludeId.HasValue)
         {
@@ -140,15 +144,16 @@ public class DeviceTypeRepository : IDeviceTypeRepository
     }
 
     public async Task<(IEnumerable<DeviceType> Items, int TotalCount)> SearchAsync(
-        Guid tenantId,
+        string tenantId,
         string? searchTerm = null,
         List<string>? tags = null,
         DeviceProtocol? protocol = null,
         int page = 1,
         int pageSize = 20)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var query = _context.DeviceTypes
-            .Where(dt => dt.TenantId == tenantId);
+            .Where(dt => dt.TenantId == tenantGuid);
 
         // Apply search term filter (search in name and description)
         if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -183,11 +188,12 @@ public class DeviceTypeRepository : IDeviceTypeRepository
         return (items, totalCount);
     }
 
-    public async Task<List<DeviceTypeVersion>> GetVersionHistoryAsync(Guid deviceTypeId, Guid tenantId)
+    public async Task<List<DeviceTypeVersion>> GetVersionHistoryAsync(Guid deviceTypeId, string tenantId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         // Verify the device type belongs to the tenant
         var deviceType = await _context.DeviceTypes
-            .FirstOrDefaultAsync(dt => dt.Id == deviceTypeId && dt.TenantId == tenantId);
+            .FirstOrDefaultAsync(dt => dt.Id == deviceTypeId && dt.TenantId == tenantGuid);
 
         if (deviceType == null)
             throw new InvalidOperationException($"Device type {deviceTypeId} not found for tenant {tenantId}");
@@ -198,12 +204,13 @@ public class DeviceTypeRepository : IDeviceTypeRepository
             .ToListAsync();
     }
 
-    public async Task<DeviceType> RollbackToVersionAsync(Guid deviceTypeId, int version, Guid tenantId, string userId)
+    public async Task<DeviceType> RollbackToVersionAsync(Guid deviceTypeId, int version, string tenantId, string userId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         // Get the device type and verify ownership
         var deviceType = await _context.DeviceTypes
             .IgnoreQueryFilters() // Include soft-deleted items
-            .FirstOrDefaultAsync(dt => dt.Id == deviceTypeId && dt.TenantId == tenantId);
+            .FirstOrDefaultAsync(dt => dt.Id == deviceTypeId && dt.TenantId == tenantGuid);
 
         if (deviceType == null)
             throw new InvalidOperationException($"Device type {deviceTypeId} not found");
@@ -247,11 +254,12 @@ public class DeviceTypeRepository : IDeviceTypeRepository
         return deviceType;
     }
 
-    public async Task<DeviceTypeUsageStatistics> GetUsageStatisticsAsync(Guid deviceTypeId, Guid tenantId)
+    public async Task<DeviceTypeUsageStatistics> GetUsageStatisticsAsync(Guid deviceTypeId, string tenantId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         // Verify the device type belongs to the tenant
         var deviceType = await _context.DeviceTypes
-            .FirstOrDefaultAsync(dt => dt.Id == deviceTypeId && dt.TenantId == tenantId);
+            .FirstOrDefaultAsync(dt => dt.Id == deviceTypeId && dt.TenantId == tenantGuid);
 
         if (deviceType == null)
             throw new InvalidOperationException($"Device type {deviceTypeId} not found for tenant {tenantId}");
@@ -271,19 +279,20 @@ public class DeviceTypeRepository : IDeviceTypeRepository
 
     public async Task<(List<DeviceTypeAuditLog> Items, int TotalCount)> GetAuditLogsAsync(
         Guid deviceTypeId,
-        Guid tenantId,
+        string tenantId,
         int page = 1,
-        int pageSize = 50)
+        int pageSize = 20)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         // Verify the device type belongs to the tenant
         var deviceType = await _context.DeviceTypes
-            .FirstOrDefaultAsync(dt => dt.Id == deviceTypeId && dt.TenantId == tenantId);
+            .FirstOrDefaultAsync(dt => dt.Id == deviceTypeId && dt.TenantId == tenantGuid);
 
         if (deviceType == null)
             throw new InvalidOperationException($"Device type {deviceTypeId} not found for tenant {tenantId}");
 
         var query = _context.DeviceTypeAuditLogs
-            .Where(log => log.DeviceTypeId == deviceTypeId && log.TenantId == tenantId)
+            .Where(log => log.DeviceTypeId == deviceTypeId && log.TenantId == tenantGuid)
             .OrderByDescending(log => log.Timestamp);
 
         var totalCount = await query.CountAsync();
@@ -299,8 +308,9 @@ public class DeviceTypeRepository : IDeviceTypeRepository
     public async Task<DeviceTypeUpdateValidationResult> ValidateUpdateAsync(
         Guid deviceTypeId,
         DeviceType proposedUpdate,
-        Guid tenantId)
+        string tenantId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var result = new DeviceTypeUpdateValidationResult
         {
             IsValid = true
@@ -308,7 +318,7 @@ public class DeviceTypeRepository : IDeviceTypeRepository
 
         // Get the current device type
         var currentDeviceType = await _context.DeviceTypes
-            .FirstOrDefaultAsync(dt => dt.Id == deviceTypeId && dt.TenantId == tenantId);
+            .FirstOrDefaultAsync(dt => dt.Id == deviceTypeId && dt.TenantId == tenantGuid);
 
         if (currentDeviceType == null)
             throw new InvalidOperationException($"Device type {deviceTypeId} not found");

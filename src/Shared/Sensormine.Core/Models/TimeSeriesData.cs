@@ -13,7 +13,7 @@ public class TimeSeriesData
     /// <summary>
     /// Tenant identifier
     /// </summary>
-    public string TenantId { get; set; } = string.Empty;
+    public Guid TenantId { get; set; }
 
     /// <summary>
     /// Timestamp of the measurement

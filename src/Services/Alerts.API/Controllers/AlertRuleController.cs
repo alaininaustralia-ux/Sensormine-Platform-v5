@@ -84,7 +84,7 @@ public class AlertRuleController : ControllerBase
             }
 
             var tenantId = GetTenantId();
-            if (rule.TenantId != tenantId)
+            if (rule.TenantId != Guid.Parse(tenantId))
             {
                 return NotFound(new { error = "Alert rule not found" });
             }
@@ -113,7 +113,7 @@ public class AlertRuleController : ControllerBase
             var rule = new AlertRule
             {
                 Id = Guid.NewGuid(),
-                TenantId = tenantId,
+                TenantId = Guid.Parse(tenantId),
                 Name = request.Name,
                 Description = request.Description,
                 Severity = request.Severity,
@@ -173,7 +173,7 @@ public class AlertRuleController : ControllerBase
             var tenantId = GetTenantId();
             var rule = await _repository.GetByIdAsync(id);
 
-            if (rule == null || rule.TenantId != tenantId)
+            if (rule == null || rule.TenantId != Guid.Parse(tenantId))
             {
                 return NotFound(new { error = "Alert rule not found" });
             }
@@ -240,7 +240,7 @@ public class AlertRuleController : ControllerBase
             var tenantId = GetTenantId();
             var rule = await _repository.GetByIdAsync(id);
 
-            if (rule == null || rule.TenantId != tenantId)
+            if (rule == null || rule.TenantId != Guid.Parse(tenantId))
             {
                 return NotFound(new { error = "Alert rule not found" });
             }

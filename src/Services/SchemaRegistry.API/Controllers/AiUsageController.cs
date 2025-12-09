@@ -83,7 +83,7 @@ public class AiUsageController : ControllerBase
         try
         {
             // TODO: Get tenant ID from authentication context
-            var tenantId = "default-tenant";
+            var tenantId = GetTenantId();
             
             var stats = await _meteringService.GetUsageStatisticsAsync(tenantId, startDate, endDate);
             return Ok(stats);
@@ -93,5 +93,12 @@ public class AiUsageController : ControllerBase
             _logger.LogError(ex, "Error retrieving current tenant AI usage statistics");
             return StatusCode(500, new { error = "Failed to retrieve usage statistics" });
         }
+    }
+
+    private string GetTenantId()
+    {
+        // TODO: Extract from JWT claims when authentication is implemented
+        // Using a fixed tenant ID for the default tenant until auth is implemented
+        return "00000000-0000-0000-0000-000000000001";
     }
 }

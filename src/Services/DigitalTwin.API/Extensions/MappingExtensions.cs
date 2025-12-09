@@ -1,0 +1,179 @@
+using DigitalTwin.API.DTOs;
+using Sensormine.Core.Models;
+
+namespace DigitalTwin.API.Extensions;
+
+/// <summary>
+/// Extension methods for mapping between domain models and DTOs
+/// </summary>
+public static class MappingExtensions
+{
+    /// <summary>
+    /// Convert Asset entity to AssetResponse DTO
+    /// </summary>
+    public static AssetResponse ToResponse(this Asset asset, int childCount = 0)
+    {
+        return new AssetResponse
+        {
+            Id = asset.Id,
+            TenantId = asset.TenantId.ToString(),
+            ParentId = asset.ParentId,
+            Name = asset.Name,
+            Description = asset.Description,
+            AssetType = asset.AssetType.ToString(),
+            Path = asset.Path,
+            Level = asset.Level,
+            Metadata = asset.Metadata ?? new Dictionary<string, object>(),
+            Location = asset.Location?.ToDto(),
+            Status = asset.Status.ToString(),
+            CreatedAt = asset.CreatedAt,
+            UpdatedAt = asset.UpdatedAt,
+            CreatedBy = asset.CreatedBy,
+            UpdatedBy = asset.UpdatedBy,
+            ChildCount = childCount,
+            CurrentState = asset.CurrentState?.ToResponse()
+        };
+    }
+
+    /// <summary>
+    /// Convert Asset entity to AssetTreeResponse DTO with children
+    /// </summary>
+    public static AssetTreeResponse ToTreeResponse(this Asset asset)
+    {
+        return new AssetTreeResponse
+        {
+            Id = asset.Id,
+            TenantId = asset.TenantId.ToString(),
+            ParentId = asset.ParentId,
+            Name = asset.Name,
+            Description = asset.Description,
+            AssetType = asset.AssetType.ToString(),
+            Path = asset.Path,
+            Level = asset.Level,
+            Metadata = asset.Metadata ?? new Dictionary<string, object>(),
+            Location = asset.Location?.ToDto(),
+            Status = asset.Status.ToString(),
+            CreatedAt = asset.CreatedAt,
+            UpdatedAt = asset.UpdatedAt,
+            CreatedBy = asset.CreatedBy,
+            UpdatedBy = asset.UpdatedBy,
+            ChildCount = asset.Children?.Count ?? 0,
+            CurrentState = asset.CurrentState?.ToResponse(),
+            Children = asset.Children?.Select(c => c.ToTreeResponse()).ToList() ?? new List<AssetTreeResponse>()
+        };
+    }
+
+    /// <summary>
+    /// Convert GeoLocation to DTO
+    /// </summary>
+    public static GeoLocationDto? ToDto(this GeoLocation? location)
+    {
+        if (location == null) return null;
+
+        return new GeoLocationDto
+        {
+            Latitude = location.Latitude,
+            Longitude = location.Longitude,
+            Altitude = location.Altitude
+        };
+    }
+
+    /// <summary>
+    /// Convert GeoLocationDto to domain model
+    /// </summary>
+    public static GeoLocation? ToDomain(this GeoLocationDto? dto)
+    {
+        if (dto == null) return null;
+
+        return new GeoLocation
+        {
+            Latitude = dto.Latitude,
+            Longitude = dto.Longitude,
+            Altitude = dto.Altitude
+        };
+    }
+
+    /// <summary>
+    /// Convert AssetState entity to AssetStateResponse DTO
+    /// </summary>
+    public static AssetStateResponse ToResponse(this AssetState state)
+    {
+        return new AssetStateResponse
+        {
+            AssetId = state.AssetId,
+            State = state.State ?? new Dictionary<string, object>(),
+            CalculatedMetrics = state.CalculatedMetrics ?? new Dictionary<string, object>(),
+            AlarmStatus = state.AlarmStatus.ToString(),
+            AlarmCount = state.AlarmCount,
+            LastUpdateTime = state.LastUpdateTime,
+            LastUpdateDeviceId = state.LastUpdateDeviceId
+        };
+    }
+
+    /// <summary>
+    /// Convert DataPointMapping entity to MappingResponse DTO
+    /// </summary>
+    public static MappingResponse ToResponse(this DataPointMapping mapping, string assetName, string assetPath)
+    {
+        return new MappingResponse
+        {
+            Id = mapping.Id,
+            TenantId = mapping.TenantId.ToString(),
+            SchemaId = mapping.SchemaId,
+            SchemaVersion = mapping.SchemaVersion,
+            JsonPath = mapping.JsonPath,
+            AssetId = mapping.AssetId,
+            AssetName = assetName,
+            AssetPath = assetPath,
+            Label = mapping.Label,
+            Description = mapping.Description,
+            Unit = mapping.Unit,
+            AggregationMethod = mapping.AggregationMethod.ToString(),
+            RollupEnabled = mapping.RollupEnabled,
+            TransformExpression = mapping.TransformExpression,
+            Metadata = mapping.Metadata ?? new Dictionary<string, object>(),
+            CreatedAt = mapping.CreatedAt,
+            UpdatedAt = mapping.UpdatedAt
+        };
+    }
+
+    /// <summary>
+    /// Parse AssetType from string
+    /// </summary>
+    public static AssetType ParseAssetType(string assetType)
+    {
+        if (string.IsNullOrWhiteSpace(assetType))
+        {
+            return AssetType.Equipment; // Default to Equipment if not specified
+        }
+        return Enum.Parse<AssetType>(assetType, ignoreCase: true);
+    }
+
+    /// <summary>
+    /// Parse AssetStatus from string
+    /// </summary>
+    public static AssetStatus ParseAssetStatus(string status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return AssetStatus.Active; // Default to Active if not specified
+        }
+        return Enum.Parse<AssetStatus>(status, ignoreCase: true);
+    }
+
+    /// <summary>
+    /// Parse AggregationMethod from string
+    /// </summary>
+    public static AggregationMethod ParseAggregationMethod(string method)
+    {
+        return Enum.Parse<AggregationMethod>(method, ignoreCase: true);
+    }
+
+    /// <summary>
+    /// Parse AlarmStatus from string
+    /// </summary>
+    public static AlarmStatus ParseAlarmStatus(string status)
+    {
+        return Enum.Parse<AlarmStatus>(status, ignoreCase: true);
+    }
+}

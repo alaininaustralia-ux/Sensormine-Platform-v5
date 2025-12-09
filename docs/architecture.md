@@ -83,6 +83,19 @@ Edge Gateway → Kafka Topic → Ingestion Service → Validation → Storage
 - Cloud-agnostic interfaces
 - Easy provider swapping
 
+**Multi-Tenant Data Isolation**:
+- All domain entities inherit from `BaseEntity` with `Guid TenantId`
+- Database tables use `uuid` type for `tenant_id` columns
+- Repository methods enforce tenant isolation via query filters
+- See [database-tenant-id-migration.md](./database-tenant-id-migration.md) for details
+
+**Database Architecture Decision (Option C - Hybrid Separation)**:
+- **PostgreSQL (Port 5433)**: OLTP workloads - devices, schemas, users, assets, configurations
+- **TimescaleDB (Port 5452)**: OLAP workloads - telemetry hypertables, time-series data
+- **Rationale**: Independent scaling, optimized query performance, clear separation of concerns
+- **Migration**: December 2025 - Migrated 7 assets from TimescaleDB to PostgreSQL
+- See [option-c-implementation-summary.md](./option-c-implementation-summary.md) for complete details
+
 ### 5. API Layer
 **Purpose**: Expose platform functionality via RESTful APIs
 
@@ -263,7 +276,263 @@ Edge Gateway → Kafka Topic → Ingestion Service → Validation → Storage
 - **Android**: 8.0 (API 26)+, NFC hardware required
 - **Distribution**: App Store, Google Play, or Enterprise
 
-### 7. AI & Semantic Layer
+### 7. Web Frontend Architecture
+**Purpose**: Browser-based user interface for platform management and visualization
+
+**Technology Stack:**
+- **Framework**: Next.js 14 (App Router) + React 19
+- **Language**: TypeScript 5
+- **Styling**: Tailwind CSS 4 + shadcn/ui components
+- **State Management**: Zustand (lightweight, no boilerplate)
+- **Data Fetching**: Native fetch with SWR for caching
+- **Charts**: Recharts for data visualization
+- **Maps**: Leaflet for GIS integration
+- **Forms**: react-hook-form + zod validation
+- **Tree Visualization**: react-arborist (for Digital Twin asset hierarchy)
+- **Drag-and-Drop**: @dnd-kit/core
+
+**Application Structure:**
+```
+src/Web/sensormine-web/
+├── src/
+│   ├── app/                          # Next.js App Router
+│   │   ├── (auth)/login              # Authentication pages
+│   │   ├── dashboard/                # Dashboard builder & viewer
+│   │   ├── devices/                  # Device management
+│   │   ├── digital-twin/             # Asset hierarchy (NEW)
+│   │   │   ├── page.tsx              # Main tree view
+│   │   │   ├── [id]/page.tsx        # Asset detail
+│   │   │   └── mappings/page.tsx    # Data point mapping editor
+│   │   ├── schemas/                  # Schema registry
+│   │   ├── settings/                 # Configuration
+│   │   └── layout.tsx                # Root layout with nav
+│   │
+│   ├── components/                   # Reusable UI components
+│   │   ├── ui/                       # shadcn/ui primitives
+│   │   ├── dashboard/                # Dashboard widgets & builder
+│   │   │   ├── builder/              # Drag-drop dashboard editor
+│   │   │   └── widgets/              # Widget library (charts, tables, maps)
+│   │   ├── devices/                  # Device-specific components
+│   │   ├── digital-twin/             # Digital Twin UI (NEW)
+│   │   │   ├── AssetTree.tsx         # Hierarchical tree view
+│   │   │   ├── AssetTreeNode.tsx    # Tree node renderer
+│   │   │   ├── AssetCreateDialog.tsx # Create asset modal
+│   │   │   ├── AssetEditDialog.tsx   # Edit asset modal
+│   │   │   ├── AssetDetailPanel.tsx  # Asset info panel
+│   │   │   ├── AssetStateView.tsx    # Real-time state display
+│   │   │   ├── AssetDeviceList.tsx   # Assigned devices table
+│   │   │   ├── DeviceAssignDialog.tsx # Device assignment picker
+│   │   │   ├── MappingEditor.tsx     # Schema → Asset mapper
+│   │   │   ├── MappingList.tsx       # Mappings table
+│   │   │   └── MappingForm.tsx       # Mapping CRUD form
+│   │   └── schemas/                  # Schema editor components
+│   │
+│   ├── lib/                          # Utilities & API clients
+│   │   ├── api/                      # Backend API clients
+│   │   │   ├── devices.ts            # Device.API
+│   │   │   ├── schemas.ts            # SchemaRegistry.API
+│   │   │   ├── dashboards.ts         # Dashboard.API
+│   │   │   ├── digital-twin.ts       # DigitalTwin.API (NEW)
+│   │   │   ├── query.ts              # Query.API
+│   │   │   └── widget-data.ts        # Widget data fetching
+│   │   ├── config.ts                 # Service URLs
+│   │   ├── types/                    # TypeScript interfaces
+│   │   └── utils.ts                  # Helper functions
+│   │
+│   └── stores/                       # Zustand state stores
+│       ├── dashboard-store.ts        # Dashboard state
+│       ├── device-store.ts           # Device management
+│       ├── digital-twin-store.ts     # Digital Twin state (NEW)
+│       └── schema-store.ts           # Schema management
+│
+├── __tests__/                        # Vitest unit tests
+├── public/                           # Static assets
+└── package.json                      # Dependencies
+```
+
+**Frontend Architecture Patterns:**
+
+#### 1. API Client Pattern
+Each backend service has a dedicated API client with:
+- Base URL configuration (environment-specific)
+- Automatic tenant header injection (`X-Tenant-Id`)
+- JWT token authentication
+- Error handling and retry logic
+- TypeScript interfaces for requests/responses
+
+```typescript
+// Example: digital-twin.ts
+export async function getAssetTree(rootId: string): Promise<AssetTreeResponse> {
+  const response = await fetch(`${DIGITAL_TWIN_URL}/api/assets/${rootId}/tree`, {
+    headers: {
+      'X-Tenant-Id': getCurrentTenantId(),
+      'Authorization': `Bearer ${getAccessToken()}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch asset tree');
+  return response.json();
+}
+```
+
+#### 2. State Management with Zustand
+- Lightweight alternative to Redux (no actions, reducers, middleware)
+- Direct state mutation (uses Immer internally)
+- Async actions with built-in loading/error states
+- Persistence to sessionStorage/localStorage
+- Selective component subscriptions (avoid re-renders)
+
+```typescript
+// Example: digital-twin-store.ts
+interface DigitalTwinStore {
+  assets: Asset[];
+  selectedAsset: Asset | null;
+  expandedNodes: Set<string>;
+  isLoading: boolean;
+  error: string | null;
+  
+  fetchAssets: () => Promise<void>;
+  selectAsset: (id: string) => void;
+  expandNode: (id: string) => void;
+  createAsset: (data: CreateAssetRequest) => Promise<Asset>;
+}
+
+export const useDigitalTwinStore = create<DigitalTwinStore>((set, get) => ({
+  assets: [],
+  selectedAsset: null,
+  expandedNodes: new Set(),
+  isLoading: false,
+  error: null,
+  
+  fetchAssets: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const assets = await getAssets();
+      set({ assets, isLoading: false });
+    } catch (error) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+  
+  selectAsset: (id) => {
+    const asset = get().assets.find(a => a.id === id);
+    set({ selectedAsset: asset });
+  },
+  
+  // ... other actions
+}));
+```
+
+#### 3. Component Composition
+- Atomic design: atoms → molecules → organisms → pages
+- shadcn/ui components for consistent UI (Button, Input, Dialog, Table, etc.)
+- Custom domain components built on primitives
+- Separation of concerns: presentational vs. container components
+- Props validation with TypeScript interfaces
+
+#### 4. Multi-Tenancy Frontend Pattern
+- Current tenant context stored in auth store
+- All API calls include `X-Tenant-Id` header
+- Tenant switcher in header (admin users only)
+- Tenant-specific branding (logo, colors) from config
+- Data isolation enforced at API level (frontend just displays)
+
+#### 5. Real-Time Updates
+Three strategies based on use case:
+- **Polling**: Simple, works everywhere (dashboard widgets, asset state)
+- **WebSocket**: True real-time (device status, telemetry streaming)
+- **Server-Sent Events (SSE)**: One-way real-time (notifications, alerts)
+
+```typescript
+// Polling example with SWR
+import useSWR from 'swr';
+
+const { data, error } = useSWR(
+  `/api/assets/${assetId}/state`,
+  fetcher,
+  { refreshInterval: 5000 } // Poll every 5 seconds
+);
+```
+
+#### 6. Error Handling Strategy
+- API errors caught and displayed as toast notifications
+- Validation errors shown inline on form fields
+- Optimistic UI updates with rollback on failure
+- Loading skeletons during data fetch
+- Empty states with call-to-action buttons
+
+**Digital Twin UI Architecture (Epic 13 Phase 2):**
+
+The Digital Twin frontend integrates with DigitalTwin.API (port 5297) to provide:
+
+**Asset Hierarchy Management:**
+- **Tree Visualization**: react-arborist displays hierarchical asset structure (Site → Building → Equipment → Sensor)
+- **CRUD Operations**: Create, read, update, delete assets with validation
+- **Tree Navigation**: Expand/collapse nodes, search/filter, keyboard shortcuts
+- **Drag-and-Drop**: Move assets by dragging to new parent nodes
+- **Multi-Level Hierarchy**: Support up to 10 levels deep
+- **Asset Types**: 7 types (Site, Building, Floor, Area, Zone, Equipment, Sensor, etc.)
+- **Location Integration**: GPS coordinates with map picker (Leaflet)
+
+**Device-to-Asset Assignment:**
+- **Assignment Methods**: Drag device from list to asset node, or selection dialog
+- **Validation**: Asset-device type compatibility, device availability check
+- **Persistence**: Updates `device.asset_id` field via Device.API
+- **Visualization**: Asset detail shows list of assigned devices with status
+- **Real-Time Status**: WebSocket updates for device online/offline
+
+**Data Point Mapping:**
+- **Two-Panel Editor**: Schema JSON tree (left) + Asset tree (right)
+- **Drag-Drop Mapping**: Drag JSON path ($.temperature) onto asset node
+- **Mapping Configuration**: Label, unit, aggregation method, rollup settings, transform expression
+- **Validation**: JSON path format, asset existence, no duplicates
+- **Bulk Operations**: CSV import/export for mass mapping creation
+- **SchemaRegistry Integration**: Fetches schemas and JSON structure dynamically
+
+**Asset State Dashboard:**
+- **Real-Time State**: Displays current asset state from telemetry (polled every 5s)
+- **Alarm Status**: Color-coded by severity (Normal, Warning, Critical)
+- **State History**: Timeline of state changes and alarm transitions
+- **Aggregated Data**: Rollup metrics from child assets (average, sum, min, max)
+- **Drill-Down**: Click metric to view raw telemetry charts
+
+**Technical Implementation:**
+- API Client: 16 methods (getAssets, createAsset, moveAsset, getMappings, etc.)
+- Zustand Store: Manages assets, selected asset, expanded nodes, mappings, loading state
+- Components: 11 components (AssetTree, dialogs, editors, lists)
+- Pages: 3 routes (/digital-twin, /digital-twin/[id], /digital-twin/mappings)
+- Dependencies: react-arborist (tree), @dnd-kit/core (drag-drop), react-leaflet (maps)
+
+**Multi-Tenant Considerations:**
+- Tenant isolation at API level (X-Tenant-Id header)
+- Frontend only displays current tenant's assets
+- Admin users can switch tenant context
+- Cannot see or modify other tenants' assets
+- Tree view filtered by tenant ID
+
+**Performance Optimizations:**
+- Tree virtualization: Only render visible nodes (1000+ assets load <500ms)
+- Lazy loading: Load children on expand (not all descendants upfront)
+- Pagination: Large asset lists show 50 per page
+- Caching: Zustand stores frequently accessed assets
+- Debounced search: Filter tree in <100ms
+- Optimistic UI: Immediate updates, rollback on error
+
+**Accessibility (WCAG 2.1 AA):**
+- Keyboard navigation: Arrow keys, Enter, Escape
+- Screen reader support: ARIA labels on tree nodes
+- Focus management: Dialogs trap focus
+- Color contrast: All text meets 4.5:1 ratio
+- Tooltips: Help text on all form fields
+
+**Mobile Responsiveness:**
+- Tree view: Sidebar on desktop, full-screen on mobile/tablet
+- Touch-friendly: Larger tap targets for tree nodes
+- Adaptive layout: Stacks panels vertically on small screens
+- Works on tablets for field use
+
+For detailed Digital Twin UI requirements, see [digital-twin-ui-requirements.md](./digital-twin-ui-requirements.md)
+
+### 8. AI & Semantic Layer
 **Purpose**: ML inference, AI operations, and semantic search
 
 **Components**:

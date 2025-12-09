@@ -239,7 +239,7 @@ public class InMemoryTimeSeriesRepository : ITimeSeriesRepository
             return results.Select(r => new Core.Models.TimeSeriesData
             {
                 DeviceId = r.DeviceId,
-                TenantId = r.TenantId,
+                TenantId = Guid.Parse(r.TenantId),
                 Timestamp = r.Timestamp,
                 Values = r.Values,
                 Quality = r.Quality,
@@ -256,6 +256,46 @@ public class InMemoryTimeSeriesRepository : ITimeSeriesRepository
             return results.Cast<T>();
 
         return Enumerable.Empty<T>();
+    }
+
+    /// <inheritdoc />
+    public Task<Dictionary<string, LatestTelemetryData>> GetLatestTelemetryForDevicesAsync(
+        IEnumerable<string> deviceIds, 
+        CancellationToken cancellationToken = default)
+    {
+        var result = new Dictionary<string, LatestTelemetryData>();
+        var deviceIdList = deviceIds.ToList();
+
+        if (!deviceIdList.Any())
+            return Task.FromResult(result);
+
+        lock (_lock)
+        {
+            if (!_measurements.TryGetValue("telemetry", out var list))
+            {
+                return Task.FromResult(result);
+            }
+
+            // Get latest telemetry for each device
+            foreach (var deviceId in deviceIdList)
+            {
+                var latest = list
+                    .Where(d => d.TenantId == _tenantId && d.DeviceId == deviceId)
+                    .OrderByDescending(d => d.Timestamp)
+                    .FirstOrDefault();
+
+                if (latest != null)
+                {
+                    result[deviceId] = new LatestTelemetryData
+                    {
+                        Timestamp = latest.Timestamp.UtcDateTime,
+                        CustomFields = new Dictionary<string, object>(latest.Values)
+                    };
+                }
+            }
+        }
+
+        return Task.FromResult(result);
     }
 
     /// <summary>

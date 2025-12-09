@@ -102,7 +102,7 @@ export function DashboardWidgetComponent({
 
   const handleResizeMove = useCallback(
     (e: MouseEvent) => {
-      if (!isResizing || !dragStart) return;
+      if (!isResizing || !dragStart || !widget.position) return;
 
       const deltaX = e.clientX - dragStart.x;
       const deltaY = e.clientY - dragStart.y;
@@ -118,11 +118,11 @@ export function DashboardWidgetComponent({
       if (widthDelta !== 0 || heightDelta !== 0) {
         const newWidth = Math.max(
           GRID_CONFIG.minWidgetWidth,
-          Math.min(GRID_CONFIG.maxWidgetWidth, widget.position.width + widthDelta)
+          Math.min(GRID_CONFIG.maxWidgetWidth, (widget.position.width || 6) + widthDelta)
         );
         const newHeight = Math.max(
           GRID_CONFIG.minWidgetHeight,
-          Math.min(GRID_CONFIG.maxWidgetHeight, widget.position.height + heightDelta)
+          Math.min(GRID_CONFIG.maxWidgetHeight, (widget.position.height || 4) + heightDelta)
         );
 
         if (newWidth !== widget.position.width || newHeight !== widget.position.height) {
@@ -150,6 +150,15 @@ export function DashboardWidgetComponent({
       };
     }
   }, [isResizing, handleResizeMove, handleResizeEnd]);
+
+  // Safety check: if position is missing, show loading state
+  if (!widget.position) {
+    return (
+      <div className="flex items-center justify-center p-4 bg-muted/20 rounded-lg">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   // Calculate grid position styles
   const gridStyles = {

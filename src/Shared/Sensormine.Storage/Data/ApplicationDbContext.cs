@@ -37,6 +37,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<AlertInstance> AlertInstances { get; set; } = null!;
     public DbSet<AlertDeliveryChannel> AlertDeliveryChannels { get; set; } = null!;
 
+    // Digital Twin Management
+    public DbSet<Asset> Assets { get; set; } = null!;
+    public DbSet<AssetState> AssetStates { get; set; } = null!;
+    public DbSet<DataPointMapping> DataPointMappings { get; set; } = null!;
+    public DbSet<AssetRollupConfig> AssetRollupConfigs { get; set; } = null!;
+    public DbSet<AssetRollupData> AssetRollupData { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -49,6 +56,7 @@ public class ApplicationDbContext : DbContext
         ConfigureSiteConfigurationEntities(modelBuilder);
         ConfigureDashboardEntities(modelBuilder);
         ConfigureAlertEntities(modelBuilder);
+        ConfigureAssetEntities(modelBuilder);
     }
 
     private void ConfigureSchemaEntities(ModelBuilder modelBuilder)
@@ -442,6 +450,9 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.SerialNumber)
                 .HasColumnName("serial_number")
                 .HasMaxLength(100);
+
+            entity.Property(e => e.AssetId)
+                .HasColumnName("asset_id");
 
             entity.Property(e => e.CustomFieldValues)
                 .HasColumnName("custom_field_values")
@@ -1068,6 +1079,403 @@ public class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => e.IsEnabled)
                 .HasDatabaseName("ix_alert_delivery_channels_enabled");
+        });
+    }
+
+    private void ConfigureAssetEntities(ModelBuilder modelBuilder)
+    {
+        // Asset Configuration
+        modelBuilder.Entity<Asset>(entity =>
+        {
+            entity.ToTable("assets");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedNever();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .HasColumnType("uuid")
+                .IsRequired();
+
+            entity.Property(e => e.ParentId)
+                .HasColumnName("parent_id");
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(e => e.Description)
+                .HasColumnName("description")
+                .HasColumnType("text");
+
+            entity.Property(e => e.AssetType)
+                .HasColumnName("asset_type")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.Path)
+                .HasColumnName("path")
+                .HasColumnType("ltree")
+                .IsRequired();
+
+            entity.Property(e => e.Level)
+                .HasColumnName("level")
+                .IsRequired();
+
+            entity.Property(e => e.PrimaryImageUrl)
+                .HasColumnName("primary_image_url")
+                .HasMaxLength(2000);
+
+            entity.Property(e => e.ImageUrls)
+                .HasColumnName("image_urls")
+                .HasColumnType("jsonb");
+
+            // Ignore dictionary properties - stored as JSONB in database but not directly mapped in EF
+            entity.Ignore(e => e.Metadata);
+            entity.Ignore(e => e.Documents);
+
+            entity.Property(e => e.Icon)
+                .HasColumnName("icon")
+                .HasMaxLength(100);
+
+            entity.Property(e => e.Status)
+                .HasColumnName("status")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .HasDefaultValue(AssetStatus.Active);
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            entity.Property(e => e.CreatedBy)
+                .HasColumnName("created_by")
+                .HasMaxLength(100);
+
+            entity.Property(e => e.UpdatedBy)
+                .HasColumnName("updated_by")
+                .HasMaxLength(100);
+
+            // Location stored as PostGIS geography(point) in database, ignore in EF
+            // Applications should query/update this using PostGIS functions directly
+            entity.Ignore(e => e.Location);
+
+            // Self-referencing relationship
+            entity.HasOne(e => e.Parent)
+                .WithMany(e => e.Children)
+                .HasForeignKey(e => e.ParentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Indexes
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("idx_assets_tenant");
+
+            entity.HasIndex(e => e.ParentId)
+                .HasDatabaseName("idx_assets_parent");
+
+            entity.HasIndex(e => e.Path)
+                .HasDatabaseName("idx_assets_path");
+
+            entity.HasIndex(e => e.AssetType)
+                .HasDatabaseName("idx_assets_type");
+
+            entity.HasIndex(e => e.Status)
+                .HasDatabaseName("idx_assets_status");
+
+            entity.HasIndex(e => e.Level)
+                .HasDatabaseName("idx_assets_level");
+
+            entity.HasIndex(e => new { e.TenantId, e.ParentId, e.Name })
+                .HasDatabaseName("unique_asset_name_per_parent")
+                .IsUnique();
+        });
+
+        // AssetState Configuration
+        modelBuilder.Entity<AssetState>(entity =>
+        {
+            entity.ToTable("asset_states");
+
+            entity.HasKey(e => e.AssetId);
+
+            entity.Property(e => e.AssetId)
+                .HasColumnName("asset_id");
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .HasColumnType("uuid")
+                .HasConversion<Guid>()
+                .IsRequired();
+
+            entity.Property(e => e.State)
+                .HasColumnName("state")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.CalculatedMetrics)
+                .HasColumnName("calculated_metrics")
+                .HasColumnType("jsonb");
+
+            entity.Property(e => e.AlarmStatus)
+                .HasColumnName("alarm_status")
+                .HasConversion<string>()
+                .HasMaxLength(50);
+
+            entity.Property(e => e.AlarmCount)
+                .HasColumnName("alarm_count")
+                .HasDefaultValue(0);
+
+            entity.Property(e => e.LastUpdateTime)
+                .HasColumnName("last_update_time")
+                .IsRequired();
+
+            entity.Property(e => e.LastUpdateDeviceId)
+                .HasColumnName("last_update_device_id")
+                .HasMaxLength(200);
+
+            // Relationship - AssetState to Asset (one-to-one)
+            entity.HasOne(e => e.Asset)
+                .WithOne(a => a.CurrentState)
+                .HasForeignKey<AssetState>(e => e.AssetId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Indexes
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("idx_asset_states_tenant");
+
+            entity.HasIndex(e => e.AlarmStatus)
+                .HasDatabaseName("idx_asset_states_alarm");
+
+            entity.HasIndex(e => e.LastUpdateTime)
+                .HasDatabaseName("idx_asset_states_last_update");
+        });
+
+        // DataPointMapping Configuration
+        modelBuilder.Entity<DataPointMapping>(entity =>
+        {
+            entity.ToTable("data_point_mappings");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedNever();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .HasColumnType("uuid")
+                .HasConversion<Guid>()
+                .IsRequired();
+
+            entity.Property(e => e.SchemaId)
+                .HasColumnName("schema_id")
+                .IsRequired();
+
+            entity.Property(e => e.SchemaVersion)
+                .HasColumnName("schema_version")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.JsonPath)
+                .HasColumnName("json_path")
+                .HasMaxLength(500)
+                .IsRequired();
+
+            entity.Property(e => e.AssetId)
+                .HasColumnName("asset_id")
+                .IsRequired();
+
+            entity.Property(e => e.Label)
+                .HasColumnName("label")
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(e => e.Description)
+                .HasColumnName("description")
+                .HasColumnType("text");
+
+            entity.Property(e => e.Unit)
+                .HasColumnName("unit")
+                .HasMaxLength(50);
+
+            entity.Property(e => e.AggregationMethod)
+                .HasColumnName("aggregation_method")
+                .HasConversion<string>()
+                .HasMaxLength(50);
+
+            entity.Property(e => e.RollupEnabled)
+                .HasColumnName("rollup_enabled")
+                .HasDefaultValue(true);
+
+            entity.Property(e => e.TransformExpression)
+                .HasColumnName("transform_expression")
+                .HasColumnType("text");
+
+            entity.Property(e => e.Metadata)
+                .HasColumnName("metadata")
+                .HasColumnType("jsonb");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            // Relationship removed - Navigation property Asset no longer exists to avoid AssetId1 shadow column issue
+            // Foreign key relationship is still enforced at database level
+            // entity.HasOne(e => e.Asset)
+            //     .WithMany()
+            //     .HasForeignKey(e => e.AssetId)
+            //     .OnDelete(DeleteBehavior.Cascade);
+
+            // Indexes
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("idx_mappings_tenant");
+
+            entity.HasIndex(e => e.SchemaId)
+                .HasDatabaseName("idx_mappings_schema");
+
+            entity.HasIndex(e => e.AssetId)
+                .HasDatabaseName("idx_mappings_asset");
+
+            entity.HasIndex(e => e.JsonPath)
+                .HasDatabaseName("idx_mappings_json_path");
+
+            entity.HasIndex(e => new { e.TenantId, e.SchemaId, e.JsonPath, e.AssetId })
+                .HasDatabaseName("unique_mapping")
+                .IsUnique();
+        });
+
+        // AssetRollupConfig Configuration
+        modelBuilder.Entity<AssetRollupConfig>(entity =>
+        {
+            entity.ToTable("asset_rollup_configs");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedNever();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .HasColumnType("uuid")
+                .HasConversion<Guid>()
+                .IsRequired();
+
+            entity.Property(e => e.AssetId)
+                .HasColumnName("asset_id")
+                .IsRequired();
+
+            entity.Property(e => e.MetricName)
+                .HasColumnName("metric_name")
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(e => e.AggregationMethod)
+                .HasColumnName("aggregation_method")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.RollupInterval)
+                .HasColumnName("rollup_interval")
+                .HasColumnType("interval");
+
+            entity.Property(e => e.IncludeChildren)
+                .HasColumnName("include_children")
+                .HasDefaultValue(true);
+
+            entity.Property(e => e.WeightFactor)
+                .HasColumnName("weight_factor")
+                .HasColumnType("numeric(10,4)")
+                .HasDefaultValue(1.0m);
+
+            entity.Property(e => e.FilterExpression)
+                .HasColumnName("filter_expression")
+                .HasColumnType("text");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            // Relationship
+            entity.HasOne(e => e.Asset)
+                .WithMany()
+                .HasForeignKey(e => e.AssetId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Indexes
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("idx_rollup_configs_tenant");
+
+            entity.HasIndex(e => e.AssetId)
+                .HasDatabaseName("idx_rollup_configs_asset");
+
+            entity.HasIndex(e => new { e.TenantId, e.AssetId, e.MetricName })
+                .HasDatabaseName("unique_rollup")
+                .IsUnique();
+        });
+
+        // AssetRollupData Configuration (TimescaleDB hypertable)
+        modelBuilder.Entity<AssetRollupData>(entity =>
+        {
+            entity.ToTable("asset_rollup_data");
+
+            entity.HasKey(e => new { e.AssetId, e.MetricName, e.Time });
+
+            entity.Property(e => e.AssetId)
+                .HasColumnName("asset_id");
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .HasColumnType("uuid")
+                .HasConversion<Guid>()
+                .IsRequired();
+
+            entity.Property(e => e.MetricName)
+                .HasColumnName("metric_name")
+                .HasMaxLength(200);
+
+            entity.Property(e => e.Time)
+                .HasColumnName("time");
+
+            entity.Property(e => e.Value)
+                .HasColumnName("value");
+
+            entity.Property(e => e.SampleCount)
+                .HasColumnName("sample_count");
+
+            entity.Property(e => e.Metadata)
+                .HasColumnName("metadata")
+                .HasColumnType("jsonb");
+
+            // Indexes
+            entity.HasIndex(e => e.Time)
+                .HasDatabaseName("asset_rollup_data_time_idx");
+
+            entity.HasIndex(e => new { e.AssetId, e.Time })
+                .HasDatabaseName("idx_rollup_data_asset");
+
+            entity.HasIndex(e => new { e.MetricName, e.Time })
+                .HasDatabaseName("idx_rollup_data_metric");
+
+            entity.HasIndex(e => new { e.TenantId, e.Time })
+                .HasDatabaseName("idx_rollup_data_tenant");
         });
     }
 }

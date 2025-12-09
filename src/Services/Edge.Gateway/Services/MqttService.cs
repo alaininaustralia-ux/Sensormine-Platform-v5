@@ -63,13 +63,16 @@ public class MqttService : BackgroundService
             _logger.LogInformation("MQTT client connected to {Host}:{Port}", mqttHost, mqttPort);
 
             // Subscribe to device telemetry topics
+            // Supports multi-tenant: sensormine/tenants/{tenant_id}/devices/{device_id}/telemetry
+            // Supports legacy: devices/{device_id}/telemetry, sensormine/devices/{device_id}/telemetry
             var subscribeOptions = mqttFactory.CreateSubscribeOptionsBuilder()
+                .WithTopicFilter("sensormine/tenants/+/devices/+/telemetry")
                 .WithTopicFilter("devices/+/telemetry")
                 .WithTopicFilter("sensormine/devices/+/telemetry")
                 .Build();
 
             await _mqttClient.SubscribeAsync(subscribeOptions, stoppingToken);
-            _logger.LogInformation("Subscribed to MQTT topics: devices/+/telemetry, sensormine/devices/+/telemetry");
+            _logger.LogInformation("Subscribed to MQTT topics: sensormine/tenants/+/devices/+/telemetry, devices/+/telemetry, sensormine/devices/+/telemetry");
 
             // Keep running until cancellation
             await Task.Delay(Timeout.Infinite, stoppingToken);
@@ -91,9 +94,9 @@ public class MqttService : BackgroundService
         {
             var topic = args.ApplicationMessage.Topic;
             var payload = Encoding.UTF8.GetString(args.ApplicationMessage.PayloadSegment);
-            var deviceId = ExtractDeviceId(topic);
+            var (tenantId, deviceId) = ExtractTenantAndDeviceId(topic);
 
-            _logger.LogInformation("Received message from device {DeviceId} on topic {Topic}", deviceId, topic);
+            _logger.LogInformation("Received message from device {DeviceId} (tenant: {TenantId}) on topic {Topic}", deviceId, tenantId, topic);
 
             // Check rate limiting
             if (_enableRateLimiting)
@@ -125,6 +128,7 @@ public class MqttService : BackgroundService
                         Headers = new Headers
                         {
                             { "mqtt-topic", Encoding.UTF8.GetBytes(topic) },
+                            { "tenant-id", Encoding.UTF8.GetBytes(tenantId) },
                             { "timestamp", Encoding.UTF8.GetBytes(DateTimeOffset.UtcNow.ToString("O")) }
                         }
                     };
@@ -172,25 +176,35 @@ public class MqttService : BackgroundService
         return messages;
     }
 
-    private string ExtractDeviceId(string topic)
+    private (string TenantId, string DeviceId) ExtractTenantAndDeviceId(string topic)
     {
-        // Extract device ID from Azure-style topic pattern: devices/{deviceId}/telemetry
-        // Also supports legacy pattern: sensormine/devices/{deviceId}/telemetry
+        // Extract tenant ID and device ID from topic patterns:
+        // 1. Multi-tenant: sensormine/tenants/{tenantId}/devices/{deviceId}/telemetry
+        // 2. Azure-style: devices/{deviceId}/telemetry (uses default tenant)
+        // 3. Legacy: sensormine/devices/{deviceId}/telemetry (uses default tenant)
+        
         var parts = topic.Split('/');
+        var defaultTenant = "00000000-0000-0000-0000-000000000001"; // Default tenant for legacy topics
+        
+        // Check for multi-tenant pattern: sensormine/tenants/{tenantId}/devices/{deviceId}/telemetry
+        if (parts.Length >= 6 && parts[0] == "sensormine" && parts[1] == "tenants" && parts[3] == "devices")
+        {
+            return (parts[2], parts[4]);
+        }
         
         // Check for Azure-style: devices/{deviceId}/telemetry (deviceId at index 1)
         if (parts.Length >= 3 && parts[0] == "devices")
         {
-            return parts[1];
+            return (defaultTenant, parts[1]);
         }
         
         // Check for legacy: sensormine/devices/{deviceId}/telemetry (deviceId at index 2)
         if (parts.Length >= 4 && parts[1] == "devices")
         {
-            return parts[2];
+            return (defaultTenant, parts[2]);
         }
         
-        return "unknown";
+        return (defaultTenant, "unknown");
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)

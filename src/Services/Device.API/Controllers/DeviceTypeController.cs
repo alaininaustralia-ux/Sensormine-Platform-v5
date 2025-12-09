@@ -16,7 +16,7 @@ public class DeviceTypeController : ControllerBase
     private readonly ILogger<DeviceTypeController> _logger;
 
     // TODO: Get from authentication context
-    private Guid TenantId => Guid.Parse("00000000-0000-0000-0000-000000000001");
+    private string TenantId => "00000000-0000-0000-0000-000000000001";
     private string UserId => "system-user";
 
     public DeviceTypeController(
@@ -52,7 +52,7 @@ public class DeviceTypeController : ControllerBase
         var deviceType = new DeviceType
         {
             Id = Guid.NewGuid(),
-            TenantId = TenantId,
+            TenantId = Guid.Parse(TenantId),
             Name = request.Name,
             Description = request.Description,
             Protocol = request.Protocol,
@@ -384,7 +384,7 @@ public class DeviceTypeController : ControllerBase
         var proposedUpdate = new Sensormine.Core.Models.DeviceType
         {
             Id = id,
-            TenantId = TenantId,
+            TenantId = Guid.Parse(TenantId),
             Name = request.Name,
             Description = request.Description,
             Protocol = request.Protocol,

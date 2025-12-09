@@ -35,7 +35,7 @@ public class SchemaVersionsController : ControllerBase
     public async Task<ActionResult<List<SchemaVersionDto>>> GetVersions(Guid schemaId)
     {
         // TODO: Extract tenant ID from authentication context
-        var tenantId = "default-tenant";
+        var tenantId = GetTenantId();
 
         try
         {
@@ -65,7 +65,7 @@ public class SchemaVersionsController : ControllerBase
     public async Task<ActionResult<SchemaVersionDetailDto>> GetVersion(Guid schemaId, string version)
     {
         // TODO: Extract tenant ID from authentication context
-        var tenantId = "default-tenant";
+        var tenantId = GetTenantId();
 
         try
         {
@@ -96,7 +96,7 @@ public class SchemaVersionsController : ControllerBase
         [FromBody] CreateSchemaVersionRequest request)
     {
         // TODO: Extract tenant ID from authentication context
-        var tenantId = "default-tenant";
+        var tenantId = GetTenantId();
         var userId = "system"; // TODO: Extract from authentication context
 
         try
@@ -125,7 +125,7 @@ public class SchemaVersionsController : ControllerBase
                 Status = SchemaStatus.Draft,
                 IsDefault = false, // New versions are not default by default
                 DeviceTypes = request.DeviceTypes ?? new List<string>(),
-                TenantId = tenantId,
+                TenantId = Guid.Parse(tenantId),
                 CreatedBy = userId,
                 CreatedAt = DateTimeOffset.UtcNow
             };
@@ -158,7 +158,7 @@ public class SchemaVersionsController : ControllerBase
         [FromBody] UpdateSchemaVersionRequest request)
     {
         // TODO: Extract tenant ID from authentication context
-        var tenantId = "default-tenant";
+        var tenantId = GetTenantId();
 
         try
         {
@@ -204,7 +204,7 @@ public class SchemaVersionsController : ControllerBase
     public async Task<IActionResult> SetDefaultVersion(Guid schemaId, string version)
     {
         // TODO: Extract tenant ID from authentication context
-        var tenantId = "default-tenant";
+        var tenantId = GetTenantId();
 
         try
         {
@@ -238,7 +238,7 @@ public class SchemaVersionsController : ControllerBase
         [FromBody] ValidateDataRequest request)
     {
         // TODO: Extract tenant ID from authentication context
-        var tenantId = "default-tenant";
+        var tenantId = GetTenantId();
 
         try
         {
@@ -287,5 +287,12 @@ public class SchemaVersionsController : ControllerBase
             UpdatedAt = version.UpdatedAt,
             CreatedBy = version.CreatedBy
         };
+    }
+
+    private string GetTenantId()
+    {
+        // TODO: Extract from JWT claims when authentication is implemented
+        // Using a fixed tenant ID for the default tenant until auth is implemented
+        return "00000000-0000-0000-0000-000000000001";
     }
 }

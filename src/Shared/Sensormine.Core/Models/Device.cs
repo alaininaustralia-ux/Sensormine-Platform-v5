@@ -26,6 +26,11 @@ public class Device : BaseEntity
     public DeviceType? DeviceType { get; set; }
 
     /// <summary>
+    /// Associated asset ID in the digital twin (optional)
+    /// </summary>
+    public Guid? AssetId { get; set; }
+
+    /// <summary>
     /// Serial number or hardware identifier
     /// </summary>
     public string? SerialNumber { get; set; }

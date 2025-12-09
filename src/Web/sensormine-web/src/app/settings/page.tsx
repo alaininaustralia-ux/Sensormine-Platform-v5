@@ -6,7 +6,7 @@
 
 import Link from 'next/link';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Cpu, Database, Users, Shield, Bell, Palette, Settings2 } from 'lucide-react';
+import { Cpu, Database, Users, Shield, Bell, Palette, Settings2, Network } from 'lucide-react';
 
 const settingsCategories = [
   {
@@ -20,6 +20,12 @@ const settingsCategories = [
     description: 'AI-powered configuration builder for Nexus IoT devices',
     icon: Settings2,
     href: '/settings/nexus-configuration',
+  },
+  {
+    title: 'Digital Twin',
+    description: 'Manage asset hierarchy and device-to-asset mappings',
+    icon: Network,
+    href: '/settings/digital-twin',
   },
   {
     title: 'Schemas',

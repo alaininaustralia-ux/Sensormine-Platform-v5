@@ -24,6 +24,20 @@ public interface ITimeSeriesRepository
     /// Query aggregated data
     /// </summary>
     Task<IEnumerable<T>> QueryAggregateAsync<T>(string measurement, AggregateQuery query, CancellationToken cancellationToken = default) where T : class;
+
+    /// <summary>
+    /// Get latest telemetry for multiple devices
+    /// </summary>
+    Task<Dictionary<string, LatestTelemetryData>> GetLatestTelemetryForDevicesAsync(IEnumerable<string> deviceIds, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Latest telemetry data with timestamp
+/// </summary>
+public class LatestTelemetryData
+{
+    public DateTime Timestamp { get; set; }
+    public Dictionary<string, object> CustomFields { get; set; } = new();
 }
 
 /// <summary>

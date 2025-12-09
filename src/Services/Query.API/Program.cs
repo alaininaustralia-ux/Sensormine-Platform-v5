@@ -1,12 +1,23 @@
 using Query.API.Services;
+using Query.API.GraphQL;
 using Sensormine.Core.Interfaces;
 using Sensormine.Storage.TimeSeries;
+using Sensormine.Storage;
+using Sensormine.Storage.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddHttpContextAccessor();
+
+// Add GraphQL
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<Query.API.GraphQL.Query>()
+    .AddType<TelemetryDataType>();
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -38,8 +49,8 @@ builder.Services.AddSwaggerGen(c =>
     
     // Include XML comments for API documentation
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
+    var xmlPath = System.IO.Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (System.IO.File.Exists(xmlPath))
     {
         c.IncludeXmlComments(xmlPath);
     }
@@ -59,8 +70,41 @@ else
     builder.Services.AddInMemoryTimeSeriesRepository();
 }
 
+// Register Device repository for device metadata access
+var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
+dataSourceBuilder.EnableDynamicJson();
+var dataSource = dataSourceBuilder.Build();
+
+builder.Services.AddDbContext<Sensormine.Storage.Data.ApplicationDbContext>(options =>
+{
+    options.UseNpgsql(dataSource);
+});
+builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
+
 // Register query service
 builder.Services.AddScoped<ITimeSeriesQueryService, TimeSeriesQueryService>();
+
+// Register Schema Registry HTTP client
+builder.Services.AddHttpClient<ISchemaRegistryClient, SchemaRegistryClient>(client =>
+{
+    var schemaRegistryUrl = builder.Configuration.GetValue<string>("ServiceUrls:SchemaRegistry") 
+                            ?? "http://localhost:5021";
+    client.BaseAddress = new Uri(schemaRegistryUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Register Digital Twin HTTP client for asset-based queries
+builder.Services.AddHttpClient("DigitalTwin", client =>
+{
+    var digitalTwinUrl = builder.Configuration.GetValue<string>("ServiceUrls:DigitalTwin") 
+                         ?? "http://localhost:5297";
+    client.BaseAddress = new Uri(digitalTwinUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+    // Add tenant header from current context in the controller
+});
+
+// Register telemetry parser service
+builder.Services.AddScoped<ITelemetryParserService, TelemetryParserService>();
 
 // Add health checks
 builder.Services.AddHealthChecks();
@@ -92,6 +136,9 @@ app.MapControllers();
 
 app.MapHealthChecks("/health");
 
+// Add GraphQL endpoint
+app.MapGraphQL("/graphql");
+
 // Add a simple info endpoint
 app.MapGet("/info", () => new
 {
@@ -104,23 +151,41 @@ app.MapGet("/info", () => new
         "POST /api/timeseries/{measurement}/query",
         "POST /api/timeseries/{measurement}/aggregate",
         "GET  /api/timeseries/{measurement}/device/{deviceId}/latest",
-        "POST /api/timeseries/{measurement}/devices/latest"
+        "POST /api/timeseries/{measurement}/devices/latest",
+        "POST /graphql - GraphQL endpoint with Banana Cake Pop UI"
     }
 }).WithName("ServiceInfo").WithTags("Info");
 
 app.Run();
 
 /// <summary>
-/// Default tenant provider implementation
+/// Default tenant provider implementation that extracts tenant ID from JWT claims
 /// </summary>
 public class DefaultTenantProvider : ITenantProvider
 {
-    private string _tenantId = "00000000-0000-0000-0000-000000000000";
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public string GetTenantId() => _tenantId;
+    public DefaultTenantProvider(IHttpContextAccessor httpContextAccessor)
+    {
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    public string GetTenantId()
+    {
+        var tenantIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("tenant_id")?.Value;
+        
+        if (string.IsNullOrEmpty(tenantIdClaim))
+        {
+            // Fallback to default tenant for development/testing
+            return "00000000-0000-0000-0000-000000000001";
+        }
+
+        return tenantIdClaim;
+    }
 
     public void SetTenantId(string tenantId)
     {
-        _tenantId = tenantId ?? throw new ArgumentNullException(nameof(tenantId));
+        // Not used when extracting from JWT, but required by interface
+        throw new NotSupportedException("SetTenantId is not supported when using JWT-based tenant resolution. Tenant ID is extracted from JWT claims.");
     }
 }

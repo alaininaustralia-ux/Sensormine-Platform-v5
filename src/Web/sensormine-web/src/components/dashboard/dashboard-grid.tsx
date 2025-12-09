@@ -75,11 +75,28 @@ export function DashboardGrid({
     );
   }
   
+  // Ensure layout has valid items for all widgets
+  const validLayout = (dashboard.layout || []).filter(item => 
+    item && typeof item.w === 'number' && typeof item.h === 'number'
+  );
+
+  // If layout is incomplete, show loading state
+  if (dashboard.widgets.length > 0 && validLayout.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full">
       <GridLayout
         className="layout"
-        layout={dashboard.layout}
+        layout={validLayout}
         cols={cols}
         rowHeight={rowHeight}
         width={1200}

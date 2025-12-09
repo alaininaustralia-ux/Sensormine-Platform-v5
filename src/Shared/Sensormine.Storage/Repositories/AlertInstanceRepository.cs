@@ -68,10 +68,11 @@ public class AlertInstanceRepository : IAlertInstanceRepository
         AlertSeverity? severity = null,
         Guid? deviceId = null)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var query = _context.AlertInstances
             .Include(i => i.AlertRule)
             .Include(i => i.Device)
-            .Where(i => i.TenantId == tenantId)
+            .Where(i => i.TenantId == tenantGuid)
             .AsQueryable();
 
         if (status.HasValue)
@@ -102,9 +103,10 @@ public class AlertInstanceRepository : IAlertInstanceRepository
 
     public async Task<List<AlertInstance>> GetActiveByDeviceIdAsync(string tenantId, Guid deviceId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.AlertInstances
             .Include(i => i.AlertRule)
-            .Where(i => i.TenantId == tenantId &&
+            .Where(i => i.TenantId == tenantGuid &&
                        i.DeviceId == deviceId &&
                        i.Status == AlertStatus.Active)
             .OrderByDescending(i => i.TriggeredAt)
@@ -113,9 +115,10 @@ public class AlertInstanceRepository : IAlertInstanceRepository
 
     public async Task<List<AlertInstance>> GetByAlertRuleIdAsync(string tenantId, Guid alertRuleId, int limit = 100)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.AlertInstances
             .Include(i => i.Device)
-            .Where(i => i.TenantId == tenantId && i.AlertRuleId == alertRuleId)
+            .Where(i => i.TenantId == tenantGuid && i.AlertRuleId == alertRuleId)
             .OrderByDescending(i => i.TriggeredAt)
             .Take(limit)
             .ToListAsync();
@@ -123,8 +126,9 @@ public class AlertInstanceRepository : IAlertInstanceRepository
 
     public async Task<AlertInstanceStatistics> GetStatisticsAsync(string tenantId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var stats = await _context.AlertInstances
-            .Where(i => i.TenantId == tenantId)
+            .Where(i => i.TenantId == tenantGuid)
             .GroupBy(i => 1)
             .Select(g => new AlertInstanceStatistics
             {
@@ -142,8 +146,9 @@ public class AlertInstanceRepository : IAlertInstanceRepository
 
     public async Task<bool> AcknowledgeAsync(Guid id, string tenantId, string acknowledgedBy, string? notes)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var instance = await _context.AlertInstances
-            .FirstOrDefaultAsync(i => i.Id == id && i.TenantId == tenantId);
+            .FirstOrDefaultAsync(i => i.Id == id && i.TenantId == tenantGuid);
 
         if (instance == null)
         {
@@ -162,8 +167,9 @@ public class AlertInstanceRepository : IAlertInstanceRepository
 
     public async Task<bool> ResolveAsync(Guid id, string tenantId, string? resolutionNotes)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var instance = await _context.AlertInstances
-            .FirstOrDefaultAsync(i => i.Id == id && i.TenantId == tenantId);
+            .FirstOrDefaultAsync(i => i.Id == id && i.TenantId == tenantGuid);
 
         if (instance == null)
         {

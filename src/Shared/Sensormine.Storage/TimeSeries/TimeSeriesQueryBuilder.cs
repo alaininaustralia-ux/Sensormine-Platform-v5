@@ -17,7 +17,7 @@ public partial class TimeSeriesQueryBuilder
     };
 
     /// <summary>
-    /// Builds a SELECT query for time-series data with filters (narrow to wide format pivot)
+    /// Builds a SELECT query for time-series data with filters (JSONB custom_fields schema)
     /// </summary>
     public static string BuildSelectQuery(
         string tableName,
@@ -32,15 +32,20 @@ public partial class TimeSeriesQueryBuilder
             ["@endTime"] = query.EndTime
         };
 
-        // Pivot narrow format (metric_name, value) to wide format (values JSONB)
+        // Query JSONB custom_fields directly
         var sql = $@"
 SELECT 
     device_id AS DeviceId,
     tenant_id AS TenantId,
     time AS Timestamp,
-    jsonb_object_agg(metric_name, value) AS Values,
-    jsonb_object_agg(metric_name, 'Good') AS Quality,
-    (array_agg(tags))[1] AS Tags
+    device_type,
+    battery_level,
+    signal_strength,
+    latitude,
+    longitude,
+    altitude,
+    custom_fields AS Values,
+    quality AS Quality
 FROM {tableName}
 WHERE tenant_id = @tenantId::uuid
     AND time >= @startTime
@@ -59,24 +64,23 @@ WHERE tenant_id = @tenantId::uuid
                 {
                     sql += $"\n    AND device_id = {paramName}";
                 }
-                else if (filter.Key.StartsWith("tag.", StringComparison.OrdinalIgnoreCase))
+                else if (filter.Key.Equals("deviceType", StringComparison.OrdinalIgnoreCase))
                 {
-                    var tagKey = SanitizeIdentifier(filter.Key[4..]); // Remove "tag." prefix and sanitize
-                    sql += $"\n    AND tags ->> '{tagKey}' = {paramName}";
+                    sql += $"\n    AND device_type = {paramName}";
                 }
                 else
                 {
-                    // Filter by metric name for narrow format
-                    sql += $"\n    AND metric_name = {paramName}";
+                    // Filter by JSONB field in custom_fields
+                    var fieldName = SanitizeIdentifier(filter.Key);
+                    sql += $"\n    AND custom_fields ? '{fieldName}'";
+                    // If we want to filter by value too:
+                    // sql += $"\n    AND custom_fields ->> '{fieldName}' = {paramName}";
                 }
                 
                 parameters[paramName] = filter.Value;
                 filterIndex++;
             }
         }
-
-        // Add GROUP BY for pivot aggregation
-        sql += $"\nGROUP BY device_id, tenant_id, time";
 
         // Add ordering - only allow whitelisted columns
         var orderBy = string.IsNullOrEmpty(query.OrderBy) ? "time" : query.OrderBy;
@@ -96,7 +100,7 @@ WHERE tenant_id = @tenantId::uuid
     }
 
     /// <summary>
-    /// Builds an aggregate query for time-series data
+    /// Builds an aggregate query for time-series data (JSONB custom_fields schema)
     /// </summary>
     public static string BuildAggregateQuery(
         string tableName,
@@ -109,13 +113,14 @@ WHERE tenant_id = @tenantId::uuid
         {
             ["@tenantId"] = tenantId,
             ["@startTime"] = query.StartTime,
-            ["@endTime"] = query.EndTime,
-            ["@metricName"] = valueField
+            ["@endTime"] = query.EndTime
         };
 
         var aggregateFunction = GetSqlAggregateFunction(query.AggregateFunction);
-        // For narrow format, value is directly in the value column
-        var valueExpression = "value";
+        
+        // For JSONB custom_fields, extract the field value and cast to numeric
+        var fieldName = SanitizeIdentifier(valueField);
+        var valueExpression = $"(custom_fields ->> '{fieldName}')::double precision";
 
         var selectClause = new List<string>();
         var groupByClause = new List<string>();
@@ -138,11 +143,10 @@ WHERE tenant_id = @tenantId::uuid
                     selectClause.Add("device_id AS DeviceId");
                     groupByClause.Add("device_id");
                 }
-                else if (field.StartsWith("tag.", StringComparison.OrdinalIgnoreCase))
+                else if (field.Equals("deviceType", StringComparison.OrdinalIgnoreCase))
                 {
-                    var tagKey = SanitizeIdentifier(field[4..]);
-                    selectClause.Add($"tags ->> '{tagKey}' AS \"{tagKey}\"");
-                    groupByClause.Add($"tags ->> '{tagKey}'");
+                    selectClause.Add("device_type AS DeviceType");
+                    groupByClause.Add("device_type");
                 }
             }
         }
@@ -150,8 +154,9 @@ WHERE tenant_id = @tenantId::uuid
         // Add aggregate column - handle percentile functions specially
         if (aggregateFunction.Contains("percentile_cont"))
         {
-            // Percentile functions already include the full expression
-            selectClause.Add($"{aggregateFunction} AS Value");
+            // Replace the value placeholder in percentile functions
+            var percentileFunc = aggregateFunction.Replace("value", valueExpression);
+            selectClause.Add($"{percentileFunc} AS Value");
         }
         else
         {
@@ -166,7 +171,7 @@ FROM {tableName}
 WHERE tenant_id = @tenantId::uuid
     AND time >= @startTime
     AND time <= @endTime
-    AND metric_name = @metricName";
+    AND custom_fields ? '{fieldName}'";
 
         // Add filters
         if (query.Filters != null && query.Filters.Count > 0)
@@ -180,12 +185,10 @@ WHERE tenant_id = @tenantId::uuid
                 {
                     sql += $"\n    AND device_id = {paramName}";
                 }
-                else if (filter.Key.StartsWith("tag.", StringComparison.OrdinalIgnoreCase))
+                else if (filter.Key.Equals("deviceType", StringComparison.OrdinalIgnoreCase))
                 {
-                    var tagKey = SanitizeIdentifier(filter.Key[4..]);
-                    sql += $"\n    AND tags ->> '{tagKey}' = {paramName}";
+                    sql += $"\n    AND device_type = {paramName}";
                 }
-                // For narrow format, metric filtering is already handled by @metricName parameter
                 
                 parameters[paramName] = filter.Value;
                 filterIndex++;

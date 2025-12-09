@@ -63,7 +63,7 @@ public class DeviceController : ControllerBase
             }
 
             // Validate Device Type exists
-            var deviceType = await _deviceTypeRepository.GetByIdAsync(request.DeviceTypeId, Guid.Parse(tenantId));
+            var deviceType = await _deviceTypeRepository.GetByIdAsync(request.DeviceTypeId, tenantId);
             if (deviceType == null)
             {
                 _logger.LogWarning("Device Type {DeviceTypeId} not found", request.DeviceTypeId);
@@ -93,7 +93,7 @@ public class DeviceController : ControllerBase
             // Create device entity
             var device = new Sensormine.Core.Models.Device
             {
-                TenantId = tenantId,
+                TenantId = Guid.Parse(tenantId),
                 DeviceId = request.DeviceId,
                 Name = request.Name,
                 DeviceTypeId = request.DeviceTypeId,
@@ -463,7 +463,7 @@ public class DeviceController : ControllerBase
             var result = new BulkDeviceRegistrationResult();
 
             // Validate Device Type exists
-            var deviceType = await _deviceTypeRepository.GetByIdAsync(request.DeviceTypeId, Guid.Parse(tenantId));
+            var deviceType = await _deviceTypeRepository.GetByIdAsync(request.DeviceTypeId, tenantId);
             if (deviceType == null)
             {
                 _logger.LogWarning("Device Type {DeviceTypeId} not found", request.DeviceTypeId);
@@ -515,7 +515,7 @@ public class DeviceController : ControllerBase
                     // Create device
                     var device = new Sensormine.Core.Models.Device
                     {
-                        TenantId = tenantId,
+                        TenantId = Guid.Parse(tenantId),
                         DeviceId = deviceRequest.DeviceId,
                         Name = deviceRequest.Name,
                         DeviceTypeId = deviceRequest.DeviceTypeId,
@@ -571,7 +571,7 @@ public class DeviceController : ControllerBase
     private string GetTenantId()
     {
         // TODO: Extract from JWT claims when authentication is implemented
-        // Using a fixed GUID for the default tenant until auth is implemented
+        // Using a fixed tenant ID for the default tenant until auth is implemented
         return "00000000-0000-0000-0000-000000000001";
     }
 
@@ -580,7 +580,7 @@ public class DeviceController : ControllerBase
         return new DeviceResponse
         {
             Id = device.Id,
-            TenantId = Guid.Parse(device.TenantId),
+            TenantId = device.TenantId.ToString(),
             DeviceId = device.DeviceId,
             Name = device.Name,
             DeviceTypeId = device.DeviceTypeId,

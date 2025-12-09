@@ -6,6 +6,11 @@ namespace Sensormine.Core.Models;
 public class Tenant : BaseEntity
 {
     /// <summary>
+    /// Override TenantId as string (Identity tables use TEXT not UUID)
+    /// </summary>
+    public new string TenantId { get; set; } = string.Empty;
+
+    /// <summary>
     /// Display name of the tenant
     /// </summary>
     public string Name { get; set; } = string.Empty;

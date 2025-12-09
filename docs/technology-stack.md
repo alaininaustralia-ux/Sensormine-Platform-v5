@@ -53,15 +53,73 @@ A **cloud-agnostic architecture** designed for portability, performance, and lon
 ### Mapping & GIS
 - **Leaflet** - Lightweight, mobile-friendly maps
 - **Mapbox GL JS** - Advanced vector maps with 3D support
+- **react-leaflet** - React wrapper for Leaflet integration
 
 ### 3D Visualization
 - **Three.js** - WebGL 3D engine for CAD and point clouds
 - **Babylon.js** - Alternative 3D engine with better tooling
 
+### Tree & Hierarchical Visualization (Digital Twin)
+**react-arborist** (Recommended)
+- High-performance tree component with virtualization
+- Handles 1000+ nodes efficiently (only renders visible items)
+- Built-in drag-and-drop support for tree reorganization
+- Keyboard navigation (arrow keys, Enter, Escape)
+- Customizable node rendering with React components
+- Search/filter integration
+- Multi-select support
+- Used for: Digital Twin asset hierarchy visualization
+
+```bash
+npm install react-arborist
+```
+
+**Alternative: react-complex-tree**
+- More features (inline editing, context menus)
+- Better accessibility (ARIA compliant)
+- Heavier bundle size (~50KB vs 20KB)
+- More configuration required
+- Trade-off: Features vs. Performance
+
+### Drag-and-Drop
+**@dnd-kit/core** (Recommended)
+- Modern, accessible drag-and-drop toolkit
+- Touch-friendly (mobile/tablet support)
+- Sensor-based architecture (mouse, touch, keyboard)
+- Collision detection algorithms
+- Used for: Device-to-asset assignment, dashboard widget placement
+
+```bash
+npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+```
+
+**Alternative: react-dnd**
+- HTML5 drag-and-drop API wrapper
+- More mature ecosystem
+- Heavier and less performant
+
+### Form Handling & Validation
+**react-hook-form** (In Use)
+- Performant forms with minimal re-renders
+- Built-in validation rules
+- Easy integration with UI libraries
+- TypeScript support
+
+**zod** (In Use)
+- TypeScript-first schema validation
+- Runtime type checking
+- Infer TypeScript types from schemas
+- Used for: Asset creation, mapping configuration, schema validation
+
+```bash
+npm install react-hook-form zod @hookform/resolvers
+```
+
 ### Real-Time Communication
 - **Socket.IO** - WebSocket library with fallbacks
 - **SignalR** - ASP.NET Core real-time framework
 - **MQTT over WebSockets** - Direct IoT device communication
+- **SWR** - Data fetching with polling (simple real-time alternative)
 
 ### Content Delivery
 **SHDCDN (Secure, High-Distributed CDN)**

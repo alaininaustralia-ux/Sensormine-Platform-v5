@@ -93,7 +93,7 @@ public class AlertInstanceController : ControllerBase
             }
 
             var tenantId = GetTenantId();
-            if (instance.TenantId != tenantId)
+            if (instance.TenantId != Guid.Parse(tenantId))
             {
                 return NotFound(new { error = "Alert instance not found" });
             }

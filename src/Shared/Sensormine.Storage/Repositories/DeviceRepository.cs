@@ -21,23 +21,26 @@ public class DeviceRepository : IDeviceRepository
 
     public async Task<Device?> GetByIdAsync(Guid id, string tenantId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.Devices
             .Include(d => d.DeviceType)
-            .FirstOrDefaultAsync(d => d.Id == id && d.TenantId == tenantId);
+            .FirstOrDefaultAsync(d => d.Id == id && d.TenantId == tenantGuid);
     }
 
     public async Task<Device?> GetByDeviceIdAsync(string deviceId, string tenantId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.Devices
             .Include(d => d.DeviceType)
-            .FirstOrDefaultAsync(d => d.DeviceId == deviceId && d.TenantId == tenantId);
+            .FirstOrDefaultAsync(d => d.DeviceId == deviceId && d.TenantId == tenantGuid);
     }
 
     public async Task<List<Device>> GetAllAsync(string tenantId, int page = 1, int pageSize = 20)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.Devices
             .Include(d => d.DeviceType)
-            .Where(d => d.TenantId == tenantId)
+            .Where(d => d.TenantId == tenantGuid)
             .OrderByDescending(d => d.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -52,9 +55,10 @@ public class DeviceRepository : IDeviceRepository
         int page = 1,
         int pageSize = 20)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var query = _context.Devices
             .Include(d => d.DeviceType)
-            .Where(d => d.TenantId == tenantId);
+            .Where(d => d.TenantId == tenantGuid);
 
         if (deviceTypeId.HasValue)
         {
@@ -87,8 +91,9 @@ public class DeviceRepository : IDeviceRepository
         string? status = null,
         string? searchTerm = null)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var query = _context.Devices
-            .Where(d => d.TenantId == tenantId);
+            .Where(d => d.TenantId == tenantGuid);
 
         if (deviceTypeId.HasValue)
         {
@@ -124,7 +129,7 @@ public class DeviceRepository : IDeviceRepository
             device.DeviceId, device.Id, device.TenantId);
 
         // Reload with DeviceType included
-        return (await GetByIdAsync(device.Id, device.TenantId))!;
+        return (await GetByIdAsync(device.Id, device.TenantId.ToString()))!;
     }
 
     public async Task<Device> UpdateAsync(Device device)
@@ -138,7 +143,7 @@ public class DeviceRepository : IDeviceRepository
             device.DeviceId, device.Id);
 
         // Reload with DeviceType included
-        return (await GetByIdAsync(device.Id, device.TenantId))!;
+        return (await GetByIdAsync(device.Id, device.TenantId.ToString()))!;
     }
 
     public async Task DeleteAsync(Guid id, string tenantId)
@@ -158,15 +163,17 @@ public class DeviceRepository : IDeviceRepository
 
     public async Task<bool> ExistsAsync(string deviceId, string tenantId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.Devices
-            .AnyAsync(d => d.DeviceId == deviceId && d.TenantId == tenantId);
+            .AnyAsync(d => d.DeviceId == deviceId && d.TenantId == tenantGuid);
     }
 
     public async Task<(Guid? SchemaId, string? SchemaName)?> GetSchemaInfoAsync(string deviceId, string tenantId)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         var device = await _context.Devices
             .Include(d => d.DeviceType)
-            .FirstOrDefaultAsync(d => d.DeviceId == deviceId && d.TenantId == tenantId);
+            .FirstOrDefaultAsync(d => d.DeviceId == deviceId && d.TenantId == tenantGuid);
 
         if (device?.DeviceType?.SchemaId == null)
         {

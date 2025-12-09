@@ -79,7 +79,7 @@ public class AlertRuleDto
         return new AlertRuleDto
         {
             Id = rule.Id,
-            TenantId = rule.TenantId,
+            TenantId = rule.TenantId.ToString(),
             Name = rule.Name,
             Description = rule.Description,
             Severity = rule.Severity,
@@ -172,7 +172,7 @@ public class AlertInstanceDto
         return new AlertInstanceDto
         {
             Id = instance.Id,
-            TenantId = instance.TenantId,
+            TenantId = instance.TenantId.ToString(),
             AlertRuleId = instance.AlertRuleId,
             AlertRuleName = instance.AlertRule?.Name ?? string.Empty,
             DeviceId = instance.DeviceId,
@@ -250,7 +250,7 @@ public class AlertDeliveryChannelDto
         return new AlertDeliveryChannelDto
         {
             Id = channel.Id,
-            TenantId = channel.TenantId,
+            TenantId = channel.TenantId.ToString(),
             Name = channel.Name,
             Description = channel.Description,
             Type = channel.Type,

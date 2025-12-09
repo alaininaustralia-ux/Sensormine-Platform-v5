@@ -141,7 +141,7 @@ export function WidgetFactory({
     }
     
     case 'device-data-table': {
-      const deviceDataTableConfig = widget.config || {};
+      const deviceDataTableConfig = widget.config?.widgetSpecific || widget.config || {};
       return (
         <DeviceDataTableWidget
           {...baseProps}

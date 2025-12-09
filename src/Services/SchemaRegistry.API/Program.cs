@@ -32,7 +32,8 @@ dataSourceBuilder.EnableDynamicJson(); // Required for JSONB columns with List<s
 var dataSource = dataSourceBuilder.Build();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(dataSource));
+    options.UseNpgsql(dataSource)
+           .ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
 // Add Repository and Services
 builder.Services.AddScoped<ISchemaRepository, SchemaRepository>();

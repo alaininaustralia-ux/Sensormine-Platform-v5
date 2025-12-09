@@ -30,16 +30,18 @@ public class SchemaRepository : ISchemaRepository
 
     public async Task<Schema?> GetByIdAsync(Guid id, string tenantId, CancellationToken cancellationToken = default)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.Schemas
             .Include(s => s.Versions)
-            .FirstOrDefaultAsync(s => s.Id == id && s.TenantId == tenantId, cancellationToken);
+            .FirstOrDefaultAsync(s => s.Id == id && s.TenantId == tenantGuid, cancellationToken);
     }
 
     public async Task<Schema?> GetByNameAsync(string name, string tenantId, CancellationToken cancellationToken = default)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.Schemas
             .Include(s => s.Versions)
-            .FirstOrDefaultAsync(s => s.Name == name && s.TenantId == tenantId, cancellationToken);
+            .FirstOrDefaultAsync(s => s.Name == name && s.TenantId == tenantGuid, cancellationToken);
     }
 
     public async Task<List<Schema>> ListAsync(
@@ -48,9 +50,10 @@ public class SchemaRepository : ISchemaRepository
         int take = 50,
         CancellationToken cancellationToken = default)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.Schemas
             .Include(s => s.Versions)
-            .Where(s => s.TenantId == tenantId)
+            .Where(s => s.TenantId == tenantGuid)
             .OrderByDescending(s => s.CreatedAt)
             .Skip(skip)
             .Take(take)
@@ -59,8 +62,9 @@ public class SchemaRepository : ISchemaRepository
 
     public async Task<int> CountAsync(string tenantId, CancellationToken cancellationToken = default)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.Schemas
-            .Where(s => s.TenantId == tenantId)
+            .Where(s => s.TenantId == tenantGuid)
             .CountAsync(cancellationToken);
     }
 
@@ -101,22 +105,24 @@ public class SchemaRepository : ISchemaRepository
 
     public async Task<SchemaVersion?> GetVersionAsync(Guid schemaId, string version, string tenantId, CancellationToken cancellationToken = default)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.SchemaVersions
             .Include(v => v.Schema)
             .FirstOrDefaultAsync(v => 
                 v.SchemaId == schemaId && 
                 v.Version == version && 
-                v.TenantId == tenantId, 
+                v.TenantId == tenantGuid, 
                 cancellationToken);
     }
 
     public async Task<SchemaVersion?> GetDefaultVersionAsync(Guid schemaId, string tenantId, CancellationToken cancellationToken = default)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.SchemaVersions
             .Include(v => v.Schema)
             .FirstOrDefaultAsync(v => 
                 v.SchemaId == schemaId && 
-                v.TenantId == tenantId && 
+                v.TenantId == tenantGuid && 
                 v.IsDefault, 
                 cancellationToken);
     }
@@ -133,9 +139,10 @@ public class SchemaRepository : ISchemaRepository
 
     public async Task SetDefaultVersionAsync(Guid schemaId, Guid versionId, string tenantId, CancellationToken cancellationToken = default)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         // Clear existing default
         var existingDefaults = await _context.SchemaVersions
-            .Where(v => v.SchemaId == schemaId && v.TenantId == tenantId && v.IsDefault)
+            .Where(v => v.SchemaId == schemaId && v.TenantId == tenantGuid && v.IsDefault)
             .ToListAsync(cancellationToken);
 
         foreach (var existing in existingDefaults)
@@ -148,7 +155,7 @@ public class SchemaRepository : ISchemaRepository
             .FirstOrDefaultAsync(v => 
                 v.Id == versionId &&
                 v.SchemaId == schemaId && 
-                v.TenantId == tenantId, 
+                v.TenantId == tenantGuid, 
                 cancellationToken);
 
         if (newDefault == null)
@@ -160,8 +167,9 @@ public class SchemaRepository : ISchemaRepository
 
     public async Task<List<SchemaVersion>> ListVersionsAsync(Guid schemaId, string tenantId, CancellationToken cancellationToken = default)
     {
+        var tenantGuid = Guid.Parse(tenantId);
         return await _context.SchemaVersions
-            .Where(v => v.SchemaId == schemaId && v.TenantId == tenantId)
+            .Where(v => v.SchemaId == schemaId && v.TenantId == tenantGuid)
             .OrderByDescending(v => v.CreatedAt)
             .ToListAsync(cancellationToken);
     }

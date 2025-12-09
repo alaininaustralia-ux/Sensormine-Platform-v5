@@ -81,6 +81,32 @@ public class TelemetryConsumerService : BackgroundService
         {
             _logger.LogDebug("Processing message from device {DeviceId}: {Payload}", deviceId, payload);
 
+            // Extract tenant ID from Kafka message headers (set by Edge Gateway from MQTT topic)
+            var tenantId = "00000000-0000-0000-0000-000000000001"; // Default tenant
+            if (message.Headers != null)
+            {
+                _logger.LogInformation("Message has {HeaderCount} headers", message.Headers.Count);
+                foreach (var header in message.Headers)
+                {
+                    _logger.LogInformation("Header: {Key} = {Value}", header.Key, System.Text.Encoding.UTF8.GetString(header.GetValueBytes()));
+                }
+                
+                var tenantHeader = message.Headers.FirstOrDefault(h => h.Key == "tenant-id");
+                if (tenantHeader != null)
+                {
+                    tenantId = System.Text.Encoding.UTF8.GetString(tenantHeader.GetValueBytes());
+                    _logger.LogInformation("Extracted tenant ID from message header: {TenantId}", tenantId);
+                }
+                else
+                {
+                    _logger.LogWarning("No tenant-id header found, using default: {TenantId}", tenantId);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Message has no headers, using default tenant: {TenantId}", tenantId);
+            }
+
             // Parse JSON payload
             var telemetryData = JsonSerializer.Deserialize<Dictionary<string, object>>(payload);
             if (telemetryData == null)
@@ -91,14 +117,6 @@ public class TelemetryConsumerService : BackgroundService
 
             // Get device tenant information
             using var scope = _serviceProvider.CreateScope();
-            
-            // TODO: Implement proper tenant lookup from device registry
-            // var deviceRepository = scope.ServiceProvider.GetRequiredService<IDeviceRepository>();
-            // var device = await deviceRepository.GetByDeviceIdAsync(deviceId, "");
-            // var tenantId = device?.TenantId ?? "00000000-0000-0000-0000-000000000000";
-            
-            // For now, use empty GUID until device registry integration is complete
-            var tenantId = "00000000-0000-0000-0000-000000000000";
             
             // Validate against schema (temporarily disabled for testing)
             // var schemaClient = scope.ServiceProvider.GetRequiredService<ISchemaRegistryClient>();

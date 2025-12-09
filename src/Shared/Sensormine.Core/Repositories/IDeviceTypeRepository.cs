@@ -13,7 +13,7 @@ public interface IDeviceTypeRepository
     /// <param name="id">Device type ID</param>
     /// <param name="tenantId">Tenant ID for multi-tenancy isolation</param>
     /// <returns>Device type or null if not found</returns>
-    Task<DeviceType?> GetByIdAsync(Guid id, Guid tenantId);
+    Task<DeviceType?> GetByIdAsync(Guid id, string tenantId);
 
     /// <summary>
     /// Gets all device types for a tenant with pagination
@@ -23,7 +23,7 @@ public interface IDeviceTypeRepository
     /// <param name="pageSize">Number of items per page</param>
     /// <returns>Paginated list of device types</returns>
     Task<(IEnumerable<DeviceType> Items, int TotalCount)> GetAllAsync(
-        Guid tenantId, 
+        string tenantId, 
         int page = 1, 
         int pageSize = 20);
 
@@ -47,7 +47,7 @@ public interface IDeviceTypeRepository
     /// <param name="id">Device type ID</param>
     /// <param name="tenantId">Tenant ID for multi-tenancy isolation</param>
     /// <returns>True if deleted successfully</returns>
-    Task<bool> DeleteAsync(Guid id, Guid tenantId);
+    Task<bool> DeleteAsync(Guid id, string tenantId);
 
     /// <summary>
     /// Checks if a device type with the given name already exists for the tenant
@@ -56,7 +56,7 @@ public interface IDeviceTypeRepository
     /// <param name="tenantId">Tenant ID</param>
     /// <param name="excludeId">Optional ID to exclude from check (for updates)</param>
     /// <returns>True if exists</returns>
-    Task<bool> ExistsAsync(string name, Guid tenantId, Guid? excludeId = null);
+    Task<bool> ExistsAsync(string name, string tenantId, Guid? excludeId = null);
 
     /// <summary>
     /// Searches device types by name and/or tags
@@ -69,7 +69,7 @@ public interface IDeviceTypeRepository
     /// <param name="pageSize">Page size</param>
     /// <returns>Filtered device types</returns>
     Task<(IEnumerable<DeviceType> Items, int TotalCount)> SearchAsync(
-        Guid tenantId,
+        string tenantId,
         string? searchTerm = null,
         List<string>? tags = null,
         DeviceProtocol? protocol = null,
@@ -82,7 +82,7 @@ public interface IDeviceTypeRepository
     /// <param name="deviceTypeId">Device type ID</param>
     /// <param name="tenantId">Tenant ID for security</param>
     /// <returns>List of versions ordered by version number descending</returns>
-    Task<List<DeviceTypeVersion>> GetVersionHistoryAsync(Guid deviceTypeId, Guid tenantId);
+    Task<List<DeviceTypeVersion>> GetVersionHistoryAsync(Guid deviceTypeId, string tenantId);
 
     /// <summary>
     /// Rolls back a device type to a previous version
@@ -92,7 +92,7 @@ public interface IDeviceTypeRepository
     /// <param name="tenantId">Tenant ID for security</param>
     /// <param name="userId">User performing the rollback</param>
     /// <returns>Updated device type</returns>
-    Task<DeviceType> RollbackToVersionAsync(Guid deviceTypeId, int version, Guid tenantId, string userId);
+    Task<DeviceType> RollbackToVersionAsync(Guid deviceTypeId, int version, string tenantId, string userId);
 
     /// <summary>
     /// Gets usage statistics for a device type
@@ -100,7 +100,7 @@ public interface IDeviceTypeRepository
     /// <param name="deviceTypeId">Device type ID</param>
     /// <param name="tenantId">Tenant ID for security</param>
     /// <returns>Usage statistics</returns>
-    Task<DeviceTypeUsageStatistics> GetUsageStatisticsAsync(Guid deviceTypeId, Guid tenantId);
+    Task<DeviceTypeUsageStatistics> GetUsageStatisticsAsync(Guid deviceTypeId, string tenantId);
 
     /// <summary>
     /// Gets audit log entries for a device type
@@ -112,7 +112,7 @@ public interface IDeviceTypeRepository
     /// <returns>Paginated audit log entries</returns>
     Task<(List<DeviceTypeAuditLog> Items, int TotalCount)> GetAuditLogsAsync(
         Guid deviceTypeId, 
-        Guid tenantId,
+        string tenantId,
         int page = 1,
         int pageSize = 50);
 
@@ -126,5 +126,5 @@ public interface IDeviceTypeRepository
     Task<DeviceTypeUpdateValidationResult> ValidateUpdateAsync(
         Guid deviceTypeId,
         DeviceType proposedUpdate,
-        Guid tenantId);
+        string tenantId);
 }

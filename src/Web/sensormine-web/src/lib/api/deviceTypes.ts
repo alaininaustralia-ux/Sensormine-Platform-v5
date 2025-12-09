@@ -4,7 +4,8 @@
  * API functions for Device Type CRUD operations
  */
 
-import { apiClient } from './client';
+import { ApiClient } from './client';
+import { serviceUrls, apiConfig } from './config';
 import type {
   DeviceType,
   DeviceTypeRequest,
@@ -15,13 +16,16 @@ import type {
 // Re-export types for convenience
 export type { DeviceType, DeviceTypeRequest, DeviceTypeListResponse, SearchDeviceTypesRequest };
 
+// Create dedicated client for Device.API (device types are managed by Device.API)
+const deviceApiClient = new ApiClient(serviceUrls.device, apiConfig.timeout);
+
 const BASE_PATH = '/api/DeviceType';
 
 /**
  * Create a new device type
  */
 export async function createDeviceType(request: DeviceTypeRequest): Promise<DeviceType> {
-  const response = await apiClient.post<DeviceType>(BASE_PATH, request);
+  const response = await deviceApiClient.post<DeviceType>(BASE_PATH, request);
   return response.data;
 }
 
@@ -29,7 +33,7 @@ export async function createDeviceType(request: DeviceTypeRequest): Promise<Devi
  * Get device type by ID
  */
 export async function getDeviceTypeById(id: string): Promise<DeviceType> {
-  const response = await apiClient.get<DeviceType>(`${BASE_PATH}/${id}`);
+  const response = await deviceApiClient.get<DeviceType>(`${BASE_PATH}/${id}`);
   return response.data;
 }
 
@@ -40,7 +44,7 @@ export async function getAllDeviceTypes(
   page: number = 1,
   pageSize: number = 20
 ): Promise<DeviceTypeListResponse> {
-  const response = await apiClient.get<DeviceTypeListResponse>(
+  const response = await deviceApiClient.get<DeviceTypeListResponse>(
     `${BASE_PATH}?page=${page}&pageSize=${pageSize}`
   );
   return response.data;
@@ -53,7 +57,7 @@ export async function updateDeviceType(
   id: string,
   request: DeviceTypeRequest
 ): Promise<DeviceType> {
-  const response = await apiClient.put<DeviceType>(`${BASE_PATH}/${id}`, request);
+  const response = await deviceApiClient.put<DeviceType>(`${BASE_PATH}/${id}`, request);
   return response.data;
 }
 
@@ -61,7 +65,7 @@ export async function updateDeviceType(
  * Delete device type (soft delete)
  */
 export async function deleteDeviceType(id: string): Promise<void> {
-  await apiClient.delete(`${BASE_PATH}/${id}`);
+  await deviceApiClient.delete(`${BASE_PATH}/${id}`);
 }
 
 /**
@@ -70,7 +74,7 @@ export async function deleteDeviceType(id: string): Promise<void> {
 export async function searchDeviceTypes(
   criteria: SearchDeviceTypesRequest
 ): Promise<DeviceTypeListResponse> {
-  const response = await apiClient.post<DeviceTypeListResponse>(
+  const response = await deviceApiClient.post<DeviceTypeListResponse>(
     `${BASE_PATH}/search`,
     criteria
   );
@@ -81,7 +85,7 @@ export async function searchDeviceTypes(
  * Get version history for a device type
  */
 export async function getDeviceTypeVersionHistory(id: string): Promise<DeviceTypeVersion[]> {
-  const response = await apiClient.get<DeviceTypeVersion[]>(`${BASE_PATH}/${id}/versions`);
+  const response = await deviceApiClient.get<DeviceTypeVersion[]>(`${BASE_PATH}/${id}/versions`);
   return response.data;
 }
 
@@ -89,7 +93,7 @@ export async function getDeviceTypeVersionHistory(id: string): Promise<DeviceTyp
  * Rollback device type to a previous version
  */
 export async function rollbackDeviceType(id: string, versionNumber: number): Promise<DeviceType> {
-  const response = await apiClient.post<DeviceType>(`${BASE_PATH}/${id}/rollback`, { versionNumber });
+  const response = await deviceApiClient.post<DeviceType>(`${BASE_PATH}/${id}/rollback`, { versionNumber });
   return response.data;
 }
 
@@ -97,7 +101,7 @@ export async function rollbackDeviceType(id: string, versionNumber: number): Pro
  * Get usage statistics for a device type
  */
 export async function getDeviceTypeUsageStatistics(id: string): Promise<DeviceTypeUsageStats> {
-  const response = await apiClient.get<DeviceTypeUsageStats>(`${BASE_PATH}/${id}/usage`);
+  const response = await deviceApiClient.get<DeviceTypeUsageStats>(`${BASE_PATH}/${id}/usage`);
   return response.data;
 }
 
@@ -109,7 +113,7 @@ export async function getDeviceTypeAuditLogs(
   page: number = 1,
   pageSize: number = 20
 ): Promise<DeviceTypeAuditLogResponse> {
-  const response = await apiClient.get<DeviceTypeAuditLogResponse>(
+  const response = await deviceApiClient.get<DeviceTypeAuditLogResponse>(
     `${BASE_PATH}/${id}/audit-logs?page=${page}&pageSize=${pageSize}`
   );
   return response.data;
@@ -122,7 +126,7 @@ export async function validateDeviceTypeUpdate(
   id: string,
   request: DeviceTypeRequest
 ): Promise<DeviceTypeValidationResult> {
-  const response = await apiClient.post<DeviceTypeValidationResult>(
+  const response = await deviceApiClient.post<DeviceTypeValidationResult>(
     `${BASE_PATH}/${id}/validate-update`,
     request
   );
