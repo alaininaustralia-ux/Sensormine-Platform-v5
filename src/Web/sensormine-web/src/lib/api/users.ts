@@ -6,7 +6,7 @@
 
 import { apiClient } from './client';
 
-const IDENTITY_API_URL = process.env.NEXT_PUBLIC_IDENTITY_API_URL || 'http://localhost:5003';
+const IDENTITY_API_URL = process.env.NEXT_PUBLIC_IDENTITY_API_URL || 'http://localhost:5072';
 
 export interface User {
   id: string;

@@ -94,9 +94,21 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasColumnName("updated_at");
 
+            entity.Property(e => e.CreatedBy)
+                .HasColumnName("created_by")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedBy)
+                .HasColumnName("updated_by")
+                .HasMaxLength(255);
+
             entity.Property(e => e.IsDeleted)
                 .HasColumnName("is_deleted")
                 .HasDefaultValue(false);
+
+            entity.Property(e => e.DeletedAt)
+                .HasColumnName("deleted_at");
 
             // Indexes
             entity.HasIndex(e => new { e.TenantId, e.Name })
