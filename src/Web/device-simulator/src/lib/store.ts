@@ -56,6 +56,10 @@ interface SimulatorStore {
   
   // Quick create helpers
   createSampleDevice: (protocol: ProtocolType) => string;
+  
+  // API integration
+  loadDevicesFromApi: () => Promise<{ success: boolean; count: number; error?: string }>;
+  replaceAllDevices: (devices: DeviceConfig[]) => void;
 }
 
 // Helper to serialize/deserialize Maps
@@ -384,6 +388,62 @@ export const useSimulatorStore = create<SimulatorStore>()(
         };
         
         return get().addDevice(device);
+      },
+      
+      // API integration
+      loadDevicesFromApi: async () => {
+        try {
+          const { apiClient } = await import('./api-client');
+          const { convertApiDevicesToSimulatorConfigs } = await import('./device-converter');
+          
+          // Fetch devices, device types, and schemas from API
+          const [apiDevices, apiDeviceTypes, apiSchemas] = await Promise.all([
+            apiClient.fetchAllDevices(),
+            apiClient.fetchAllDeviceTypes(),
+            apiClient.fetchSchemas(0, 100), // Get first 100 schemas
+          ]);
+          
+          // Create lookup maps
+          const deviceTypesMap = new Map(apiDeviceTypes.map(dt => [dt.id, dt]));
+          const schemasMap = new Map(apiSchemas.schemas.map(s => [s.id, s]));
+          
+          // Convert API devices to simulator configs
+          const simulatorDevices = convertApiDevicesToSimulatorConfigs(
+            apiDevices,
+            deviceTypesMap,
+            schemasMap
+          );
+          
+          // Replace all devices with loaded ones
+          get().replaceAllDevices(simulatorDevices);
+          
+          // Set up protocol configs for each device
+          simulatorDevices.forEach(device => {
+            const config = getDefaultProtocolConfig(device.protocol, device.id);
+            get().setProtocolConfig(device.id, config);
+          });
+          
+          return { success: true, count: simulatorDevices.length };
+        } catch (error) {
+          console.error('Failed to load devices from API:', error);
+          return { 
+            success: false, 
+            count: 0, 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+          };
+        }
+      },
+      
+      replaceAllDevices: (newDevices) => {
+        // Stop all running simulations first
+        get().stopAllSimulations();
+        
+        // Clear existing devices
+        set({
+          devices: newDevices,
+          protocolConfigs: new Map(),
+          simulations: new Map(),
+        });
       },
     }),
     {

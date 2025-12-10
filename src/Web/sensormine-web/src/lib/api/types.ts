@@ -174,6 +174,51 @@ export interface AlertRuleTemplate {
   }>;
 }
 
+// Field Mapping types
+export type FieldSource = 'Schema' | 'CustomField' | 'System';
+export type FieldDataType = 'Number' | 'String' | 'Boolean' | 'Object' | 'Array' | 'Timestamp';
+
+export interface FieldMapping {
+  id: string;
+  fieldName: string;
+  fieldSource: FieldSource;
+  friendlyName: string;
+  description?: string;
+  unit?: string;
+  dataType: FieldDataType;
+  minValue?: number;
+  maxValue?: number;
+  isQueryable: boolean;
+  isVisible: boolean;
+  displayOrder: number;
+  category?: string;
+  tags?: string[];
+  defaultAggregation?: string;
+  supportsAggregations?: string[];
+  formatString?: string;
+}
+
+export interface FieldMappingRequest {
+  fieldName: string;
+  friendlyName: string;
+  description?: string;
+  unit?: string;
+  minValue?: number;
+  maxValue?: number;
+  isQueryable: boolean;
+  isVisible: boolean;
+  displayOrder: number;
+  category?: string;
+  tags?: string[];
+  defaultAggregation?: string;
+  supportsAggregations?: string[];
+  formatString?: string;
+}
+
+export interface BulkUpdateFieldMappingsRequest {
+  fieldMappings: FieldMappingRequest[];
+}
+
 export interface DeviceType {
   id: string;
   tenantId: string;
@@ -186,6 +231,7 @@ export interface DeviceType {
   alertTemplates: AlertRuleTemplate[];
   tags: string[];
   isActive: boolean;
+  fields?: FieldMapping[];
   createdAt: string;
   updatedAt: string;
   createdBy?: string;

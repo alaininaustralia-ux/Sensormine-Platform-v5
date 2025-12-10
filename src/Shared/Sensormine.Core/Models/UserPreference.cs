@@ -11,11 +11,6 @@ public class UserPreference : BaseEntity
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Tenant ID for multi-tenancy
-    /// </summary>
-    public string TenantId { get; set; } = string.Empty;
-
-    /// <summary>
     /// Display preferences (theme, language, timezone, etc.) stored as JSON
     /// </summary>
     public string DisplayPreferences { get; set; } = "{}";
@@ -46,7 +41,12 @@ public class UserPreference : BaseEntity
     public string RecentlyViewed { get; set; } = "{}";
 
     /// <summary>
-    /// Last updated timestamp
+    /// User bookmarks (favorite pages) stored as JSON array
     /// </summary>
-    public DateTimeOffset UpdatedAt { get; set; }
+    public string Bookmarks { get; set; } = "[]";
+
+    /// <summary>
+    /// Page visit history stored as JSON array
+    /// </summary>
+    public string PageHistory { get; set; } = "[]";
 }

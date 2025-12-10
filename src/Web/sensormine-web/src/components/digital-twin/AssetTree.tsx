@@ -19,7 +19,6 @@ import {
   Edit2,
   Trash2,
   Move,
-  Settings,
 } from 'lucide-react';
 import useDigitalTwinStore from '@/lib/stores/digital-twin-store';
 import { Asset, AssetType, AssetStatus } from '@/lib/api/digital-twin';
@@ -37,7 +36,6 @@ import { AssetCreateDialog } from './AssetCreateDialog';
 import { AssetEditDialog } from './AssetEditDialog';
 import { AssetDeleteDialog } from './AssetDeleteDialog';
 import { AssetMoveDialog } from './AssetMoveDialog';
-import { DeviceAssignmentTray } from './DeviceAssignmentTray';
 
 // Icon mapping based on AssetType
 const getAssetTypeIcon = (type: AssetType, customIcon?: string) => {
@@ -86,11 +84,10 @@ interface AssetNodeProps {
   onEdit?: (asset: Asset) => void;
   onMove?: (asset: Asset) => void;
   onDelete?: (asset: Asset) => void;
-  onAssignDevices?: (asset: Asset) => void;
 }
 
 // Tree node component
-const AssetNode: React.FC<AssetNodeProps> = ({ node, style, dragHandle, onEdit, onMove, onDelete, onAssignDevices }) => {
+const AssetNode: React.FC<AssetNodeProps> = ({ node, style, dragHandle, onEdit, onMove, onDelete }) => {
   const { selectAsset, assets } = useDigitalTwinStore();
 
   const handleClick = () => {
@@ -146,19 +143,6 @@ const AssetNode: React.FC<AssetNodeProps> = ({ node, style, dragHandle, onEdit, 
           title={node.data.status}
         />
         
-        {/* Edit (Settings) Icon - visible on hover */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit?.(node.data);
-          }}
-        >
-          <Settings className="h-3 w-3" />
-        </Button>
-        
         <Badge variant="outline" className="text-xs">
           {node.data.type}
         </Badge>
@@ -170,16 +154,6 @@ const AssetNode: React.FC<AssetNodeProps> = ({ node, style, dragHandle, onEdit, 
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem 
-              onClick={(e) => {
-                e.stopPropagation();
-                onAssignDevices?.(node.data);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Assign Devices
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem 
               onClick={(e) => {
                 e.stopPropagation();
@@ -238,9 +212,7 @@ export const AssetTree: React.FC<AssetTreeProps> = ({
   const [editDialogOpen, setEditDialogOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = React.useState(false);
-  const [deviceTrayOpen, setDeviceTrayOpen] = React.useState(false);
   const [selectedAssetForAction, setSelectedAssetForAction] = React.useState<Asset | null>(null);
-  const [selectedNode, setSelectedNode] = React.useState<Asset | null>(null);
 
   // Fetch assets on mount
   React.useEffect(() => {
@@ -261,11 +233,6 @@ export const AssetTree: React.FC<AssetTreeProps> = ({
   const handleDelete = (asset: Asset) => {
     setSelectedAssetForAction(asset);
     setDeleteDialogOpen(true);
-  };
-
-  const handleAssignDevices = (asset: Asset) => {
-    setSelectedNode(asset);
-    setDeviceTrayOpen(true);
   };
 
   // Build tree data with children
@@ -331,7 +298,6 @@ export const AssetTree: React.FC<AssetTreeProps> = ({
                 onEdit={handleEdit}
                 onMove={handleMove}
                 onDelete={handleDelete}
-                onAssignDevices={handleAssignDevices}
               />
             )}
           </Tree>
@@ -357,13 +323,6 @@ export const AssetTree: React.FC<AssetTreeProps> = ({
         asset={selectedAssetForAction}
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-      />
-
-      {/* Device Assignment Tray */}
-      <DeviceAssignmentTray
-        asset={selectedNode}
-        isOpen={deviceTrayOpen}
-        onClose={() => setDeviceTrayOpen(false)}
       />
     </div>
   );

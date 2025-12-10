@@ -165,6 +165,25 @@ Or use VS Code launch configuration "Device Simulator" (runs on port 3021).
 - Use async/await patterns
 - Implement proper error handling and logging
 
+## 📚 Core Architecture Documentation
+
+**Read these documents to understand the system:**
+
+### Essential References (AI-Optimized)
+| Document | Purpose | Read When |
+|----------|---------|-----------|
+| **[APPLICATION.md](../docs/APPLICATION.md)** | Microservices, APIs, domain models, communication patterns | Starting any backend work |
+| **[DATABASE.md](../docs/DATABASE.md)** | Database schema, tables, indexes, queries, multi-tenancy | Working with data layer |
+| **[INFRASTRUCTURE.md](../docs/INFRASTRUCTURE.md)** | Containers, networking, volumes, deployment, monitoring | Infrastructure or DevOps tasks |
+| **[LOCAL-DEVELOPMENT.md](../docs/LOCAL-DEVELOPMENT.md)** | Setup, build, test, debug, troubleshooting | Setting up environment |
+| **[DATABASE-QUICK-REFERENCE.md](../docs/DATABASE-QUICK-REFERENCE.md)** | Connection strings, common commands | Quick database lookups |
+
+### Key Points
+- **All databases** are in TimescaleDB container on **port 5452**
+- **sensormine_metadata** - Devices, assets, dashboards, config
+- **sensormine_timeseries** - Telemetry, events, metrics
+- **Connection String:** `Host=localhost;Port=5452;Database=sensormine_metadata;Username=sensormine;Password=sensormine123`
+
 ## Coding Standards
 
 ### Backend (C#)
@@ -185,6 +204,7 @@ Or use VS Code launch configuration "Device Simulator" (runs on port 3021).
 ## AI-Driven Development Workflow
 - **Always read** `.agent/current-state.md` at session start
 - **Follow TDD workflow** defined in `.agent/workflow.md`
+- **Consult core docs** (`APPLICATION.md`, `DATABASE.md`, `INFRASTRUCTURE.md`) as needed
 - **One story per commit** with `[Story X.Y]` prefix
 - **Update state** after completing each story
 - **See** `.github/copilot-standing-orders.md` for complete protocol

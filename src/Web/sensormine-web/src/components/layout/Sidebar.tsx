@@ -18,10 +18,13 @@ import {
   Menu,
   X,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Bookmark,
+  File
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { getBookmarks, type BookmarkItem } from '@/lib/bookmarks';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -39,12 +42,31 @@ const settingsNavigation = [
   { name: 'Users', href: '/settings/users' },
 ];
 
+// Icon mapping for bookmarks
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  LayoutDashboard,
+  Cpu,
+  Bell,
+  LineChart,
+  Settings,
+  File,
+};
+
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [settingsExpanded, setSettingsExpanded] = useState(
     pathname?.startsWith('/settings') ?? false
   );
+  const [bookmarksExpanded, setBookmarksExpanded] = useState(true);
+  const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
+  
+  // Load bookmarks on client side only to avoid hydration mismatch
+  useEffect(() => {
+    // Intentionally syncing with external localStorage - this is correct usage
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setBookmarks(getBookmarks());
+  }, [pathname]); // Refresh bookmarks when navigation changes
 
   return (
     <>
@@ -158,6 +180,50 @@ export function Sidebar() {
                 </div>
               )}
             </div>
+
+            {/* Bookmarks Section */}
+            {!collapsed && bookmarks.length > 0 && (
+              <div className="mt-6 space-y-1 border-t border-white/10 pt-4">
+                <button
+                  onClick={() => setBookmarksExpanded(!bookmarksExpanded)}
+                  className="group flex w-full items-center rounded-lg px-3 py-2.5 text-sm font-medium text-blue-100 transition-all hover:bg-white/10 hover:text-white"
+                >
+                  <Bookmark className="h-5 w-5 shrink-0 mr-3" />
+                  <span className="flex-1 text-left">Bookmarks</span>
+                  {bookmarksExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </button>
+
+                {/* Bookmarks List */}
+                {bookmarksExpanded && (
+                  <div className="ml-4 space-y-1 border-l-2 border-white/10 pl-2">
+                    {bookmarks.map((bookmark) => {
+                      const isActive = pathname === bookmark.href;
+                      const Icon = bookmark.icon ? iconMap[bookmark.icon] || File : File;
+                      
+                      return (
+                        <Link
+                          key={bookmark.id}
+                          href={bookmark.href}
+                          className={cn(
+                            'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all',
+                            isActive
+                              ? 'bg-white/10 text-white font-medium'
+                              : 'text-blue-100 hover:bg-white/5 hover:text-white'
+                          )}
+                        >
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{bookmark.title}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </nav>
 
           {/* Collapse button (desktop only) */}

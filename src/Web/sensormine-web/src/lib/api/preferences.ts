@@ -65,6 +65,8 @@ export const userPreferencesApi = {
           data: preferences.data,
           favorites: preferences.favorites,
           recentlyViewed: preferences.recentlyViewed,
+          bookmarks: preferences.bookmarks || [],
+          pageHistory: preferences.pageHistory || [],
         }),
       });
 

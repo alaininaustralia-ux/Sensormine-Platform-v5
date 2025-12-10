@@ -381,7 +381,7 @@ function HttpConfigEditor({ config, onChange }: { config: HttpConfig; onChange: 
           <Input
             value={config.endpoint}
             onChange={e => onChange({ ...config, endpoint: e.target.value })}
-            placeholder="http://localhost:5000/api/v1/telemetry"
+            placeholder="http://localhost:5200/api/simulation/publish"
           />
         </div>
         <div className="space-y-2">
@@ -432,7 +432,7 @@ function WebSocketConfigEditor({ config, onChange }: { config: WebSocketConfig; 
         <Input
           value={config.url}
           onChange={e => onChange({ ...config, url: e.target.value })}
-          placeholder="ws://localhost:5000/ws/telemetry"
+          placeholder="ws://localhost:5200/ws/simulation"
         />
       </div>
       <div className="grid grid-cols-2 gap-4">

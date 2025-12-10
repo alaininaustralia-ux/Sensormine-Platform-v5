@@ -76,7 +76,12 @@ Let the user choose:
 1. ✅ Check `.agent/current-state.md` for blockers
 2. ✅ Verify dependencies are complete
 3. ✅ Read story in `docs/user-stories.md`
-4. ✅ Review relevant sections in `docs/architecture.md`
+4. ✅ Review **core architecture documents**:
+   - `docs/APPLICATION.md` - Microservices and API details
+   - `docs/DATABASE.md` - Database schema and queries
+   - `docs/INFRASTRUCTURE.md` - Containers and deployment
+   - `docs/LOCAL-DEVELOPMENT.md` - Development environment
+   - `docs/DATABASE-QUICK-REFERENCE.md` - Connection strings
 
 ---
 

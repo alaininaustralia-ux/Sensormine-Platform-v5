@@ -40,6 +40,12 @@ export enum AssetStatus {
   Decommissioned = 'Decommissioned'
 }
 
+export enum AssetCategory {
+  Facility = 'Facility',
+  Equipment = 'Equipment',
+  Geography = 'Geography'
+}
+
 export enum AlarmStatus {
   Normal = 'Normal',
   Warning = 'Warning',
@@ -61,23 +67,42 @@ export interface GeoLocation {
   altitude?: number;
 }
 
+export interface GeographicData {
+  country?: string;
+  state?: string;
+  council?: string;
+  city?: string;
+  geofence?: GeofenceData;
+}
+
+export interface GeofenceData {
+  type: string;
+  coordinates: GeoLocation[];
+  radius?: number;
+}
+
 export interface Asset {
   id: string;
   tenantId: string;
   name: string;
   type: AssetType;
+  category: AssetCategory;
   description?: string;
   parentId?: string;
   path: string;
   level: number;
   metadata: Record<string, unknown>;
   location?: GeoLocation;
+  geographicData?: GeographicData;
+  cadDrawingUrl?: string;
   status: AssetStatus;
   tags: string[];
   icon?: string;
   primaryImageUrl?: string;
   imageUrls: string[];
   documents: Record<string, string>;
+  childCount: number;
+  deviceCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -114,10 +139,13 @@ export interface DataPointMapping {
 export interface CreateAssetRequest {
   name: string;
   type: AssetType;
+  category?: AssetCategory;
   description?: string;
   parentId?: string;
   metadata?: Record<string, unknown>;
   location?: GeoLocation;
+  geographicData?: GeographicData;
+  cadDrawingUrl?: string;
   status?: AssetStatus;
   tags?: string[];
   icon?: string;
@@ -129,9 +157,12 @@ export interface CreateAssetRequest {
 export interface UpdateAssetRequest {
   name?: string;
   type?: AssetType;
+  category?: AssetCategory;
   description?: string;
   metadata?: Record<string, unknown>;
   location?: GeoLocation;
+  geographicData?: GeographicData;
+  cadDrawingUrl?: string;
   status?: AssetStatus;
   tags?: string[];
   icon?: string;

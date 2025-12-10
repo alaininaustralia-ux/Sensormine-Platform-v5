@@ -63,20 +63,6 @@ services:
     networks:
       - sensormine-network
 
-  postgres:
-    image: postgres:16
-    container_name: sensormine-postgres
-    ports:
-      - "5433:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=sensormine
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - sensormine-network
-
   # Cache
   redis:
     image: redis:7-alpine
@@ -153,7 +139,6 @@ volumes:
   mqtt_data:
   mqtt_logs:
   timescaledb_data:
-  postgres_data:
   redis_data:
   minio_data:
   opensearch_data:

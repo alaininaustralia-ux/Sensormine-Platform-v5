@@ -1,4 +1,5 @@
 using Device.API.DTOs;
+using Device.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Sensormine.Core.Models;
 using Sensormine.Core.Repositories;
@@ -17,15 +18,21 @@ public class DeviceController : ControllerBase
 {
     private readonly IDeviceRepository _deviceRepository;
     private readonly IDeviceTypeRepository _deviceTypeRepository;
+    private readonly ISchemaRegistryClient _schemaRegistryClient;
     private readonly ILogger<DeviceController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the DeviceController
+    /// </summary>
     public DeviceController(
         IDeviceRepository deviceRepository,
         IDeviceTypeRepository deviceTypeRepository,
+        ISchemaRegistryClient schemaRegistryClient,
         ILogger<DeviceController> logger)
     {
         _deviceRepository = deviceRepository ?? throw new ArgumentNullException(nameof(deviceRepository));
         _deviceTypeRepository = deviceTypeRepository ?? throw new ArgumentNullException(nameof(deviceTypeRepository));
+        _schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -165,7 +172,18 @@ public class DeviceController : ControllerBase
                 });
             }
 
-            return Ok(MapToResponse(device));
+            // Fetch schema name if device has a schema
+            Dictionary<Guid, string>? schemaNames = null;
+            if (device.DeviceType?.SchemaId != null)
+            {
+                var schemaName = await _schemaRegistryClient.GetSchemaNameAsync(device.DeviceType.SchemaId.Value);
+                if (schemaName != null)
+                {
+                    schemaNames = new Dictionary<Guid, string> { { device.DeviceType.SchemaId.Value, schemaName } };
+                }
+            }
+
+            return Ok(MapToResponse(device, schemaNames));
         }
         catch (Exception ex)
         {
@@ -209,7 +227,18 @@ public class DeviceController : ControllerBase
                 });
             }
 
-            return Ok(MapToResponse(device));
+            // Fetch schema name if device has a schema
+            Dictionary<Guid, string>? schemaNames = null;
+            if (device.DeviceType?.SchemaId != null)
+            {
+                var schemaName = await _schemaRegistryClient.GetSchemaNameAsync(device.DeviceType.SchemaId.Value);
+                if (schemaName != null)
+                {
+                    schemaNames = new Dictionary<Guid, string> { { device.DeviceType.SchemaId.Value, schemaName } };
+                }
+            }
+
+            return Ok(MapToResponse(device, schemaNames));
         }
         catch (Exception ex)
         {
@@ -303,9 +332,20 @@ public class DeviceController : ControllerBase
                 parameters.Status,
                 parameters.SearchTerm);
 
+            // Fetch schema names in batch for all devices that have schemas
+            var schemaIds = devices
+                .Where(d => d.DeviceType?.SchemaId != null)
+                .Select(d => d.DeviceType!.SchemaId!.Value)
+                .Distinct()
+                .ToList();
+
+            var schemaNames = schemaIds.Any() 
+                ? await _schemaRegistryClient.GetSchemaNamesAsync(schemaIds)
+                : new Dictionary<Guid, string>();
+
             return Ok(new DeviceListResponse
             {
-                Devices = devices.Select(MapToResponse).ToList(),
+                Devices = devices.Select(d => MapToResponse(d, schemaNames)).ToList(),
                 TotalCount = totalCount,
                 Page = parameters.Page,
                 PageSize = parameters.PageSize
@@ -575,8 +615,18 @@ public class DeviceController : ControllerBase
         return "00000000-0000-0000-0000-000000000001";
     }
 
-    private DeviceResponse MapToResponse(Sensormine.Core.Models.Device device)
+    private DeviceResponse MapToResponse(
+        Sensormine.Core.Models.Device device, 
+        Dictionary<Guid, string>? schemaNames = null)
     {
+        var schemaId = device.DeviceType?.SchemaId;
+        string? schemaName = null;
+        
+        if (schemaId.HasValue && schemaNames != null && schemaNames.TryGetValue(schemaId.Value, out var name))
+        {
+            schemaName = name;
+        }
+
         return new DeviceResponse
         {
             Id = device.Id,
@@ -598,9 +648,8 @@ public class DeviceController : ControllerBase
             LastSeenAt = device.LastSeenAt,
             CreatedAt = device.CreatedAt,
             UpdatedAt = device.UpdatedAt ?? device.CreatedAt,
-            SchemaId = device.DeviceType?.SchemaId,
-            // SchemaName must be fetched from SchemaRegistry.API in microservices architecture
-            SchemaName = null
+            SchemaId = schemaId,
+            SchemaName = schemaName
         };
     }
 

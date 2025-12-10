@@ -1,4 +1,5 @@
 using Device.API.DTOs;
+using Device.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Sensormine.Core.Models;
 using Sensormine.Core.Repositories;
@@ -13,6 +14,7 @@ namespace Device.API.Controllers;
 public class DeviceTypeController : ControllerBase
 {
     private readonly IDeviceTypeRepository _repository;
+    private readonly IFieldMappingService _fieldMappingService;
     private readonly ILogger<DeviceTypeController> _logger;
 
     // TODO: Get from authentication context
@@ -21,9 +23,11 @@ public class DeviceTypeController : ControllerBase
 
     public DeviceTypeController(
         IDeviceTypeRepository repository,
+        IFieldMappingService fieldMappingService,
         ILogger<DeviceTypeController> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _fieldMappingService = fieldMappingService ?? throw new ArgumentNullException(nameof(fieldMappingService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -94,6 +98,11 @@ public class DeviceTypeController : ControllerBase
         }
 
         var response = DeviceTypeResponse.FromEntity(deviceType);
+        
+        // Populate field mappings
+        var fieldMappings = await _fieldMappingService.GetFieldMappingsForDeviceTypeAsync(id, TenantId);
+        response.Fields = fieldMappings.Select(FieldMappingResponse.FromEntity).ToList();
+        
         return Ok(response);
     }
 

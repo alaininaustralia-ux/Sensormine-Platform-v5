@@ -78,6 +78,11 @@ public class DeviceTypeResponse
     public string? CreatedBy { get; set; }
 
     /// <summary>
+    /// Field mappings combining schema fields and custom fields with friendly names
+    /// </summary>
+    public List<FieldMappingResponse> Fields { get; set; } = new();
+
+    /// <summary>
     /// Maps from DeviceType domain model to DeviceTypeResponse DTO
     /// </summary>
     public static DeviceTypeResponse FromEntity(DeviceType entity)

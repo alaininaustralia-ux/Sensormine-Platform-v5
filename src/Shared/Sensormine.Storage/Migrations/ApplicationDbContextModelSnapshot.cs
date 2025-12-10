@@ -22,6 +22,7 @@ namespace Sensormine.Storage.Migrations
                 .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "ltree");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Sensormine.Core.Models.AlertDeliveryChannel", b =>
@@ -65,9 +66,8 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnType("text[]")
                         .HasColumnName("tags");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("text")
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
                     b.Property<string>("Type")
@@ -191,9 +191,8 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("status");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("text")
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
                     b.Property<DateTimeOffset>("TriggeredAt")
@@ -315,9 +314,8 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("target_type");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("text")
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
                     b.Property<int>("TimeWindowSeconds")
@@ -348,6 +346,299 @@ namespace Sensormine.Storage.Migrations
                         .HasDatabaseName("ix_alert_rules_tenant_name");
 
                     b.ToTable("alert_rules", (string)null);
+                });
+
+            modelBuilder.Entity("Sensormine.Core.Models.Asset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AssetType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("asset_type");
+
+                    b.Property<string>("CadDrawingUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("cad_drawing_url");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("Equipment")
+                        .HasColumnName("category");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("icon");
+
+                    b.PrimitiveCollection<List<string>>("ImageUrls")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("image_urls");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer")
+                        .HasColumnName("level");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_id");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasColumnType("ltree")
+                        .HasColumnName("path");
+
+                    b.Property<string>("PrimaryImageUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("primary_image_url");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("Active")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetType")
+                        .HasDatabaseName("idx_assets_type");
+
+                    b.HasIndex("Level")
+                        .HasDatabaseName("idx_assets_level");
+
+                    b.HasIndex("ParentId")
+                        .HasDatabaseName("idx_assets_parent");
+
+                    b.HasIndex("Path")
+                        .HasDatabaseName("idx_assets_path");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("idx_assets_status");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("idx_assets_tenant");
+
+                    b.HasIndex("TenantId", "ParentId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_asset_name_per_parent");
+
+                    b.ToTable("assets", (string)null);
+                });
+
+            modelBuilder.Entity("Sensormine.Core.Models.AssetRollupConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AggregationMethod")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("aggregation_method");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("asset_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FilterExpression")
+                        .HasColumnType("text")
+                        .HasColumnName("filter_expression");
+
+                    b.Property<bool>("IncludeChildren")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("include_children");
+
+                    b.Property<string>("MetricName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("metric_name");
+
+                    b.Property<TimeSpan>("RollupInterval")
+                        .HasColumnType("interval")
+                        .HasColumnName("rollup_interval");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<decimal>("WeightFactor")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(10,4)")
+                        .HasDefaultValue(1.0m)
+                        .HasColumnName("weight_factor");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId")
+                        .HasDatabaseName("idx_rollup_configs_asset");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("idx_rollup_configs_tenant");
+
+                    b.HasIndex("TenantId", "AssetId", "MetricName")
+                        .IsUnique()
+                        .HasDatabaseName("unique_rollup");
+
+                    b.ToTable("asset_rollup_configs", (string)null);
+                });
+
+            modelBuilder.Entity("Sensormine.Core.Models.AssetRollupData", b =>
+                {
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("asset_id");
+
+                    b.Property<string>("MetricName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("metric_name");
+
+                    b.Property<DateTimeOffset>("Time")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("time");
+
+                    b.Property<Dictionary<string, object>>("Metadata")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("metadata");
+
+                    b.Property<int>("SampleCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("sample_count");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<double?>("Value")
+                        .HasColumnType("double precision")
+                        .HasColumnName("value");
+
+                    b.HasKey("AssetId", "MetricName", "Time");
+
+                    b.HasIndex("Time")
+                        .HasDatabaseName("asset_rollup_data_time_idx");
+
+                    b.HasIndex("AssetId", "Time")
+                        .HasDatabaseName("idx_rollup_data_asset");
+
+                    b.HasIndex("MetricName", "Time")
+                        .HasDatabaseName("idx_rollup_data_metric");
+
+                    b.HasIndex("TenantId", "Time")
+                        .HasDatabaseName("idx_rollup_data_tenant");
+
+                    b.ToTable("asset_rollup_data", (string)null);
+                });
+
+            modelBuilder.Entity("Sensormine.Core.Models.AssetState", b =>
+                {
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("asset_id");
+
+                    b.Property<int>("AlarmCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("alarm_count");
+
+                    b.Property<string>("AlarmStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("alarm_status");
+
+                    b.Property<Dictionary<string, object>>("CalculatedMetrics")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("calculated_metrics");
+
+                    b.Property<string>("LastUpdateDeviceId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("last_update_device_id");
+
+                    b.Property<DateTimeOffset>("LastUpdateTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_update_time");
+
+                    b.Property<Dictionary<string, object>>("State")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("state");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("AssetId");
+
+                    b.HasIndex("AlarmStatus")
+                        .HasDatabaseName("idx_asset_states_alarm");
+
+                    b.HasIndex("LastUpdateTime")
+                        .HasDatabaseName("idx_asset_states_last_update");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("idx_asset_states_tenant");
+
+                    b.ToTable("asset_states", (string)null);
                 });
 
             modelBuilder.Entity("Sensormine.Core.Models.Dashboard", b =>
@@ -456,11 +747,110 @@ namespace Sensormine.Storage.Migrations
                     b.ToTable("dashboards", (string)null);
                 });
 
+            modelBuilder.Entity("Sensormine.Core.Models.DataPointMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AggregationMethod")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("aggregation_method");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("asset_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("JsonPath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("json_path");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("label");
+
+                    b.Property<Dictionary<string, object>>("Metadata")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("metadata");
+
+                    b.Property<bool>("RollupEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("rollup_enabled");
+
+                    b.Property<Guid>("SchemaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("schema_id");
+
+                    b.Property<string>("SchemaVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("schema_version");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("TransformExpression")
+                        .HasColumnType("text")
+                        .HasColumnName("transform_expression");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("unit");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId")
+                        .HasDatabaseName("idx_mappings_asset");
+
+                    b.HasIndex("JsonPath")
+                        .HasDatabaseName("idx_mappings_json_path");
+
+                    b.HasIndex("SchemaId")
+                        .HasDatabaseName("idx_mappings_schema");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("idx_mappings_tenant");
+
+                    b.HasIndex("TenantId", "SchemaId", "JsonPath", "AssetId")
+                        .IsUnique()
+                        .HasDatabaseName("unique_mapping");
+
+                    b.ToTable("data_point_mappings", (string)null);
+                });
+
             modelBuilder.Entity("Sensormine.Core.Models.Device", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<Guid?>("AssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("asset_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -511,9 +901,8 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("status");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("text")
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
@@ -743,6 +1132,136 @@ namespace Sensormine.Storage.Migrations
                     b.ToTable("device_type_versions", (string)null);
                 });
 
+            modelBuilder.Entity("Sensormine.Core.Models.FieldMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("category");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DataType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("data_type");
+
+                    b.Property<string>("DefaultAggregation")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("default_aggregation");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<Guid>("DeviceTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("device_type_id");
+
+                    b.Property<int>("DisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("display_order");
+
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("field_name");
+
+                    b.Property<string>("FieldSource")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("field_source");
+
+                    b.Property<string>("FormatString")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("format_string");
+
+                    b.Property<string>("FriendlyName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("friendly_name");
+
+                    b.Property<bool>("IsQueryable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_queryable");
+
+                    b.Property<bool>("IsVisible")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_visible");
+
+                    b.Property<double?>("MaxValue")
+                        .HasColumnType("double precision")
+                        .HasColumnName("max_value");
+
+                    b.Property<double?>("MinValue")
+                        .HasColumnType("double precision")
+                        .HasColumnName("min_value");
+
+                    b.PrimitiveCollection<List<string>>("SupportsAggregations")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("supports_aggregations");
+
+                    b.PrimitiveCollection<List<string>>("Tags")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("tags");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("unit");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeviceTypeId")
+                        .HasDatabaseName("ix_field_mappings_device_type");
+
+                    b.HasIndex("IsQueryable")
+                        .HasDatabaseName("ix_field_mappings_queryable");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_field_mappings_tenant");
+
+                    b.HasIndex("DeviceTypeId", "FieldName")
+                        .IsUnique()
+                        .HasDatabaseName("ix_field_mappings_device_type_field_name");
+
+                    b.ToTable("field_mappings", (string)null);
+                });
+
             modelBuilder.Entity("Sensormine.Core.Models.Schema", b =>
                 {
                     b.Property<Guid>("Id")
@@ -777,10 +1296,9 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
+                    b.Property<Guid>("TenantId")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -849,10 +1367,9 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("status");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
+                    b.Property<Guid>("TenantId")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -924,10 +1441,9 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("site_settings");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
+                    b.Property<Guid>("TenantId")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
@@ -954,6 +1470,10 @@ namespace Sensormine.Storage.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("Bookmarks")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -984,15 +1504,18 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("notification_preferences");
 
+                    b.Property<string>("PageHistory")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("RecentlyViewed")
                         .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("recently_viewed");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
+                    b.Property<Guid>("TenantId")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
@@ -1036,6 +1559,122 @@ namespace Sensormine.Storage.Migrations
                     b.Navigation("Device");
                 });
 
+            modelBuilder.Entity("Sensormine.Core.Models.Asset", b =>
+                {
+                    b.HasOne("Sensormine.Core.Models.Asset", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.OwnsOne("Sensormine.Core.Models.GeographicData", "GeographicData", b1 =>
+                        {
+                            b1.Property<Guid>("AssetId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("City")
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)");
+
+                            b1.Property<string>("Council")
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)");
+
+                            b1.Property<string>("Country")
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)");
+
+                            b1.Property<string>("State")
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)");
+
+                            b1.HasKey("AssetId");
+
+                            b1.ToTable("assets", (string)null);
+
+                            b1.ToJson("geographic_data");
+
+                            b1.WithOwner()
+                                .HasForeignKey("AssetId");
+
+                            b1.OwnsOne("Sensormine.Core.Models.GeofenceData", "Geofence", b2 =>
+                                {
+                                    b2.Property<Guid>("GeographicDataAssetId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<double?>("Radius")
+                                        .HasColumnType("double precision");
+
+                                    b2.Property<string>("Type")
+                                        .IsRequired()
+                                        .HasMaxLength(50)
+                                        .HasColumnType("character varying(50)");
+
+                                    b2.HasKey("GeographicDataAssetId");
+
+                                    b2.ToTable("assets", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("GeographicDataAssetId");
+
+                                    b2.OwnsMany("Sensormine.Core.Models.GeoLocation", "Coordinates", b3 =>
+                                        {
+                                            b3.Property<Guid>("GeofenceDataGeographicDataAssetId")
+                                                .HasColumnType("uuid");
+
+                                            b3.Property<int>("__synthesizedOrdinal")
+                                                .ValueGeneratedOnAdd()
+                                                .HasColumnType("integer");
+
+                                            b3.Property<double?>("Altitude")
+                                                .HasColumnType("double precision");
+
+                                            b3.Property<double>("Latitude")
+                                                .HasColumnType("double precision");
+
+                                            b3.Property<double>("Longitude")
+                                                .HasColumnType("double precision");
+
+                                            b3.HasKey("GeofenceDataGeographicDataAssetId", "__synthesizedOrdinal");
+
+                                            b3.ToTable("assets", (string)null);
+
+                                            b3.WithOwner()
+                                                .HasForeignKey("GeofenceDataGeographicDataAssetId");
+                                        });
+
+                                    b2.Navigation("Coordinates");
+                                });
+
+                            b1.Navigation("Geofence");
+                        });
+
+                    b.Navigation("GeographicData");
+
+                    b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("Sensormine.Core.Models.AssetRollupConfig", b =>
+                {
+                    b.HasOne("Sensormine.Core.Models.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+                });
+
+            modelBuilder.Entity("Sensormine.Core.Models.AssetState", b =>
+                {
+                    b.HasOne("Sensormine.Core.Models.Asset", "Asset")
+                        .WithOne("CurrentState")
+                        .HasForeignKey("Sensormine.Core.Models.AssetState", "AssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+                });
+
             modelBuilder.Entity("Sensormine.Core.Models.Dashboard", b =>
                 {
                     b.HasOne("Sensormine.Core.Models.Dashboard", "ParentDashboard")
@@ -1044,6 +1683,15 @@ namespace Sensormine.Storage.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ParentDashboard");
+                });
+
+            modelBuilder.Entity("Sensormine.Core.Models.DataPointMapping", b =>
+                {
+                    b.HasOne("Sensormine.Core.Models.Asset", null)
+                        .WithMany("DataPointMappings")
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Sensormine.Core.Models.Device", b =>
@@ -1075,6 +1723,17 @@ namespace Sensormine.Storage.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Sensormine.Core.Models.FieldMapping", b =>
+                {
+                    b.HasOne("Sensormine.Core.Models.DeviceType", "DeviceType")
+                        .WithMany()
+                        .HasForeignKey("DeviceTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DeviceType");
+                });
+
             modelBuilder.Entity("Sensormine.Core.Models.SchemaVersion", b =>
                 {
                     b.HasOne("Sensormine.Core.Models.Schema", "Schema")
@@ -1084,6 +1743,15 @@ namespace Sensormine.Storage.Migrations
                         .IsRequired();
 
                     b.Navigation("Schema");
+                });
+
+            modelBuilder.Entity("Sensormine.Core.Models.Asset", b =>
+                {
+                    b.Navigation("Children");
+
+                    b.Navigation("CurrentState");
+
+                    b.Navigation("DataPointMappings");
                 });
 
             modelBuilder.Entity("Sensormine.Core.Models.Dashboard", b =>

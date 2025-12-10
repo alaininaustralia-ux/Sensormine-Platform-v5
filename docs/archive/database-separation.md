@@ -1,10 +1,27 @@
 # Database Architecture - Separation of Concerns
 
+## ⚡ Quick Reference
+
+**Container:** `sensormine-timescaledb` (one container, two databases)  
+**Host Port:** `5452` (maps to container port 5432)  
+**Credentials:** Username `sensormine`, Password `sensormine123`
+
+| Database | Purpose | Used By | Connection String |
+|----------|---------|---------|-------------------|
+| `sensormine_metadata` | Devices, Assets, Dashboards, Config | Device.API, Dashboard.API, DigitalTwin.API, Alerts.API | `Host=localhost;Port=5452;Database=sensormine_metadata;Username=sensormine;Password=sensormine123` |
+| `sensormine_timeseries` | Telemetry, Metrics, Time-series Data | Query.API, Ingestion.Service, StreamProcessing.Service | `Host=localhost;Port=5452;Database=sensormine_timeseries;Username=sensormine;Password=sensormine123` |
+
+> **⚠️ Important:** The PostgreSQL container on port 5433 is **deprecated and unused**. All data is in TimescaleDB on port 5452.
+
+---
+
 ## Overview
 The Sensormine platform uses two separate PostgreSQL databases to optimize for different data access patterns and scalability requirements.
 
-## Database: sensormine_metadata (Port 5432)
+## Database: sensormine_metadata
 
+**Container:** TimescaleDB (sensormine-timescaledb)  
+**Host Port:** 5452 (mapped to container port 5432)  
 **Purpose:** Operational metadata and configuration data
 
 **Tables:**
@@ -49,8 +66,10 @@ The Sensormine platform uses two separate PostgreSQL databases to optimize for d
 - Low to moderate data volume
 - Frequent reads and updates
 
-## Database: sensormine_timeseries (Port 5432, via TimescaleDB extension)
+## Database: sensormine_timeseries
 
+**Container:** TimescaleDB (sensormine-timescaledb)  
+**Host Port:** 5452 (mapped to container port 5432)  
 **Purpose:** High-volume time-series telemetry data
 
 **Tables:**
@@ -86,14 +105,17 @@ The Sensormine platform uses two separate PostgreSQL databases to optimize for d
 
 ## Connection String Format
 
+**For Development (from host machine):**
 ```json
 {
   "ConnectionStrings": {
-    "MetadataConnection": "Host=localhost;Port=5432;Database=sensormine_metadata;Username=sensormine;Password=sensormine123",
-    "TimeseriesConnection": "Host=localhost;Port=5432;Database=sensormine_timeseries;Username=sensormine;Password=sensormine123"
+    "MetadataConnection": "Host=localhost;Port=5452;Database=sensormine_metadata;Username=sensormine;Password=sensormine123",
+    "TimeseriesConnection": "Host=localhost;Port=5452;Database=sensormine_timeseries;Username=sensormine;Password=sensormine123"
   }
 }
 ```
+
+**Note:** Port 5452 is the host port mapped to the TimescaleDB container (internal port 5432). Both databases are in the same container.
 
 ## Best Practices
 

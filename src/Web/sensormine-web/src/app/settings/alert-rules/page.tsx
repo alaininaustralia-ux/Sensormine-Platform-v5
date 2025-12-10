@@ -89,6 +89,7 @@ export default function AlertRulesPage() {
       Critical: 'destructive',
       Warning: 'default',
       Info: 'secondary',
+      Error: 'destructive',
     };
     return (
       <Badge variant={variants[severity] as any}>

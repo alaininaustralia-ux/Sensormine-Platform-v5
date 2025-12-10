@@ -11,7 +11,7 @@ public static class MappingExtensions
     /// <summary>
     /// Convert Asset entity to AssetResponse DTO
     /// </summary>
-    public static AssetResponse ToResponse(this Asset asset, int childCount = 0)
+    public static AssetResponse ToResponse(this Asset asset, int childCount = 0, int deviceCount = 0)
     {
         return new AssetResponse
         {
@@ -21,16 +21,20 @@ public static class MappingExtensions
             Name = asset.Name,
             Description = asset.Description,
             AssetType = asset.AssetType.ToString(),
+            Category = asset.Category.ToString(),
             Path = asset.Path,
             Level = asset.Level,
             Metadata = asset.Metadata ?? new Dictionary<string, object>(),
             Location = asset.Location?.ToDto(),
+            GeographicData = asset.GeographicData?.ToDto(),
+            CadDrawingUrl = asset.CadDrawingUrl,
             Status = asset.Status.ToString(),
             CreatedAt = asset.CreatedAt,
             UpdatedAt = asset.UpdatedAt,
             CreatedBy = asset.CreatedBy,
             UpdatedBy = asset.UpdatedBy,
             ChildCount = childCount,
+            DeviceCount = deviceCount,
             CurrentState = asset.CurrentState?.ToResponse()
         };
     }
@@ -38,7 +42,7 @@ public static class MappingExtensions
     /// <summary>
     /// Convert Asset entity to AssetTreeResponse DTO with children
     /// </summary>
-    public static AssetTreeResponse ToTreeResponse(this Asset asset)
+    public static AssetTreeResponse ToTreeResponse(this Asset asset, int deviceCount = 0)
     {
         return new AssetTreeResponse
         {
@@ -48,16 +52,20 @@ public static class MappingExtensions
             Name = asset.Name,
             Description = asset.Description,
             AssetType = asset.AssetType.ToString(),
+            Category = asset.Category.ToString(),
             Path = asset.Path,
             Level = asset.Level,
             Metadata = asset.Metadata ?? new Dictionary<string, object>(),
             Location = asset.Location?.ToDto(),
+            GeographicData = asset.GeographicData?.ToDto(),
+            CadDrawingUrl = asset.CadDrawingUrl,
             Status = asset.Status.ToString(),
             CreatedAt = asset.CreatedAt,
             UpdatedAt = asset.UpdatedAt,
             CreatedBy = asset.CreatedBy,
             UpdatedBy = asset.UpdatedBy,
             ChildCount = asset.Children?.Count ?? 0,
+            DeviceCount = deviceCount,
             CurrentState = asset.CurrentState?.ToResponse(),
             Children = asset.Children?.Select(c => c.ToTreeResponse()).ToList() ?? new List<AssetTreeResponse>()
         };
@@ -90,6 +98,70 @@ public static class MappingExtensions
             Latitude = dto.Latitude,
             Longitude = dto.Longitude,
             Altitude = dto.Altitude
+        };
+    }
+
+    /// <summary>
+    /// Convert GeographicData to DTO
+    /// </summary>
+    public static GeographicDataDto? ToDto(this GeographicData? data)
+    {
+        if (data == null) return null;
+
+        return new GeographicDataDto
+        {
+            Country = data.Country,
+            State = data.State,
+            Council = data.Council,
+            City = data.City,
+            Geofence = data.Geofence?.ToDto()
+        };
+    }
+
+    /// <summary>
+    /// Convert GeographicDataDto to domain model
+    /// </summary>
+    public static GeographicData? ToDomain(this GeographicDataDto? dto)
+    {
+        if (dto == null) return null;
+
+        return new GeographicData
+        {
+            Country = dto.Country,
+            State = dto.State,
+            Council = dto.Council,
+            City = dto.City,
+            Geofence = dto.Geofence?.ToDomain()
+        };
+    }
+
+    /// <summary>
+    /// Convert GeofenceData to DTO
+    /// </summary>
+    public static GeofenceDataDto? ToDto(this GeofenceData? data)
+    {
+        if (data == null) return null;
+
+        return new GeofenceDataDto
+        {
+            Type = data.Type,
+            Coordinates = data.Coordinates?.Select(c => c.ToDto()).Where(c => c != null).Cast<GeoLocationDto>().ToList() ?? new List<GeoLocationDto>(),
+            Radius = data.Radius
+        };
+    }
+
+    /// <summary>
+    /// Convert GeofenceDataDto to domain model
+    /// </summary>
+    public static GeofenceData? ToDomain(this GeofenceDataDto? dto)
+    {
+        if (dto == null) return null;
+
+        return new GeofenceData
+        {
+            Type = dto.Type,
+            Coordinates = dto.Coordinates?.Select(c => c.ToDomain()).Where(c => c != null).Cast<GeoLocation>().ToList() ?? new List<GeoLocation>(),
+            Radius = dto.Radius
         };
     }
 
@@ -159,6 +231,18 @@ public static class MappingExtensions
             return AssetStatus.Active; // Default to Active if not specified
         }
         return Enum.Parse<AssetStatus>(status, ignoreCase: true);
+    }
+
+    /// <summary>
+    /// Parse AssetCategory from string
+    /// </summary>
+    public static AssetCategory ParseAssetCategory(string category)
+    {
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            return AssetCategory.Equipment; // Default to Equipment if not specified
+        }
+        return Enum.Parse<AssetCategory>(category, ignoreCase: true);
     }
 
     /// <summary>

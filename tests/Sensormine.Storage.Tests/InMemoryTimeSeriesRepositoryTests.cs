@@ -7,13 +7,13 @@ using Sensormine.Storage.TimeSeries;
 
 public class InMemoryTimeSeriesRepositoryTests
 {
-    private const string TenantId = "test-tenant";
+    private readonly Guid TenantId = Guid.NewGuid();
     private const string Measurement = "telemetry";
     private readonly InMemoryTimeSeriesRepository _repository;
 
     public InMemoryTimeSeriesRepositoryTests()
     {
-        _repository = new InMemoryTimeSeriesRepository(TenantId);
+        _repository = new InMemoryTimeSeriesRepository(TenantId.ToString());
     }
 
     [Fact]

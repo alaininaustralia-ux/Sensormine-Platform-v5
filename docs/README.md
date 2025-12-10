@@ -1,54 +1,63 @@
 # Sensormine Platform v5 - Documentation Hub
 
-**Status**: December 10, 2025 | **Version**: 5.0 | **Branch**: master
+**Last Updated**: December 10, 2025 | **Version**: 5.0 | **Branch**: master
 
-> 🚀 **Latest Update**: Dashboard Asset Integration Phase completed (6/6 stories) - Asset-based widgets with hierarchical filtering now available
+> 🚀 **Latest Update**: Documentation consolidation complete - 5 core AI-optimized documents created
 
 ---
 
 ## 📖 Documentation Overview
 
-The Sensormine Platform v5 is a cloud-agnostic industrial IoT platform designed for high-throughput data ingestion, real-time processing, and advanced analytics at scale. Built with .NET 8 microservices architecture and modern React/Next.js frontend.
-
-### 🏗️ **Core Architecture**
-- **Backend**: .NET 8, C# 12, ASP.NET Core Web API, Entity Framework Core
-- **Frontend**: Next.js 14, React 19, TypeScript 5, Tailwind CSS 4, shadcn/ui
-- **Data Storage**: PostgreSQL 16 + TimescaleDB, Redis caching
-- **Messaging**: Kafka/NATS for event-driven architecture
-- **Protocols**: MQTT, HTTP/REST, WebSocket, Modbus TCP, OPC UA
-- **Deployment**: Docker, Kubernetes, Helm, Terraform
+The Sensormine Platform v5 is a cloud-agnostic industrial IoT platform designed for high-throughput data ingestion, real-time processing, and advanced analytics at scale.
 
 ---
 
-## 🚀 Quick Start
+## ⚡ Core Documentation (Start Here)
 
-| Task | Documentation | Commands |
-|------|---------------|----------|
-| **Development Setup** | [development.md](development.md) | `docker-compose up -d` |
-| **Build Backend** | [architecture.md](architecture.md) | `dotnet build Sensormine.sln` |
-| **Frontend Dev** | [development.md](development.md) | `cd src/Web/sensormine-web && npm run dev` |
-| **Run Tests** | [development.md](development.md) | `dotnet test Sensormine.sln` |
-| **Device Simulator** | [development.md](development.md) | `cd src/Web/device-simulator && npm run dev` |
+> **These 5 documents contain everything you need to understand and work with the platform.**
+
+| Document | Purpose | Read When |
+|----------|---------|-----------|
+| **[APPLICATION.md](APPLICATION.md)** | Microservices architecture, APIs, domain models, communication patterns | Starting any backend work |
+| **[DATABASE.md](DATABASE.md)** | Database schema, tables, indexes, queries, multi-tenancy | Working with data layer |
+| **[INFRASTRUCTURE.md](INFRASTRUCTURE.md)** | Containers, networking, volumes, deployment, monitoring | Infrastructure or DevOps tasks |
+| **[LOCAL-DEVELOPMENT.md](LOCAL-DEVELOPMENT.md)** | Setup, build, test, debug, troubleshooting | Setting up environment |
+| **[DEPLOYMENT.md](DEPLOYMENT.md)** | Docker Compose, Kubernetes, cloud providers, production deployment | Deploying to any environment |
+
+### 🗝️ Quick Reference
+
+| Document | Purpose | Read When |
+|----------|---------|-----------|
+| **[DATABASE-QUICK-REFERENCE.md](DATABASE-QUICK-REFERENCE.md)** | Connection strings, common commands | Quick database lookups |
+| **[service-ports.md](service-ports.md)** | Port assignments and service endpoints | Port conflicts or service discovery |
 
 ---
 
-## 📚 Core Documentation
+## 📚 Supporting Documentation
 
-### **🏛️ System Architecture**
-- **[Architecture Overview](architecture.md)** - Complete system design, layers, and data flow
-- **[Technology Stack](technology-stack.md)** - Technologies, frameworks, and rationale
-- **[Database Architecture](database-architecture.md)** - Multi-database strategy, schemas, and patterns
-- **[Service Ports](service-ports.md)** - Port assignments and service endpoints
+### **Technology & Architecture**
+- **[technology-stack.md](technology-stack.md)** - Technologies, frameworks, and rationale
+- **[requirements.md](requirements.md)** - Platform requirements and specifications
 
-### **💾 Data & Storage**
-- **[Database Separation Strategy](database-separation.md)** - Three-database architecture implementation
-- **[Telemetry Architecture](telemetry-architecture-update-completed.md)** - Time-series data handling with TimescaleDB
-- **[Digital Twin Implementation](digital-twin-phase1-complete.md)** - Asset hierarchy and digital twin features
+### **User Management & Security**
+- **[user-management-overview.md](user-management-overview.md)** - User management and authentication
+- **[permissions-matrix.md](permissions-matrix.md)** - Role-based access control matrix
 
-### **🔧 Development & Deployment**
-- **[Development Workflow](development.md)** - Local setup, build process, and guidelines
-- **[Local Infrastructure](local-infrastructure.md)** - Docker setup for development environment
-- **[Deployment Guide](deployment.md)** - Production deployment with Kubernetes and Helm
+### **Project Management**
+- **[user-stories.md](user-stories.md)** - User stories and epics
+- **[PLATFORM-STATUS.md](PLATFORM-STATUS.md)** - Current platform status and progress
+
+---
+
+## 🗄️ Archived Documentation
+
+Older documentation has been archived to `archive/` folder:
+- Historical implementation notes
+- Completed feature summaries
+- Superseded architecture documents
+- Detailed specifications (now in core docs or user stories)
+
+**See [archive/README.md](archive/README.md)** for complete list and migration guide.
 
 ---
 

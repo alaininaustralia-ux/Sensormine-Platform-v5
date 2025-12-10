@@ -16,5 +16,10 @@ export { ConnectedKPIWidget } from './kpi-widget-connected';
 export { ConnectedChartWidget } from './chart-widget-connected';
 export { ConnectedPieChartWidget } from './pie-chart-widget-connected';
 
+// Asset-based widgets
+export { ChartWidgetWithAsset } from './chart-widget-with-asset';
+export { KPIWidgetWithAsset } from './kpi-widget-with-asset';
+export { GaugeWidgetWithAsset } from './gauge-widget-with-asset';
+
 // Base widget
 export type { BaseWidgetProps } from './base-widget';

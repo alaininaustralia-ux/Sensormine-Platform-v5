@@ -42,6 +42,7 @@ import { DeviceTypeForm } from '@/components/device-types/device-type-form';
 import { VersionHistory } from '@/components/device-types/version-history';
 import { UsageStatistics } from '@/components/device-types/usage-statistics';
 import { AuditLogs } from '@/components/device-types/audit-logs';
+import { FieldMappingEditor } from '@/components/device-types/field-mapping-editor';
 
 interface DeviceTypeEditorProps {
   deviceType: DeviceType;
@@ -288,6 +289,13 @@ export function DeviceTypeEditor({ deviceType }: DeviceTypeEditorProps) {
             <Settings className="h-4 w-4 mr-2" />
             Configuration
           </TabsTrigger>
+          <TabsTrigger value="fields">
+            <Settings2 className="h-4 w-4 mr-2" />
+            Field Mappings
+            {deviceType.fields && deviceType.fields.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{deviceType.fields.length}</Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="history">
             <History className="h-4 w-4 mr-2" />
             Version History
@@ -324,6 +332,10 @@ export function DeviceTypeEditor({ deviceType }: DeviceTypeEditorProps) {
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="fields">
+          <FieldMappingEditor deviceTypeId={deviceType.id} />
         </TabsContent>
 
         <TabsContent value="history">

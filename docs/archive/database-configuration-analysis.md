@@ -4,7 +4,20 @@
 
 ---
 
-## Executive Summary
+> **⚠️ IMPORTANT NOTE - December 10, 2025**
+> 
+> **This document is HISTORICAL ANALYSIS ONLY.**  
+> For current database architecture, see **[database-separation.md](./database-separation.md)**
+>
+> **Current Unified Architecture:**
+> - **All databases** are in the **TimescaleDB container** on **port 5452**
+> - `sensormine_metadata`: All operational data (devices, assets, dashboards, etc.)
+> - `sensormine_timeseries`: All telemetry data
+> - The PostgreSQL container on port 5433 is **deprecated and unused**
+
+---
+
+## Executive Summary (HISTORICAL)
 
 The Sensormine Platform uses **THREE separate PostgreSQL databases** across **TWO Docker containers**:
 

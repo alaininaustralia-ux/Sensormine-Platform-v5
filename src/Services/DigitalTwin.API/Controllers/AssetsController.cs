@@ -165,8 +165,11 @@ public class AssetsController : ControllerBase
             Name = request.Name,
             Description = request.Description,
             AssetType = MappingExtensions.ParseAssetType(request.AssetType),
+            Category = MappingExtensions.ParseAssetCategory(request.Category),
             Metadata = request.Metadata ?? new Dictionary<string, object>(),
             Location = request.Location?.ToDomain(),
+            GeographicData = request.GeographicData?.ToDomain(),
+            CadDrawingUrl = request.CadDrawingUrl,
             Status = MappingExtensions.ParseAssetStatus(request.Status),
             CreatedAt = DateTimeOffset.UtcNow
         };
@@ -194,11 +197,20 @@ public class AssetsController : ControllerBase
         if (request.Description != null)
             asset.Description = request.Description;
 
+        if (!string.IsNullOrWhiteSpace(request.Category))
+            asset.Category = MappingExtensions.ParseAssetCategory(request.Category);
+
         if (request.Metadata != null)
             asset.Metadata = request.Metadata;
 
         if (request.Location != null)
             asset.Location = request.Location.ToDomain();
+
+        if (request.GeographicData != null)
+            asset.GeographicData = request.GeographicData.ToDomain();
+
+        if (request.CadDrawingUrl != null)
+            asset.CadDrawingUrl = request.CadDrawingUrl;
 
         if (!string.IsNullOrWhiteSpace(request.Status))
             asset.Status = MappingExtensions.ParseAssetStatus(request.Status);

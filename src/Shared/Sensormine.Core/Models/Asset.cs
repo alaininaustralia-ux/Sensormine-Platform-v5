@@ -31,6 +31,11 @@ public class Asset : BaseEntity
     public AssetType AssetType { get; set; }
 
     /// <summary>
+    /// Asset category (Facility, Equipment, Geography)
+    /// </summary>
+    public AssetCategory Category { get; set; } = AssetCategory.Equipment;
+
+    /// <summary>
     /// Materialized path for efficient hierarchical queries (LTREE format)
     /// </summary>
     public string Path { get; set; } = string.Empty;
@@ -72,6 +77,16 @@ public class Asset : BaseEntity
     public GeoLocation? Location { get; set; }
 
     /// <summary>
+    /// Geographic data for geography-type assets
+    /// </summary>
+    public GeographicData? GeographicData { get; set; }
+
+    /// <summary>
+    /// URL to CAD drawing file (for equipment/facility assets)
+    /// </summary>
+    public string? CadDrawingUrl { get; set; }
+
+    /// <summary>
     /// Current asset status
     /// </summary>
     public AssetStatus Status { get; set; } = AssetStatus.Active;
@@ -109,11 +124,24 @@ public enum AssetType
 {
     Site,
     Building,
+    Floor,
     Area,
-    Line,
+    Zone,
     Equipment,
+    Subsystem,
     Component,
+    Subcomponent,
     Sensor
+}
+
+/// <summary>
+/// Asset category classification
+/// </summary>
+public enum AssetCategory
+{
+    Facility,
+    Equipment,
+    Geography
 }
 
 /// <summary>
@@ -122,8 +150,8 @@ public enum AssetType
 public enum AssetStatus
 {
     Active,
+    Inactive,
     Maintenance,
-    Offline,
     Decommissioned
 }
 
@@ -135,4 +163,26 @@ public class GeoLocation
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public double? Altitude { get; set; }
+}
+
+/// <summary>
+/// Geographic data for geography-type assets
+/// </summary>
+public class GeographicData
+{
+    public string? Country { get; set; }
+    public string? State { get; set; }
+    public string? Council { get; set; }
+    public string? City { get; set; }
+    public GeofenceData? Geofence { get; set; }
+}
+
+/// <summary>
+/// Geofence definition (polygon boundary)
+/// </summary>
+public class GeofenceData
+{
+    public string Type { get; set; } = "Polygon"; // GeoJSON type
+    public List<GeoLocation> Coordinates { get; set; } = new();
+    public double? Radius { get; set; } // For circular geofences
 }

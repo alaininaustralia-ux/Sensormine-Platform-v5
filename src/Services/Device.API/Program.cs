@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Device.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Sensormine.Core.Repositories;
 using Sensormine.Storage.Data;
@@ -33,6 +34,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Add Repositories
 builder.Services.AddScoped<IDeviceTypeRepository, DeviceTypeRepository>();
 builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
+builder.Services.AddScoped<IFieldMappingRepository, FieldMappingRepository>();
+
+// Add Services
+builder.Services.AddScoped<IFieldMappingService, FieldMappingService>();
+
+// Add HttpClient for SchemaRegistry.API
+var schemaRegistryUrl = builder.Configuration.GetValue<string>("SchemaRegistryApi:BaseUrl") 
+    ?? "http://localhost:5021";
+builder.Services.AddHttpClient<ISchemaRegistryClient, SchemaRegistryClient>(client =>
+{
+    client.BaseAddress = new Uri(schemaRegistryUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 // Add CORS for development
 builder.Services.AddCors(options =>

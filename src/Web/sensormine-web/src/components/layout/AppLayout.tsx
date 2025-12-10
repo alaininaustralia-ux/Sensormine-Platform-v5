@@ -13,6 +13,7 @@ import { Sidebar } from './Sidebar';
 import { Footer } from './Footer';
 import { useAuth } from '@/lib/auth';
 import { HelpPanel } from '@/components/help/HelpPanel';
+import { useNavigationTracking } from '@/hooks/useNavigationTracking';
 
 // Pages that don't use the sidebar layout (only when not authenticated)
 const PUBLIC_PAGES = ['/login', '/register', '/forgot-password'];
@@ -22,6 +23,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   const isPublicPage = PUBLIC_PAGES.includes(pathname || '');
   const [helpOpen, setHelpOpen] = useState(false);
+  
+  // Track navigation for authenticated users
+  useNavigationTracking();
 
   // Public pages when not authenticated - full width, no sidebar
   if (!isAuthenticated && (isPublicPage || pathname === '/')) {

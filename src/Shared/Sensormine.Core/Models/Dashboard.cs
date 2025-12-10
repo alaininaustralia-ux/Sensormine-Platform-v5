@@ -11,9 +11,9 @@ public class Dashboard : BaseEntity
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Tenant ID for multi-tenancy
+    /// Tenant ID for multi-tenancy (shadows BaseEntity.TenantId)
     /// </summary>
-    public string TenantId { get; set; } = string.Empty;
+    public new string TenantId { get; set; } = string.Empty;
 
     /// <summary>
     /// Dashboard name

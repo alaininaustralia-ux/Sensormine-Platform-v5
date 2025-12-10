@@ -89,12 +89,12 @@ npm start
 - **Client ID**: Unique client identifier
 
 #### HTTP/REST
-- **Endpoint**: API URL for telemetry ingestion
+- **Endpoint**: API URL for telemetry ingestion (default: `http://localhost:5200/api/simulation/publish`)
 - **Method**: POST or PUT
 - **Auth Type**: None, Bearer Token, API Key, or Basic Auth
 
 #### WebSocket
-- **URL**: WebSocket server URL (e.g., `ws://localhost:5000/ws/telemetry`)
+- **URL**: WebSocket server URL (default: `ws://localhost:5200/ws/simulation`)
 - **Reconnect Interval**: Time between reconnection attempts
 - **Heartbeat Interval**: Ping/pong interval for connection keep-alive
 
@@ -177,12 +177,53 @@ src/
 
 ## Integration with Sensormine Platform
 
-The Device Simulator is designed to work with the Sensormine Platform's:
+The Device Simulator integrates with the Sensormine Platform's backend services:
 
-- **Edge.Gateway**: MQTT message ingestion
-- **Ingestion.Service**: Data validation and processing
-- **Query.API**: Time-series data storage and retrieval
-- **Device.API**: Device registration and management
+### API Service Endpoints
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| **Device.API** | 5293 | Device and device type management |
+| **SchemaRegistry.API** | 5021 | JSON Schema definitions and validation |
+| **Simulation.API** | 5200 | Telemetry ingestion for simulations |
+| **MQTT Broker** | 1883 | MQTT message ingestion |
+
+### Auto-Create Devices from Platform
+
+The simulator can automatically import devices from your Sensormine Platform:
+
+1. Click **"Load from Platform"** in the API Device Loader card
+2. The simulator will:
+   - Fetch all devices from Device.API (port 5293)
+   - Fetch device types to determine protocols
+   - Fetch schemas from SchemaRegistry.API (port 5021)
+   - Parse JSON schemas to extract sensor configurations
+   - Auto-configure protocols (MQTT, HTTP, WebSocket, Modbus, OPC UA)
+   - Create ready-to-run simulator configurations
+
+**Tenant ID**: `00000000-0000-0000-0000-000000000001` (default)
+
+**What Gets Auto-Configured**:
+- ✅ Device name, ID, and description
+- ✅ Protocol detection from device type metadata
+- ✅ Sensors extracted from JSON Schema (field names, types, ranges, units)
+- ✅ Default protocol endpoints (MQTT broker, HTTP API, WebSocket URL)
+- ✅ Telemetry intervals (default: 5 seconds)
+- ✅ Device status (active devices are enabled by default)
+
+**Manual Review**: After auto-creation, review and adjust:
+- Protocol-specific settings (MQTT topics, HTTP headers, auth tokens)
+- Sensor value ranges and variance
+- Telemetry intervals for each device
+
+### Sending Telemetry Data
+
+Once configured, the simulator publishes to:
+- **MQTT Protocol**: Mosquitto broker on port 1883
+- **HTTP/REST Protocol**: Simulation.API on port 5200 (`/api/simulation/publish`)
+- **WebSocket Protocol**: Simulation.API on port 5200 (`/ws/simulation`)
+- **Modbus TCP**: Direct Modbus device simulation
+- **OPC UA**: Direct OPC UA server simulation
 
 Configure the simulator's protocol endpoints to match your platform deployment.
 

@@ -11,7 +11,7 @@ public class SchemaValidationServiceTests
 {
     private readonly Mock<ISchemaRepository> _mockRepository;
     private readonly SchemaValidationService _service;
-    private const string TestTenantId = "test-tenant-123";
+    private readonly Guid TestTenantId = Guid.NewGuid();
 
     public SchemaValidationServiceTests()
     {

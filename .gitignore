@@ -83,10 +83,21 @@ Thumbs.db
 .terraform/
 .terraform.lock.hcl
 
-# Environment files
+# Environment files & Secrets
 .env
 .env.local
 .env.*.local
+*.env
+!.env.example
+*.secret
+*.key
+*.pem
+*.pfx
+*.p12
+secrets/
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
 
 # IDE
 .vs/

@@ -21,6 +21,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<DeviceType> DeviceTypes { get; set; } = null!;
     public DbSet<DeviceTypeVersion> DeviceTypeVersions { get; set; } = null!;
     public DbSet<DeviceTypeAuditLog> DeviceTypeAuditLogs { get; set; } = null!;
+    public DbSet<FieldMapping> FieldMappings { get; set; } = null!;
 
     // Device Management
     public DbSet<Device> Devices { get; set; } = null!;
@@ -292,6 +293,126 @@ public class ApplicationDbContext : DbContext
 
             // Query filter for soft delete (only show active by default)
             entity.HasQueryFilter(e => e.IsActive);
+        });
+
+        // FieldMapping Configuration
+        modelBuilder.Entity<FieldMapping>(entity =>
+        {
+            entity.ToTable("field_mappings");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedOnAdd();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .IsRequired();
+
+            entity.Property(e => e.DeviceTypeId)
+                .HasColumnName("device_type_id")
+                .IsRequired();
+
+            entity.Property(e => e.FieldName)
+                .HasColumnName("field_name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.FieldSource)
+                .HasColumnName("field_source")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.FriendlyName)
+                .HasColumnName("friendly_name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.Description)
+                .HasColumnName("description")
+                .HasColumnType("text");
+
+            entity.Property(e => e.Unit)
+                .HasColumnName("unit")
+                .HasMaxLength(50);
+
+            entity.Property(e => e.DataType)
+                .HasColumnName("data_type")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.MinValue)
+                .HasColumnName("min_value");
+
+            entity.Property(e => e.MaxValue)
+                .HasColumnName("max_value");
+
+            entity.Property(e => e.IsQueryable)
+                .HasColumnName("is_queryable")
+                .HasDefaultValue(true);
+
+            entity.Property(e => e.IsVisible)
+                .HasColumnName("is_visible")
+                .HasDefaultValue(true);
+
+            entity.Property(e => e.DisplayOrder)
+                .HasColumnName("display_order")
+                .HasDefaultValue(0);
+
+            entity.Property(e => e.Category)
+                .HasColumnName("category")
+                .HasMaxLength(100);
+
+            entity.Property(e => e.Tags)
+                .HasColumnName("tags")
+                .HasColumnType("text[]");
+
+            entity.Property(e => e.DefaultAggregation)
+                .HasColumnName("default_aggregation")
+                .HasMaxLength(50);
+
+            entity.Property(e => e.SupportsAggregations)
+                .HasColumnName("supports_aggregations")
+                .HasColumnType("text[]");
+
+            entity.Property(e => e.FormatString)
+                .HasColumnName("format_string")
+                .HasMaxLength(100);
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            entity.Property(e => e.CreatedBy)
+                .HasColumnName("created_by")
+                .HasMaxLength(255);
+
+            // Indexes
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("ix_field_mappings_tenant");
+
+            entity.HasIndex(e => e.DeviceTypeId)
+                .HasDatabaseName("ix_field_mappings_device_type");
+
+            entity.HasIndex(e => new { e.DeviceTypeId, e.FieldName })
+                .HasDatabaseName("ix_field_mappings_device_type_field_name")
+                .IsUnique();
+
+            entity.HasIndex(e => e.IsQueryable)
+                .HasDatabaseName("ix_field_mappings_queryable");
+
+            // Foreign key relationship
+            entity.HasOne(e => e.DeviceType)
+                .WithMany()
+                .HasForeignKey(e => e.DeviceTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 
@@ -1165,9 +1286,35 @@ public class ApplicationDbContext : DbContext
                 .HasColumnName("updated_by")
                 .HasMaxLength(100);
 
+            entity.Property(e => e.Category)
+                .HasColumnName("category")
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .HasDefaultValue(AssetCategory.Equipment);
+
+            entity.Property(e => e.CadDrawingUrl)
+                .HasColumnName("cad_drawing_url")
+                .HasMaxLength(2000);
+
             // Location stored as PostGIS geography(point) in database, ignore in EF
             // Applications should query/update this using PostGIS functions directly
             entity.Ignore(e => e.Location);
+
+            // GeographicData and GeofenceData as owned types (stored as JSONB)
+            entity.OwnsOne(e => e.GeographicData, geo =>
+            {
+                geo.ToJson("geographic_data");
+                geo.Property(g => g.Country).HasMaxLength(100);
+                geo.Property(g => g.State).HasMaxLength(100);
+                geo.Property(g => g.Council).HasMaxLength(100);
+                geo.Property(g => g.City).HasMaxLength(100);
+                
+                geo.OwnsOne(g => g.Geofence, fence =>
+                {
+                    fence.Property(f => f.Type).HasMaxLength(50);
+                    fence.OwnsMany(f => f.Coordinates);
+                });
+            });
 
             // Self-referencing relationship
             entity.HasOne(e => e.Parent)

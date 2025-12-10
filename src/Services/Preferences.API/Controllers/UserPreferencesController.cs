@@ -30,7 +30,7 @@ public class UserPreferencesController : ControllerBase
     {
         // TODO: Get from JWT claims in production
         userId ??= "demo-user";
-        tenantId ??= "default";
+        tenantId ??= "00000000-0000-0000-0000-000000000001";
 
         var preference = await _repository.GetByUserIdAsync(userId, tenantId);
         
@@ -53,7 +53,7 @@ public class UserPreferencesController : ControllerBase
     {
         // TODO: Get from JWT claims in production
         userId ??= dto.UserId ?? "demo-user";
-        tenantId ??= "default";
+        tenantId ??= "00000000-0000-0000-0000-000000000001";
 
         var existing = await _repository.GetByUserIdAsync(userId, tenantId);
 
@@ -64,13 +64,15 @@ public class UserPreferencesController : ControllerBase
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                TenantId = tenantId,
+                TenantId = Guid.Parse(tenantId),
                 DisplayPreferences = JsonSerializer.Serialize(dto.Display),
                 NotificationPreferences = JsonSerializer.Serialize(dto.Notifications),
                 DashboardPreferences = JsonSerializer.Serialize(dto.Dashboard),
                 DataPreferences = JsonSerializer.Serialize(dto.Data),
                 Favorites = JsonSerializer.Serialize(dto.Favorites),
-                RecentlyViewed = JsonSerializer.Serialize(dto.RecentlyViewed)
+                RecentlyViewed = JsonSerializer.Serialize(dto.RecentlyViewed),
+                Bookmarks = JsonSerializer.Serialize(dto.Bookmarks),
+                PageHistory = JsonSerializer.Serialize(dto.PageHistory)
             };
 
             var created = await _repository.CreateAsync(newPreference);
@@ -85,6 +87,8 @@ public class UserPreferencesController : ControllerBase
             existing.DataPreferences = JsonSerializer.Serialize(dto.Data);
             existing.Favorites = JsonSerializer.Serialize(dto.Favorites);
             existing.RecentlyViewed = JsonSerializer.Serialize(dto.RecentlyViewed);
+            existing.Bookmarks = JsonSerializer.Serialize(dto.Bookmarks);
+            existing.PageHistory = JsonSerializer.Serialize(dto.PageHistory);
 
             var updated = await _repository.UpdateAsync(existing);
             return Ok(MapToDto(updated));
@@ -117,14 +121,33 @@ public class UserPreferencesController : ControllerBase
         return new UserPreferenceDto
         {
             UserId = preference.UserId,
-            Display = JsonSerializer.Deserialize<JsonElement>(preference.DisplayPreferences),
-            Notifications = JsonSerializer.Deserialize<JsonElement>(preference.NotificationPreferences),
-            Dashboard = JsonSerializer.Deserialize<JsonElement>(preference.DashboardPreferences),
-            Data = JsonSerializer.Deserialize<JsonElement>(preference.DataPreferences),
-            Favorites = JsonSerializer.Deserialize<JsonElement>(preference.Favorites),
-            RecentlyViewed = JsonSerializer.Deserialize<JsonElement>(preference.RecentlyViewed),
-            UpdatedAt = preference.UpdatedAt.ToString("O")
+            Display = DeserializeJsonOrDefault(preference.DisplayPreferences),
+            Notifications = DeserializeJsonOrDefault(preference.NotificationPreferences),
+            Dashboard = DeserializeJsonOrDefault(preference.DashboardPreferences),
+            Data = DeserializeJsonOrDefault(preference.DataPreferences),
+            Favorites = DeserializeJsonOrDefault(preference.Favorites),
+            RecentlyViewed = DeserializeJsonOrDefault(preference.RecentlyViewed),
+            Bookmarks = DeserializeJsonOrDefault(preference.Bookmarks),
+            PageHistory = DeserializeJsonOrDefault(preference.PageHistory),
+            UpdatedAt = preference.UpdatedAt?.ToString("O")
         };
+    }
+
+    private static JsonElement DeserializeJsonOrDefault(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return JsonSerializer.Deserialize<JsonElement>("{}");
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<JsonElement>(json);
+        }
+        catch
+        {
+            return JsonSerializer.Deserialize<JsonElement>("{}");
+        }
     }
 }
 
@@ -137,5 +160,7 @@ public record UserPreferenceDto
     public JsonElement Data { get; init; }
     public JsonElement Favorites { get; init; }
     public JsonElement RecentlyViewed { get; init; }
+    public JsonElement Bookmarks { get; init; }
+    public JsonElement PageHistory { get; init; }
     public string? UpdatedAt { get; init; }
 }

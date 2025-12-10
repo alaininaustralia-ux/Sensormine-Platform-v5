@@ -112,6 +112,25 @@ export {
   AlertStatus,
 } from './alerts';
 
+export {
+  publishTelemetry,
+  startSimulation,
+  stopSimulation,
+  quickStartSimulation,
+  getActiveSimulations,
+  getSimulationLogs,
+} from './simulation';
+
+export type {
+  SimulatedDevice,
+  SimulatedSensor,
+  PublishTelemetryRequest,
+  PublishTelemetryResponse,
+  SimulationLogEntry,
+  SimulationStartResponse,
+  SimulationStopResponse,
+} from './simulation';
+
 export { nexusConfigurationApi } from './nexusConfiguration';
 export type {
   NexusConfiguration,

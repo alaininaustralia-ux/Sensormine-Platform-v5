@@ -45,6 +45,24 @@ export interface DataPreferences {
   useMetricUnits: boolean;
 }
 
+// Bookmark item
+export interface BookmarkItem {
+  id: string;
+  title: string;
+  path: string;
+  icon?: string;
+  category?: string;
+  createdAt: string;
+}
+
+// Page visit history item
+export interface PageVisit {
+  path: string;
+  title: string;
+  visitedAt: string;
+  duration?: number; // seconds spent on page
+}
+
 // User preferences (stored per user)
 export interface UserPreferences {
   userId: string;
@@ -62,6 +80,8 @@ export interface UserPreferences {
     devices: string[];
     schemas: string[];
   };
+  bookmarks: BookmarkItem[];
+  pageHistory: PageVisit[];
   updatedAt: string;
 }
 
@@ -147,6 +167,8 @@ export const DEFAULT_USER_PREFERENCES: Omit<UserPreferences, 'userId' | 'updated
     devices: [],
     schemas: [],
   },
+  bookmarks: [],
+  pageHistory: [],
 };
 
 export const DEFAULT_SITE_CONFIGURATION: Omit<SiteConfiguration, 'updatedAt' | 'updatedBy'> = {

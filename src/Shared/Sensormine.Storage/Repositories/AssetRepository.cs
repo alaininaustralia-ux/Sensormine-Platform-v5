@@ -281,4 +281,42 @@ public class AssetRepository : IAssetRepository
 
         return states.ToDictionary(s => s.AssetId, s => s);
     }
+
+    public async Task<int> GetDeviceCountAsync(Guid assetId, string tenantId, CancellationToken cancellationToken = default)
+    {
+        var tenantGuid = Guid.Parse(tenantId);
+        
+        // Count distinct schema IDs mapped to this asset
+        // Each schema represents a device type/configuration
+        var count = await _context.DataPointMappings
+            .Where(m => m.AssetId == assetId && m.TenantId == tenantGuid)
+            .Select(m => m.SchemaId)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+        return count;
+    }
+
+    public async Task<Dictionary<Guid, int>> GetBulkDeviceCountsAsync(List<Guid> assetIds, string tenantId, CancellationToken cancellationToken = default)
+    {
+        var tenantGuid = Guid.Parse(tenantId);
+        
+        // Group by asset ID and count distinct schema IDs
+        var counts = await _context.DataPointMappings
+            .Where(m => assetIds.Contains(m.AssetId) && m.TenantId == tenantGuid)
+            .GroupBy(m => m.AssetId)
+            .Select(g => new { AssetId = g.Key, Count = g.Select(m => m.SchemaId).Distinct().Count() })
+            .ToDictionaryAsync(x => x.AssetId, x => x.Count, cancellationToken);
+
+        // Add zero counts for assets with no mappings
+        foreach (var assetId in assetIds)
+        {
+            if (!counts.ContainsKey(assetId))
+            {
+                counts[assetId] = 0;
+            }
+        }
+
+        return counts;
+    }
 }

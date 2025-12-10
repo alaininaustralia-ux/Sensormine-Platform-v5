@@ -26,6 +26,7 @@ export const serviceUrls = {
   preferences: process.env.NEXT_PUBLIC_PREFERENCES_API_URL || 'http://localhost:5296',
   dashboard: process.env.NEXT_PUBLIC_DASHBOARD_API_URL || 'http://localhost:5298',
   digitalTwin: process.env.NEXT_PUBLIC_DIGITAL_TWIN_API_URL || 'http://localhost:5297',
+  simulation: process.env.NEXT_PUBLIC_SIMULATION_API_URL || 'http://localhost:5200',
 } as const;
 
 export const endpoints = {

@@ -122,10 +122,9 @@ Host=localhost;Port=5452;Database=sensormine_timeseries;Username=sensormine;Pass
 
 ---
 
-#### PostgreSQL (Metadata Database)
-**Image**: `postgres:16`  
-**Container**: `sensormine-postgres`  
-**Port**: `5433` (mapped to internal 5432)
+#### PostgreSQL (Metadata Database - Also in TimescaleDB Container)
+**Container**: `sensormine-timescaledb` (same container as timeseries)  
+**Port**: `5452` (mapped to internal 5432)
 
 **Purpose**: Relational database for application metadata, configuration, and business data.
 
@@ -136,8 +135,10 @@ Host=localhost;Port=5452;Database=sensormine_timeseries;Username=sensormine;Pass
 
 **Connection String**: 
 ```
-Host=localhost;Port=5433;Database=sensormine_metadata;Username=sensormine;Password=sensormine123
+Host=localhost;Port=5452;Database=sensormine_metadata;Username=sensormine;Password=sensormine123
 ```
+
+**Note:** Both `sensormine_metadata` and `sensormine_timeseries` databases are in the TimescaleDB container. The separate PostgreSQL container on port 5433 is deprecated and not used.
 
 **Use Cases**:
 - User accounts and profiles
@@ -551,7 +552,7 @@ Create a `.env` file in the root directory:
 ```env
 # Databases
 TIMESCALE_CONNECTION=Host=localhost;Port=5452;Database=sensormine_timeseries;Username=sensormine;Password=sensormine123
-POSTGRES_CONNECTION=Host=localhost;Port=5433;Database=sensormine_metadata;Username=sensormine;Password=sensormine123
+METADATA_CONNECTION=Host=localhost;Port=5452;Database=sensormine_metadata;Username=sensormine;Password=sensormine123
 
 # Messaging
 KAFKA_BOOTSTRAP_SERVERS=localhost:9092

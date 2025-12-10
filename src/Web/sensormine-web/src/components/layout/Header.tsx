@@ -19,6 +19,8 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/lib/auth';
 import { Bell, Search, HelpCircle } from 'lucide-react';
+import { Breadcrumbs } from './Breadcrumbs';
+import { BookmarkButton } from './BookmarkButton';
 
 interface HeaderProps {
   onHelpClick?: () => void;
@@ -60,9 +62,9 @@ export function Header({ onHelpClick }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 border-b bg-white/80 backdrop-blur">
       <div className="flex h-16 items-center justify-between px-6 lg:px-8">
-        {/* Left side - Page title will go here, managed by pages */}
+        {/* Left side - Breadcrumbs */}
         <div className="flex-1">
-          {/* Spacer */}
+          <Breadcrumbs />
         </div>
 
         {/* Right side - Actions and user menu */}
@@ -71,6 +73,9 @@ export function Header({ onHelpClick }: HeaderProps) {
           <Button variant="ghost" size="icon" className="relative">
             <Search className="h-5 w-5" />
           </Button>
+
+          {/* Bookmark current page */}
+          <BookmarkButton />
 
           {/* Help */}
           <Button 

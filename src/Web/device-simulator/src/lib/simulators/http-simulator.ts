@@ -80,7 +80,7 @@ export class HttpSimulator extends BaseProtocolSimulator {
  */
 export function getDefaultHttpConfig(): HttpConfig {
   return {
-    endpoint: 'http://localhost:5000/api/v1/telemetry',
+    endpoint: 'http://localhost:5200/api/simulation/publish',
     method: 'POST',
     headers: {},
     authType: 'none',

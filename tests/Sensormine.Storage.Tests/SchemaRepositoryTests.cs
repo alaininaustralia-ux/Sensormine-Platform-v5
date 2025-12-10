@@ -10,8 +10,8 @@ public class SchemaRepositoryTests : IDisposable
 {
     private readonly ApplicationDbContext _context;
     private readonly SchemaRepository _repository;
-    private const string TestTenantId = "test-tenant-123";
-    private const string OtherTenantId = "other-tenant-456";
+    private readonly Guid TestTenantId = Guid.NewGuid();
+    private readonly Guid OtherTenantId = Guid.NewGuid();
 
     public SchemaRepositoryTests()
     {

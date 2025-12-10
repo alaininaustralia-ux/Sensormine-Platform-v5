@@ -30,7 +30,15 @@ public class SiteConfigurationController : ControllerBase
         
         if (config == null)
         {
-            return NotFound(new { message = "Site configuration not found" });
+            // Return default configuration if none exists
+            return Ok(new SiteConfigurationDto
+            {
+                Site = JsonSerializer.Deserialize<JsonElement>("{}"),
+                Features = JsonSerializer.Deserialize<JsonElement>("{}"),
+                Limits = JsonSerializer.Deserialize<JsonElement>("{}"),
+                Defaults = JsonSerializer.Deserialize<JsonElement>("{}"),
+                Integrations = JsonSerializer.Deserialize<JsonElement>("{}")
+            });
         }
 
         return Ok(MapToDto(config));
@@ -55,7 +63,7 @@ public class SiteConfigurationController : ControllerBase
             var newConfig = new SiteConfiguration
             {
                 Id = Guid.NewGuid(),
-                TenantId = "default",
+                TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
                 ConfigKey = "default",
                 SiteSettings = JsonSerializer.Serialize(dto.Site),
                 Features = JsonSerializer.Serialize(dto.Features),

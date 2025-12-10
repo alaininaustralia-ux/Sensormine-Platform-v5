@@ -2,6 +2,22 @@
 
 A cloud-agnostic industrial IoT platform built with C# .NET 8 microservices architecture for real-time data ingestion, processing, and analytics.
 
+---
+
+## 📚 Core Documentation (Start Here)
+
+**For AI Agents & Developers:**
+
+| Document | Purpose | When to Read |
+|----------|---------|--------------|
+| **[📌 LOCAL-DEVELOPMENT.md](docs/LOCAL-DEVELOPMENT.md)** | **Quick start, setup, troubleshooting** | Setting up local environment |
+| **[🏗️ APPLICATION.md](docs/APPLICATION.md)** | **Microservices, APIs, domain models** | Understanding application architecture |
+| **[🗄️ DATABASE.md](docs/DATABASE.md)** | **Database schema, queries, optimization** | Working with data layer |
+| **[🐳 INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md)** | **Containers, deployment, monitoring** | Infrastructure and DevOps |
+| **[⚡ DATABASE-QUICK-REFERENCE.md](docs/DATABASE-QUICK-REFERENCE.md)** | **Connection strings, common commands** | Quick database reference |
+
+---
+
 ## 🏗️ Architecture Overview
 
 ### Architectural Principles

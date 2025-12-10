@@ -135,7 +135,7 @@ export class WebSocketSimulator extends BaseProtocolSimulator {
  */
 export function getDefaultWebSocketConfig(): WebSocketConfig {
   return {
-    url: 'ws://localhost:5000/ws/telemetry',
+    url: 'ws://localhost:5200/ws/simulation',
     reconnectInterval: 5000,
     heartbeatInterval: 30000,
   };

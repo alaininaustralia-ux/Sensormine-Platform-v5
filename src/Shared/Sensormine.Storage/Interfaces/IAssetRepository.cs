@@ -33,4 +33,8 @@ public interface IAssetRepository
     Task<AssetState?> GetStateAsync(Guid assetId, string tenantId, CancellationToken cancellationToken = default);
     Task UpdateStateAsync(AssetState state, CancellationToken cancellationToken = default);
     Task<Dictionary<Guid, AssetState>> GetBulkStatesAsync(List<Guid> assetIds, string tenantId, CancellationToken cancellationToken = default);
+    
+    // Device count
+    Task<int> GetDeviceCountAsync(Guid assetId, string tenantId, CancellationToken cancellationToken = default);
+    Task<Dictionary<Guid, int>> GetBulkDeviceCountsAsync(List<Guid> assetIds, string tenantId, CancellationToken cancellationToken = default);
 }

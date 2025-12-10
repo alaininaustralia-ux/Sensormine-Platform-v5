@@ -312,6 +312,96 @@ Dashboard Widgets (React components)
 
 ---
 
+### ⭐ Bookmarks and Navigation History (NEW - Dec 9, 2025)
+**Locations**: Header (bookmark button), Sidebar (bookmarks section), Homepage (bookmarks & recent pages)
+
+**Purpose**: Provide users with personalized navigation through bookmarking and automatic page visit tracking.
+
+**Features**:
+
+1. **Bookmark Button** (Header):
+   - Located between Help and Notifications icons
+   - Click to bookmark/unbookmark current page
+   - Filled yellow star icon when page is bookmarked
+   - Hidden on home, login, and register pages
+
+2. **Bookmarks Section** (Sidebar):
+   - Collapsible section below main navigation
+   - Shows all bookmarked pages with icons
+   - Active page highlighted
+   - Updates automatically when bookmarks change
+
+3. **Personalized Homepage** (`/`):
+   - Shows for authenticated users only
+   - **Bookmarks Section**: Grid of bookmarked pages with quick access
+   - **Recently Visited Section**: Grid of recent pages with time-ago indicators
+   - **Quick Actions**: Quick access to main features
+
+4. **Navigation Tracking** (Automatic):
+   - Tracks all page visits automatically
+   - Stores up to 10 most recent pages
+   - Excludes login pages and homepage
+   - Updates on every navigation
+
+**Storage**:
+- Browser localStorage (per-browser, not synced)
+- Keys: `sensormine_bookmarks`, `sensormine_recent_pages`
+- JSON format with id, title, href, icon, timestamp
+
+**Components**:
+- `BookmarkButton.tsx` - Header bookmark toggle button
+- `Sidebar.tsx` - Enhanced with bookmarks section
+- `page.tsx` (Home) - Personalized homepage with bookmarks and recent pages
+
+**Utilities**: `lib/bookmarks.ts`
+- `getBookmarks()`, `addBookmark()`, `removeBookmark()`, `isBookmarked()`, `toggleBookmark()`
+- `getRecentPages()`, `addRecentPage()`, `clearRecentPages()`
+- `getPageMetadata(pathname)` - Returns title and icon for any path
+
+**Hooks**: `hooks/useNavigationTracking.ts`
+- Automatically tracks page visits
+- Integrated in `AppLayout` component
+- Excludes public pages
+
+**Example Usage**:
+```typescript
+// Add/remove bookmark manually
+import { toggleBookmark, getPageMetadata } from '@/lib/bookmarks';
+
+const handleBookmark = () => {
+  const metadata = getPageMetadata(pathname);
+  toggleBookmark({ title: metadata.title, href: pathname, icon: metadata.icon });
+};
+
+// Check if page is bookmarked
+import { isBookmarked } from '@/lib/bookmarks';
+const bookmarked = isBookmarked('/dashboard');
+
+// Get all bookmarks
+import { getBookmarks } from '@/lib/bookmarks';
+const bookmarks = getBookmarks();
+```
+
+**Page Metadata Mapping**:
+| Path | Title | Icon |
+|------|-------|------|
+| `/dashboard` | Dashboard | LayoutDashboard |
+| `/devices` | Devices | Cpu |
+| `/alerts` | Alerts | Bell |
+| `/charts` | Charts | LineChart |
+| `/settings/*` | Various | Settings |
+
+**Future Enhancements**:
+- Backend sync for cross-device bookmarks
+- Bookmark folders and tags
+- Search within bookmarks
+- Most visited pages analytics
+- Bookmark sharing with team members
+
+**Documentation**: See `/docs/bookmarks-and-navigation.md` for complete feature documentation.
+
+---
+
 ## Technology Stack Details
 
 ### Core Framework
