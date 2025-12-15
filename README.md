@@ -15,6 +15,8 @@ A cloud-agnostic industrial IoT platform built with C# .NET 8 microservices arch
 | **[🗄️ DATABASE.md](docs/DATABASE.md)** | **Database schema, queries, optimization** | Working with data layer |
 | **[🐳 INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md)** | **Containers, deployment, monitoring** | Infrastructure and DevOps |
 | **[⚡ DATABASE-QUICK-REFERENCE.md](docs/DATABASE-QUICK-REFERENCE.md)** | **Connection strings, common commands** | Quick database reference |
+| **[🎨 custom-widget-system-complete.md](docs/custom-widget-system-complete.md)** | **Custom widget development guide** | Building custom dashboard widgets |
+| **[⚡ custom-widget-quick-start.md](docs/custom-widget-quick-start.md)** | **10-minute widget tutorial** | Quick widget development start |
 
 ---
 
@@ -47,6 +49,62 @@ A cloud-agnostic industrial IoT platform built with C# .NET 8 microservices arch
 | **Container Orchestration** | Kubernetes + Helm |
 | **IaC** | Terraform |
 | **Observability** | Prometheus, Grafana, OpenTelemetry, Jaeger |
+
+---
+
+## ✨ Key Features
+
+### 🎨 Custom Widget System (NEW!)
+**Developers can now build and upload custom dashboard widgets!**
+
+- **Widget SDK**: TypeScript/React SDK (`@sensormine/widget-sdk`)
+- **Secure Execution**: Iframe isolation with sandboxed API access
+- **API Access**: Query telemetry data and device information
+- **Configuration**: Dynamic widget configuration forms
+- **Gallery**: Browse, upload, and manage custom widgets
+- **Documentation**: Complete guides at [`docs/custom-widget-system-complete.md`](docs/custom-widget-system-complete.md)
+
+**Quick Start**: See [`docs/custom-widget-quick-start.md`](docs/custom-widget-quick-start.md) for 10-minute tutorial
+
+**Access**: 
+- Widget Gallery: http://localhost:3020/widgets
+- Upload: http://localhost:3020/widgets/upload
+- Developer Help: http://localhost:3020/help/developer
+
+### 📊 Dashboard & Visualization
+- Drag-and-drop dashboard builder with 12-column grid
+- 10+ built-in widget types (charts, gauges, KPIs, maps, etc.)
+- Real-time data updates with SignalR
+- Custom widget support with iframe isolation
+- CAD 3D viewer with sensor overlays
+- Video player with analytics metadata
+
+### 🏗️ Digital Twin & Asset Management
+- Hierarchical asset structure (site → building → floor → equipment)
+- Device-to-asset mappings with aggregation rules
+- Real-time asset health monitoring
+- Parent-child relationships with materialized paths
+
+### 🔔 Alerting & Notifications
+- Threshold-based alert rules
+- Multi-channel notifications (email, SMS, webhook)
+- Alert acknowledgment and resolution tracking
+- Background alert evaluation service (30s intervals)
+- Alert statistics and trending
+
+### 📱 Multi-Platform Support
+- **Web**: React/Next.js progressive web app
+- **Mobile**: .NET MAUI (iOS/Android) with NFC support
+- **Edge**: MQTT/OPC UA gateway for industrial protocols
+
+### 🔒 Security & Multi-Tenancy
+- Row-level security (RLS) in PostgreSQL
+- JWT-based authentication
+- Role-based access control (RBAC)
+- Tenant isolation at database level
+- API key management for devices
+
+---
 
 ## 📁 Project Structure
 

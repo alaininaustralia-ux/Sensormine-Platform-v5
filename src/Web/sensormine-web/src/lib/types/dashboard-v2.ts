@@ -14,7 +14,8 @@ export type WidgetType =
   | 'map'
   | 'digital-twin-tree'
   | 'cad-3d-viewer'
-  | 'video-player';
+  | 'video-player'
+  | 'custom';
 
 export type ChartType = 'line' | 'bar' | 'area' | 'scatter' | 'step';
 

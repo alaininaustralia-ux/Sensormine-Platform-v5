@@ -17,6 +17,7 @@ import { GaugeWidgetConfig } from './config/GaugeWidgetConfig';
 import { MapWidgetConfig } from './config/MapWidgetConfig';
 import { CAD3DViewerWidgetConfig } from './builder/widget-configs/cad-3d-viewer-widget-config';
 import { VideoPlayerConfig } from './config/VideoPlayerConfig';
+import { CustomWidgetConfig } from './config/CustomWidgetConfig';
 
 interface ConfigurationPanelProps {
   widgetId: string;
@@ -170,8 +171,12 @@ export function ConfigurationPanel({ widgetId, onClose, selectedElementId, selec
           <VideoPlayerConfig widget={widget} onChange={handleConfigChange} />
         )}
 
+        {widget.type === 'custom' && (
+          <CustomWidgetConfig widget={widget} onChange={handleConfigChange} />
+        )}
+
         {/* Default for unsupported widget types */}
-        {!['device-list', 'timeseries-chart', 'kpi-card', 'gauge', 'map', 'cad-3d-viewer', 'video-player'].includes(widget.type) && (
+        {!['device-list', 'timeseries-chart', 'kpi-card', 'gauge', 'map', 'cad-3d-viewer', 'video-player', 'custom'].includes(widget.type) && (
           <div className="text-center text-muted-foreground p-8">
             <p className="mb-2">Configuration not yet implemented for this widget type.</p>
             <p className="text-sm">Widget type: <code className="bg-muted px-2 py-1 rounded">{widget.type}</code></p>

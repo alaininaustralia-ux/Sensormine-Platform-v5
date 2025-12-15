@@ -1,8 +1,19 @@
 # Sensormine Web Application - Developer Documentation
 
 **Project**: Sensormine Platform v5 - Frontend Web Application  
-**Framework**: Next.js 14 (App Router) + React 19 + TypeScript 5  
-**Last Updated**: 2025-12-07
+**Framework**: Next.js 16 (App Router) + React 19 + TypeScript 5  
+**Last Updated**: 2025-12-15
+
+## 🚀 What's New
+
+### Custom Widget System (December 2025)
+Developers can now build and upload custom dashboard widgets!
+
+- **Widget SDK**: `@sensormine/widget-sdk` npm package
+- **Upload**: Drag-drop ZIP files in Widget Gallery
+- **Integration**: Add custom widgets to dashboards
+- **API Access**: Query telemetry and device data
+- **Documentation**: See `/help/developer` for complete guide
 
 ---
 

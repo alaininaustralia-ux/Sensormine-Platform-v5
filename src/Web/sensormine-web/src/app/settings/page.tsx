@@ -76,6 +76,12 @@ const settingsCategories = [
     icon: Package,
     href: '/settings/solution-kits',
   },
+  {
+    title: 'Widget Configuration',
+    description: 'Manage custom widgets, upload new widgets, and configure widget gallery',
+    icon: Settings2,
+    href: '/widgets',
+  },
 ];
 
 export default function SettingsPage() {

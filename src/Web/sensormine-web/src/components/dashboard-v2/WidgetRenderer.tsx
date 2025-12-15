@@ -12,6 +12,7 @@ import { MapWidget } from './widgets/MapWidget';
 import { DigitalTwinTreeWidget } from './widgets/DigitalTwinTreeWidget';
 import { CAD3DViewerWidget } from './widgets/cad-3d-viewer-widget';
 import { VideoPlayerWidget } from './widgets/VideoPlayerWidget';
+import { WidgetLoader } from '@/components/widgets/WidgetLoader';
 
 interface WidgetRendererProps {
   widget: Widget;
@@ -24,13 +25,13 @@ export function WidgetRenderer({ widget, mode, onElementSelected }: WidgetRender
   // Check both deviceTypeId (for device-type based widgets) and deviceIds (for specific device widgets)
   // For CAD 3D Viewer, check if modelUrl is configured
   // For Map widget, it's always configured (can show all devices)
-  // For Video Player, check if videoUrl is configured
+  // For Video Player, check if videoUrl or deviceId is configured
   const isConfigured = widget.type === 'cad-3d-viewer' 
     ? !!(widget.config as any)?.modelUrl
     : widget.type === 'map'
     ? true // Map widget can show all devices with GPS, so it's always configured
     : widget.type === 'video-player'
-    ? !!(widget.config as any)?.videoUrl
+    ? !!((widget.config as any)?.videoUrl || (widget.config as any)?.deviceId)
     : widget.dataSource.deviceTypeId || 
       (widget.dataSource.deviceIds && widget.dataSource.deviceIds.length > 0);
   
@@ -82,6 +83,28 @@ export function WidgetRenderer({ widget, mode, onElementSelected }: WidgetRender
     
     case 'video-player':
       return <VideoPlayerWidget widget={widget} mode={mode} />;
+    
+    case 'custom':
+      return (
+        <WidgetLoader
+          widgetId={(widget.config as any)?.customWidgetId}
+          widgetUrl={`/api/widgets/${(widget.config as any)?.customWidgetId}/download`}
+          config={(widget.config as any)?.customWidgetConfig || {}}
+          size={{
+            width: widget.position.w,
+            height: widget.position.h,
+          }}
+          context={{
+            instanceId: widget.id,
+            tenantId: 'current', // Will be set by WidgetLoader from headers
+            config: (widget.config as any)?.customWidgetConfig || {},
+            size: {
+              width: widget.position.w,
+              height: widget.position.h,
+            },
+          }}
+        />
+      );
     
     default:
       return (

@@ -1,0 +1,27 @@
+{
+  "name": "@sensormine/widget-sdk",
+  "version": "1.0.0",
+  "description": "SDK for building custom Sensormine dashboard widgets",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "sensormine",
+    "widget",
+    "dashboard",
+    "sdk"
+  ],
+  "author": "Sensormine",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

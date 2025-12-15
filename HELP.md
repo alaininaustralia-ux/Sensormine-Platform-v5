@@ -5,12 +5,22 @@
 ### Documentation Files
 - **README.md** - Project overview and getting started
 - **.agent/current-state.md** - Current development status and completed work
-- **docs/architecture.md** - System architecture and design patterns
-- **docs/device-type-architecture.md** - Device Type-centric architecture guide
-- **docs/user-stories.md** - Feature requirements (122 stories, ~1,520 points)
+- **docs/APPLICATION.md** - Microservices architecture and API reference
+- **docs/DATABASE.md** - Database schema, tables, and queries
+- **docs/INFRASTRUCTURE.md** - Container setup and deployment
+- **docs/LOCAL-DEVELOPMENT.md** - Development environment setup
+- **docs/custom-widget-system-complete.md** - Complete custom widget guide
+- **docs/custom-widget-quick-start.md** - 10-minute widget tutorial
+- **docs/device-type-architecture.md** - Device Type-centric architecture
+- **docs/user-stories.md** - Feature requirements (122 stories)
 - **docs/technology-stack.md** - Technology choices and rationale
-- **docs/local-infrastructure.md** - Docker container setup and troubleshooting
-- **docs/development.md** - Development workflow and best practices
+
+### Developer Resources
+- **Widget Development**: http://localhost:3020/help/developer#widgets
+- **API Reference**: http://localhost:3020/help/developer#api
+- **How-To Guides**: http://localhost:3020/help/developer#guides
+- **Widget Gallery**: http://localhost:3020/widgets
+- **Widget Upload**: http://localhost:3020/widgets/upload
 
 ---
 

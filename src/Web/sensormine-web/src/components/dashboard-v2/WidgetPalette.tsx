@@ -99,8 +99,50 @@ const widgetTypes: WidgetPaletteItem[] = [
   },
 ];
 
+interface CustomWidget {
+  id: string;
+  name: string;
+  description: string;
+  icon?: string;
+  version: string;
+  manifest: {
+    id: string;
+    name: string;
+    version: string;
+    description: string;
+    size?: {
+      defaultWidth: number;
+      defaultHeight: number;
+      minWidth?: number;
+      minHeight?: number;
+    };
+  };
+}
+
 export function WidgetPalette() {
   const { addWidget, currentDashboard, widgetPaletteVisible, toggleWidgetPalette } = useDashboardV2Store();
+  const [customWidgets, setCustomWidgets] = useState<CustomWidget[]>([]);
+  const [loadingCustom, setLoadingCustom] = useState(false);
+
+  // Load custom widgets on mount
+  useEffect(() => {
+    loadCustomWidgets();
+  }, []);
+
+  const loadCustomWidgets = async () => {
+    setLoadingCustom(true);
+    try {
+      const response = await fetch('/api/widgets?limit=20&status=published');
+      if (response.ok) {
+        const data = await response.json();
+        setCustomWidgets(data.items || []);
+      }
+    } catch (error) {
+      console.error('Failed to load custom widgets:', error);
+    } finally {
+      setLoadingCustom(false);
+    }
+  };
 
   const handleAddWidget = (item: WidgetPaletteItem) => {
     const widgets = currentDashboard?.widgets || [];
@@ -148,6 +190,56 @@ export function WidgetPalette() {
     });
   };
 
+  const handleAddCustomWidget = (widget: CustomWidget) => {
+    const widgets = currentDashboard?.widgets || [];
+    const maxY = Math.max(...widgets.map(w => w.position.y + w.position.h), 0);
+
+    // Use size from manifest or defaults
+    const defaultWidth = widget.manifest.size?.defaultWidth || 4;
+    const defaultHeight = widget.manifest.size?.defaultHeight || 4;
+    const minWidth = widget.manifest.size?.minWidth || 2;
+    const minHeight = widget.manifest.size?.minHeight || 3;
+
+    console.log(`[WidgetPalette] Adding custom widget ${widget.name} with size: ${defaultWidth}x${defaultHeight}`);
+
+    addWidget({
+      type: 'custom' as WidgetType,
+      title: widget.name,
+      config: {
+        showTitle: true,
+        customWidgetId: widget.id,
+        customWidgetConfig: {},
+      },
+      dataSource: {
+        type: 'device-type',
+        fieldMappings: [],
+        aggregation: {
+          function: 'avg',
+        },
+        timeRange: {
+          type: 'relative',
+          relative: '24h',
+        },
+      },
+      appearance: {},
+      behavior: {
+        refreshInterval: '1m',
+        autoRefresh: true,
+        subscriptions: [],
+        links: [],
+      },
+      position: {
+        i: '',
+        x: 0,
+        y: maxY,
+        w: defaultWidth,
+        h: defaultHeight,
+        minW: minWidth,
+        minH: minHeight,
+      },
+    });
+  };
+
   return (
     <div className="relative h-full flex">
       {/* Palette Content */}
@@ -156,26 +248,69 @@ export function WidgetPalette() {
           widgetPaletteVisible ? 'w-64' : 'w-0'
         } overflow-hidden`}
       >
-        <div className="w-64 p-4">
+        <div className="w-64 p-4 h-full overflow-y-auto">
           <h3 className="font-semibold mb-4">Widget Palette</h3>
-          <div className="space-y-2">
-            {widgetTypes.map((item) => (
-              <Card
-                key={item.type}
-                className="p-3 cursor-pointer hover:bg-accent transition-colors"
-                onClick={() => handleAddWidget(item)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="shrink-0 text-primary">
-                    {item.icon}
+          
+          {/* Built-in Widgets */}
+          <div className="mb-6">
+            <h4 className="text-sm font-medium text-muted-foreground mb-2">Built-in Widgets</h4>
+            <div className="space-y-2">
+              {widgetTypes.map((item) => (
+                <Card
+                  key={item.type}
+                  className="p-3 cursor-pointer hover:bg-accent transition-colors"
+                  onClick={() => handleAddWidget(item)}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="shrink-0 text-primary">
+                      {item.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm">{item.name}</div>
+                      <div className="text-xs text-muted-foreground">{item.description}</div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{item.name}</div>
-                    <div className="text-xs text-muted-foreground">{item.description}</div>
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom Widgets */}
+          <div>
+            <h4 className="text-sm font-medium text-muted-foreground mb-2">Custom Widgets</h4>
+            {loadingCustom ? (
+              <div className="text-xs text-muted-foreground p-3">Loading...</div>
+            ) : customWidgets.length === 0 ? (
+              <div className="text-xs text-muted-foreground p-3">
+                No custom widgets installed. Visit the{' '}
+                <a href="/widgets" className="text-primary underline">Widget Gallery</a> to browse.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {customWidgets.map((widget) => (
+                  <Card
+                    key={widget.id}
+                    className="p-3 cursor-pointer hover:bg-accent transition-colors"
+                    onClick={() => handleAddCustomWidget(widget)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="shrink-0 text-primary">
+                        {widget.icon ? (
+                          <span className="text-lg">{widget.icon}</span>
+                        ) : (
+                          <Box className="h-5 w-5" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">{widget.name}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-2">{widget.description}</div>
+                        <div className="text-xs text-muted-foreground mt-1">v{widget.version}</div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
