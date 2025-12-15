@@ -116,6 +116,7 @@ public class FieldMappingService : IFieldMappingService
                     FriendlyName = customField.Label ?? customField.Name,
                     Description = customField.HelpText,
                     DataType = MapCustomFieldType(customField.Type.ToString()),
+                    JsonPath = $"$.{customField.Name}", // CustomField stored in JSONB root
                     IsQueryable = true,
                     IsVisible = customField.Required,
                     DisplayOrder = displayOrder++,
@@ -183,6 +184,7 @@ public class FieldMappingService : IFieldMappingService
                 existing.FriendlyName = update.FriendlyName;
                 existing.Description = update.Description;
                 existing.Unit = update.Unit;
+                existing.JsonPath = update.JsonPath;
                 existing.IsVisible = update.IsVisible;
                 existing.IsQueryable = update.IsQueryable;
                 existing.DisplayOrder = update.DisplayOrder;
@@ -213,6 +215,7 @@ public class FieldMappingService : IFieldMappingService
                 Description = "Device battery level percentage",
                 Unit = "%",
                 DataType = FieldDataType.Number,
+                JsonPath = null, // System field - stored as direct column, not in JSONB
                 MinValue = 0,
                 MaxValue = 100,
                 IsQueryable = true,
@@ -229,6 +232,7 @@ public class FieldMappingService : IFieldMappingService
                 Description = "Device signal strength",
                 Unit = "dBm",
                 DataType = FieldDataType.Number,
+                JsonPath = null, // System field - stored as direct column, not in JSONB
                 MinValue = -120,
                 MaxValue = 0,
                 IsQueryable = true,
@@ -317,6 +321,7 @@ public class FieldMappingService : IFieldMappingService
                         FieldSource = FieldSource.Schema,
                         FriendlyName = TitleCase(fieldName),
                         DataType = MapJsonSchemaType(fieldDef),
+                        JsonPath = $"$.{fieldName}", // Schema field stored in JSONB root
                         IsQueryable = true,
                         IsVisible = true,
                         Category = "Telemetry"
@@ -363,6 +368,7 @@ public class FieldMappingService : IFieldMappingService
                         FieldSource = FieldSource.Schema,
                         FriendlyName = TitleCase(fieldName),
                         DataType = MapAvroType(fieldType),
+                        JsonPath = $"$.{fieldName}", // Schema field stored in JSONB root
                         IsQueryable = true,
                         IsVisible = true,
                         Category = "Telemetry"

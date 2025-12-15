@@ -4,8 +4,17 @@
  * API functions for managing device type field mappings
  */
 
-import { apiClient } from './client';
+import { ApiClient } from './client';
+import { serviceUrls, apiConfig } from './config';
 import type { FieldMapping, FieldMappingRequest, BulkUpdateFieldMappingsRequest } from './types';
+
+// Create dedicated client for Device.API
+export const deviceApiClient = new ApiClient(serviceUrls.device, apiConfig.timeout);
+
+// Set default tenant ID for development/testing
+// In production, this should be set by AuthProvider after login
+const DEFAULT_TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '00000000-0000-0000-0000-000000000001';
+deviceApiClient.setTenantId(DEFAULT_TENANT_ID);
 
 const BASE_URL = '/api/devicetype';
 
@@ -13,7 +22,7 @@ const BASE_URL = '/api/devicetype';
  * Get field mappings for a device type
  */
 export async function getFieldMappings(deviceTypeId: string): Promise<FieldMapping[]> {
-  const response = await apiClient.get<FieldMapping[]>(
+  const response = await deviceApiClient.get<FieldMapping[]>(
     `${BASE_URL}/${deviceTypeId}/fields`
   );
   return response.data;
@@ -26,7 +35,7 @@ export async function updateFieldMappings(
   deviceTypeId: string,
   request: BulkUpdateFieldMappingsRequest
 ): Promise<FieldMapping[]> {
-  const response = await apiClient.put<FieldMapping[]>(
+  const response = await deviceApiClient.put<FieldMapping[]>(
     `${BASE_URL}/${deviceTypeId}/fields`,
     request
   );
@@ -37,7 +46,7 @@ export async function updateFieldMappings(
  * Synchronize field mappings after schema or device type changes
  */
 export async function synchronizeFieldMappings(deviceTypeId: string): Promise<FieldMapping[]> {
-  const response = await apiClient.post<FieldMapping[]>(
+  const response = await deviceApiClient.post<FieldMapping[]>(
     `${BASE_URL}/${deviceTypeId}/fields/sync`
   );
   return response.data;

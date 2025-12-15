@@ -27,7 +27,7 @@ public partial class TimeSeriesQueryBuilder
     {
         parameters = new Dictionary<string, object>
         {
-            ["@tenantId"] = tenantId,
+            ["@tenantId"] = Guid.Parse(tenantId), // Parse string to Guid for proper UUID parameter type
             ["@startTime"] = query.StartTime,
             ["@endTime"] = query.EndTime
         };
@@ -62,7 +62,7 @@ WHERE tenant_id = @tenantId::uuid
                 // Handle special filter cases
                 if (filter.Key.Equals("deviceId", StringComparison.OrdinalIgnoreCase))
                 {
-                    sql += $"\n    AND device_id = {paramName}";
+                    sql += $"\n    AND device_id = {paramName}::uuid";
                 }
                 else if (filter.Key.Equals("deviceType", StringComparison.OrdinalIgnoreCase))
                 {
@@ -183,14 +183,27 @@ WHERE tenant_id = @tenantId::uuid
                 
                 if (filter.Key.Equals("deviceId", StringComparison.OrdinalIgnoreCase))
                 {
-                    sql += $"\n    AND device_id = {paramName}";
+                    sql += $"\n    AND device_id = {paramName}::uuid";
+                    // Parse string to Guid for proper UUID parameter type
+                    if (filter.Value is string strValue && Guid.TryParse(strValue, out var guidValue))
+                    {
+                        parameters[paramName] = guidValue;
+                    }
+                    else
+                    {
+                        parameters[paramName] = filter.Value;
+                    }
                 }
                 else if (filter.Key.Equals("deviceType", StringComparison.OrdinalIgnoreCase))
                 {
                     sql += $"\n    AND device_type = {paramName}";
+                    parameters[paramName] = filter.Value;
+                }
+                else
+                {
+                    parameters[paramName] = filter.Value;
                 }
                 
-                parameters[paramName] = filter.Value;
                 filterIndex++;
             }
         }

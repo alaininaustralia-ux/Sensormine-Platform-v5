@@ -28,7 +28,12 @@ var pooledConnectionString = new NpgsqlConnectionStringBuilder(connectionString)
     ConnectionPruningInterval = 10
 }.ToString();
 
-builder.Services.AddScoped<IDbConnection>(sp => new NpgsqlConnection(pooledConnectionString));
+// Configure Npgsql data source with dynamic JSON support
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(pooledConnectionString);
+dataSourceBuilder.EnableDynamicJson(); // Required for Dictionary<string, object> to JSONB serialization
+var dataSource = dataSourceBuilder.Build();
+
+builder.Services.AddScoped<IDbConnection>(sp => dataSource.CreateConnection());
 builder.Services.AddScoped<ITimeSeriesRepository>(sp =>
 {
     var connection = sp.GetRequiredService<IDbConnection>();

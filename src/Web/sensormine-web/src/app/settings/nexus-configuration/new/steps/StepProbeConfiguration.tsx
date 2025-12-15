@@ -4,6 +4,7 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,42 +22,77 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Plus, Trash2, Radio } from 'lucide-react';
-import type { CreateNexusConfigurationRequest, ProbeConfig } from '@/lib/api';
+import { Plus, Trash2, Radio, Loader2, Info } from 'lucide-react';
+import { nexusConfigurationApi } from '@/lib/api';
+import type { 
+  CreateNexusConfigurationRequest, 
+  ProbeConfig,
+  ProbeTypeInfo,
+  SensorTypeInfo,
+} from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 interface StepProbeConfigurationProps {
   formData: Partial<CreateNexusConfigurationRequest>;
   updateFormData: (data: Partial<CreateNexusConfigurationRequest>) => void;
 }
 
-const PROBE_TYPES = ['RS485', 'RS232', 'OneWire', 'Analog420mA', 'Digital'];
-const SENSOR_TYPES = [
-  'Temperature',
-  'Humidity',
-  'Pressure',
-  'Flow',
-  'Level',
-  'Vibration',
-  'Voltage',
-  'Current',
-  'Power',
-  'Speed',
-  'Position',
-  'pH',
-  'CO2',
-  'Light',
-];
-
 export function StepProbeConfiguration({ formData, updateFormData }: StepProbeConfigurationProps) {
+  const { toast } = useToast();
+  const [probeTypes, setProbeTypes] = useState<ProbeTypeInfo[]>([]);
+  const [sensorTypes, setSensorTypes] = useState<SensorTypeInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProbeType, setSelectedProbeType] = useState<string>('');
+
   const probes = formData.probeConfigurations || [];
 
+  // Load probe types and sensor types from API
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [probeTypesData, sensorTypesData] = await Promise.all([
+          nexusConfigurationApi.getProbeTypes(),
+          nexusConfigurationApi.getSensorTypes(),
+        ]);
+        setProbeTypes(probeTypesData);
+        setSensorTypes(sensorTypesData);
+      } catch (error) {
+        console.error('Error loading probe/sensor types:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load probe and sensor types. Using defaults.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [toast]);
+
+  // Load sensor types filtered by probe type
+  const loadSensorTypesForProbe = async (probeType: string) => {
+    try {
+      const filteredSensors = await nexusConfigurationApi.getSensorTypes(probeType);
+      setSensorTypes(filteredSensors);
+      setSelectedProbeType(probeType);
+    } catch (error) {
+      console.error('Error loading sensor types:', error);
+    }
+  };
+
   const addProbe = () => {
+    const defaultProbeType = probeTypes[0]?.type || 'RS485';
+    const defaultSensorType = sensorTypes[0]?.type || 'Temperature';
+    const defaultUnit = sensorTypes.find(s => s.type === defaultSensorType)?.defaultUnit || '°C';
+    
     const newProbe: ProbeConfig = {
       probeId: `probe_${Date.now()}`,
       probeName: `Probe ${probes.length + 1}`,
-      probeType: 'RS485',
-      sensorType: 'Temperature',
-      unit: '°C',
+      probeType: defaultProbeType as ProbeConfig['probeType'],
+      sensorType: defaultSensorType,
+      unit: defaultUnit,
       protocolSettings: {},
       samplingIntervalSeconds: 60,
     };
@@ -136,20 +172,33 @@ export function StepProbeConfiguration({ formData, updateFormData }: StepProbeCo
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Probe Type</Label>
+                    <Label className="flex items-center gap-2">
+                      Probe Type
+                      {loading && <Loader2 className="h-3 w-3 animate-spin" />}
+                    </Label>
                     <Select
                       value={probe.probeType}
-                      onValueChange={(value) =>
-                        updateProbe(index, { probeType: value as ProbeConfig['probeType'] })
-                      }
+                      onValueChange={(value) => {
+                        updateProbe(index, { probeType: value as ProbeConfig['probeType'] });
+                        // Load compatible sensor types when probe type changes
+                        loadSensorTypesForProbe(value);
+                      }}
+                      disabled={loading}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {PROBE_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
+                        {probeTypes.map((type) => (
+                          <SelectItem key={type.type} value={type.type}>
+                            <div className="flex flex-col">
+                              <span>{type.displayName}</span>
+                              {type.description && (
+                                <span className="text-xs text-muted-foreground">
+                                  {type.description}
+                                </span>
+                              )}
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -157,24 +206,45 @@ export function StepProbeConfiguration({ formData, updateFormData }: StepProbeCo
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Sensor Type</Label>
+                    <Label className="flex items-center gap-2">
+                      Sensor Type
+                      {loading && <Loader2 className="h-3 w-3 animate-spin" />}
+                    </Label>
                     <Select
                       value={probe.sensorType}
-                      onValueChange={(value) =>
-                        updateProbe(index, { sensorType: value })
-                      }
+                      onValueChange={(value) => {
+                        const selectedSensor = sensorTypes.find(s => s.type === value);
+                        updateProbe(index, { 
+                          sensorType: value,
+                          unit: selectedSensor?.defaultUnit || probe.unit 
+                        });
+                      }}
+                      disabled={loading}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {SENSOR_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
+                        {sensorTypes.map((type) => (
+                          <SelectItem key={type.type} value={type.type}>
+                            <div className="flex flex-col">
+                              <span>{type.displayName}</span>
+                              {type.description && (
+                                <span className="text-xs text-muted-foreground">
+                                  {type.description}
+                                </span>
+                              )}
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {probe.probeType && sensorTypes.length === 0 && !loading && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Info className="h-3 w-3" />
+                        No compatible sensors found for {probe.probeType}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">

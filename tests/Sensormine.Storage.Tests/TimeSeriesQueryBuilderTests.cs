@@ -43,7 +43,7 @@ public class TimeSeriesQueryBuilderTests
         {
             StartTime = DateTimeOffset.UtcNow.AddDays(-1),
             EndTime = DateTimeOffset.UtcNow,
-            Filters = new Dictionary<string, string> { ["deviceId"] = "device-123" }
+            Filters = new Dictionary<string, object> { ["deviceId"] = "device-123" }
         };
 
         // Act
@@ -62,7 +62,7 @@ public class TimeSeriesQueryBuilderTests
         {
             StartTime = DateTimeOffset.UtcNow.AddDays(-1),
             EndTime = DateTimeOffset.UtcNow,
-            Filters = new Dictionary<string, string> { ["tag.location"] = "warehouse-a" }
+            Filters = new Dictionary<string, object> { ["tag.location"] = "warehouse-a" }
         };
 
         // Act
@@ -268,7 +268,7 @@ public class TimeSeriesQueryBuilderTests
         {
             StartTime = DateTimeOffset.UtcNow.AddDays(-1),
             EndTime = DateTimeOffset.UtcNow,
-            Filters = new Dictionary<string, string>
+            Filters = new Dictionary<string, object>
             {
                 ["deviceId"] = "device-123",
                 ["tag.location"] = "warehouse-a",

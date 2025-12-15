@@ -6,7 +6,7 @@ This document lists all service ports for the Sensormine Platform v5.
 
 | Service | Port | Protocol | Description |
 |---------|------|----------|-------------|
-| **ApiGateway** | 5134 | HTTP | Main API Gateway, entry point for all client requests |
+| **ApiGateway** | 5000 | HTTP | Main API Gateway, entry point for all client requests |
 | **Device.API** | 5293 | HTTP | Device management and registration |
 | **SchemaRegistry.API** | 5021 | HTTP | Schema definition and validation |
 | **DigitalTwin.API** | 5297 | HTTP | Digital twin and asset hierarchy management |
@@ -15,13 +15,16 @@ This document lists all service ports for the Sensormine Platform v5.
 | **Alerts.API** | 5295 | HTTP | Alert rules and notifications |
 | **Edge.Gateway** | 5187 | HTTP/MQTT | Edge device connectivity and MQTT broker |
 | **StreamProcessing.Service** | 5138 | HTTP | Real-time stream processing |
-| **VideoMetadata.API** | 5023 | HTTP | Video processing metadata |
+| **VideoMetadata.API** | 5298 | HTTP | Video analytics configuration and metadata |
 | **Billing.API** | 5236 | HTTP | Billing, metering, and Stripe integration |
 | **Identity.API** | 5298 | HTTP | Authentication and authorization |
 | **Preferences.API** | 5296 | HTTP | User preferences management |
-| **NexusConfiguration.API** | 5179 | HTTP | Nexus configuration builder |
+| **NexusConfiguration.API** | 5179 | HTTP | Nexus configuration builder (Direct access - not through API Gateway) |
 | **Simulation.API** | 5200 | HTTP | Device simulation for testing |
 | **Dashboard.API** | 5299 | HTTP | Dashboard configuration and management |
+| **Template.API** | 5320 | HTTP | Template export/import for dashboards, alerts, device types, schemas, nexus configs |
+| **AI.API** | 5401 | HTTP | AI Agent service with Claude integration (routes through API Gateway) |
+| **Sensormine.MCP.Server** | 5400 | HTTP | Model Context Protocol server for AI agent integration |
 
 ## Frontend Applications
 
@@ -55,7 +58,7 @@ Different services use different tenant ID formats:
 Get-NetTCPConnection -LocalPort 5021 -ErrorAction SilentlyContinue
 
 # Check all service ports
-5134,5293,5021,5297,5079,5022,5295,5187,5138,5023,5236,5298,5296,5179,5200,5299 | ForEach-Object {
+5000,5293,5021,5297,5079,5022,5295,5187,5138,5023,5236,5298,5296,5179,5200,5299,5401,5400 | ForEach-Object {
     $conn = Get-NetTCPConnection -LocalPort $_ -State Listen -ErrorAction SilentlyContinue
     if ($conn) {
         $process = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue

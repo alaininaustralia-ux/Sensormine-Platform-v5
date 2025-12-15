@@ -6,10 +6,10 @@
  */
 
 import { serviceUrls, endpoints } from './config';
+import { getCurrentTenantId } from './index';
 import type { UserPreferences, SiteConfiguration } from '../types/preferences';
 
 const PREFERENCES_API_BASE = serviceUrls.preferences;
-const DEFAULT_TENANT_ID = 'default';
 
 /**
  * User Preferences API
@@ -18,14 +18,15 @@ export const userPreferencesApi = {
   /**
    * Get user preferences
    */
-  async get(userId: string, tenantId: string = DEFAULT_TENANT_ID): Promise<UserPreferences | null> {
+  async get(userId: string, tenantId?: string): Promise<UserPreferences | null> {
+    const effectiveTenantId = tenantId || getCurrentTenantId();
     try {
       const response = await fetch(`${PREFERENCES_API_BASE}${endpoints.userPreferences.get}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'X-User-Id': userId,
-          'X-Tenant-Id': tenantId,
+          'X-Tenant-Id': effectiveTenantId,
         },
       });
 
@@ -48,17 +49,18 @@ export const userPreferencesApi = {
   /**
    * Create or update user preferences
    */
-  async upsert(preferences: UserPreferences, tenantId: string = DEFAULT_TENANT_ID): Promise<UserPreferences> {
+  async upsert(preferences: UserPreferences, tenantId?: string): Promise<UserPreferences> {
+    const effectiveTenantId = tenantId || getCurrentTenantId();
     try {
       const response = await fetch(`${PREFERENCES_API_BASE}${endpoints.userPreferences.upsert}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': preferences.userId,
-          'X-Tenant-Id': tenantId,
+          'X-User-Id': preferences.userId || 'demo-user',
+          'X-Tenant-Id': effectiveTenantId,
         },
         body: JSON.stringify({
-          userId: preferences.userId,
+          userId: preferences.userId || 'demo-user',
           display: preferences.display,
           notifications: preferences.notifications,
           dashboard: preferences.dashboard,
@@ -67,6 +69,7 @@ export const userPreferencesApi = {
           recentlyViewed: preferences.recentlyViewed,
           bookmarks: preferences.bookmarks || [],
           pageHistory: preferences.pageHistory || [],
+          customNavigation: preferences.customNavigation || [],
         }),
       });
 
@@ -85,14 +88,15 @@ export const userPreferencesApi = {
   /**
    * Delete user preferences
    */
-  async delete(userId: string, tenantId: string = DEFAULT_TENANT_ID): Promise<void> {
+  async delete(userId: string, tenantId?: string): Promise<void> {
+    const effectiveTenantId = tenantId || getCurrentTenantId();
     try {
       const response = await fetch(`${PREFERENCES_API_BASE}${endpoints.userPreferences.delete}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           'X-User-Id': userId,
-          'X-Tenant-Id': tenantId,
+          'X-Tenant-Id': effectiveTenantId,
         },
       });
 
@@ -118,13 +122,14 @@ export const siteConfigurationApi = {
   /**
    * Get site configuration
    */
-  async get(tenantId: string = DEFAULT_TENANT_ID): Promise<SiteConfiguration | null> {
+  async get(tenantId?: string): Promise<SiteConfiguration | null> {
+    const effectiveTenantId = tenantId || getCurrentTenantId();
     try {
       const response = await fetch(`${PREFERENCES_API_BASE}${endpoints.siteConfiguration.get}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'X-Tenant-Id': tenantId,
+          'X-Tenant-Id': effectiveTenantId,
         },
       });
 
@@ -147,14 +152,15 @@ export const siteConfigurationApi = {
   /**
    * Create or update site configuration
    */
-  async upsert(config: SiteConfiguration, updatedBy: string, tenantId: string = DEFAULT_TENANT_ID): Promise<SiteConfiguration> {
+  async upsert(config: SiteConfiguration, updatedBy: string, tenantId?: string): Promise<SiteConfiguration> {
+    const effectiveTenantId = tenantId || getCurrentTenantId();
     try {
       const response = await fetch(`${PREFERENCES_API_BASE}${endpoints.siteConfiguration.upsert}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'X-User-Id': updatedBy,
-          'X-Tenant-Id': tenantId,
+          'X-Tenant-Id': effectiveTenantId,
         },
         body: JSON.stringify({
           site: config.site,

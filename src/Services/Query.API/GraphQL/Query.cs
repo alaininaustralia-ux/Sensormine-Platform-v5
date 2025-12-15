@@ -25,7 +25,7 @@ public class Query
             EndTime = input.EndTime,
             Limit = input.Limit,
             OrderBy = input.OrderBy ?? "time",
-            Filters = new Dictionary<string, string>()
+            Filters = new Dictionary<string, object>()
         };
 
         // Add device ID filter if specified
@@ -33,7 +33,7 @@ public class Query
         {
             // For multiple devices, we'll need to query each and combine
             // For now, support single device in filter
-            query.Filters["deviceId"] = input.DeviceIds.First();
+            query.Filters["deviceId"] = input.DeviceIds.First().ToString();
         }
 
         // Add device type filter if specified
@@ -79,13 +79,13 @@ public class Query
             AggregateFunction = input.AggregateFunction,
             GroupByInterval = input.GroupByInterval,
             GroupByFields = input.GroupByFields?.ToArray(),
-            Filters = new Dictionary<string, string>()
+            Filters = new Dictionary<string, object>()
         };
 
         // Add device ID filter if specified
         if (input.DeviceIds != null && input.DeviceIds.Any())
         {
-            query.Filters["deviceId"] = input.DeviceIds.First();
+            query.Filters["deviceId"] = input.DeviceIds.First().ToString();
         }
 
         // Add device type filter if specified
@@ -126,7 +126,7 @@ public class Query
             EndTime = DateTime.UtcNow,
             Limit = 1,
             OrderBy = "time",
-            Filters = new Dictionary<string, string>
+            Filters = new Dictionary<string, object>
             {
                 ["deviceId"] = deviceId
             }
@@ -184,12 +184,12 @@ public class Query
         // If specific device IDs are requested, filter the results
         if (input.DeviceIds != null && input.DeviceIds.Any())
         {
-            var deviceIdSet = new HashSet<string>(input.DeviceIds);
+            var deviceIdSet = new HashSet<string>(input.DeviceIds.Select(g => g.ToString()));
             devices = devices.Where(d => deviceIdSet.Contains(d.DeviceId)).ToList();
         }
 
         // Get latest telemetry for all devices in batch
-        var deviceIds = devices.Select(d => d.DeviceId).ToList();
+        var deviceIds = devices.Select(d => Guid.TryParse(d.DeviceId, out var guid) ? guid : Guid.Empty).Where(g => g != Guid.Empty).ToList();
         var latestTelemetry = await timeSeriesRepository.GetLatestTelemetryForDevicesAsync(
             deviceIds,
             CancellationToken.None);
@@ -197,14 +197,15 @@ public class Query
         // Combine device metadata with telemetry
         var result = devices.Select(device =>
         {
-            var telemetryData = latestTelemetry.TryGetValue(device.DeviceId, out var telemetry)
+            var deviceGuidKey = Guid.TryParse(device.DeviceId, out var deviceGuidVal) ? deviceGuidVal : Guid.Empty;
+            var telemetryData = deviceGuidKey != Guid.Empty && latestTelemetry.TryGetValue(deviceGuidKey, out var telemetry)
                 ? telemetry
                 : null;
 
             return new DeviceWithTelemetry
             {
                 Id = device.Id,
-                DeviceId = device.DeviceId,
+                DeviceId = Guid.TryParse(device.DeviceId, out var deviceGuid) ? deviceGuid : device.Id,
                 Name = device.Name,
                 DeviceTypeId = device.DeviceTypeId,
                 DeviceTypeName = device.DeviceType?.Name,
@@ -214,7 +215,7 @@ public class Query
                 Metadata = device.Metadata?.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value),
                 LatestTelemetry = telemetryData != null ? new TelemetryData
                 {
-                    DeviceId = device.DeviceId,
+                    DeviceId = Guid.TryParse(device.DeviceId, out var telDeviceGuid) ? telDeviceGuid : device.Id,
                     Timestamp = telemetryData.Timestamp,
                     TenantId = tenantId,
                     CustomFields = telemetryData.CustomFields

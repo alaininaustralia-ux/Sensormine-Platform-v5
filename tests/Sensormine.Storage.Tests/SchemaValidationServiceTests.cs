@@ -301,18 +301,18 @@ public class SchemaValidationServiceTests
         };
 
         _mockRepository
-            .Setup(r => r.GetDefaultVersionAsync(schemaId, TestTenantId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetDefaultVersionAsync(schemaId, TestTenantId.ToString(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(schemaVersion);
 
         var data = @"{ ""value"": 42 }";
 
         // Act
-        var result = await _service.ValidateDataAgainstSchemaAsync(schemaId, TestTenantId, data);
+        var result = await _service.ValidateDataAgainstSchemaAsync(schemaId, TestTenantId.ToString(), data);
 
         // Assert
         result.Should().NotBeNull();
         result.IsValid.Should().BeTrue();
-        _mockRepository.Verify(r => r.GetDefaultVersionAsync(schemaId, TestTenantId, It.IsAny<CancellationToken>()), Times.Once);
+        _mockRepository.Verify(r => r.GetDefaultVersionAsync(schemaId, TestTenantId.ToString(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -343,7 +343,7 @@ public class SchemaValidationServiceTests
         var data = @"{ ""value"": ""test"" }";
 
         // Act
-        var result = await _service.ValidateDataAgainstSchemaAsync(schemaId, TestTenantId, data, version);
+        var result = await _service.ValidateDataAgainstSchemaAsync(schemaId, TestTenantId.ToString(), data, version);
 
         // Assert
         result.Should().NotBeNull();
@@ -358,13 +358,13 @@ public class SchemaValidationServiceTests
         var schemaId = Guid.NewGuid();
 
         _mockRepository
-            .Setup(r => r.GetDefaultVersionAsync(schemaId, TestTenantId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetDefaultVersionAsync(schemaId, TestTenantId.ToString(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((SchemaVersion?)null);
 
         var data = @"{ ""value"": 42 }";
 
         // Act
-        var result = await _service.ValidateDataAgainstSchemaAsync(schemaId, TestTenantId, data);
+        var result = await _service.ValidateDataAgainstSchemaAsync(schemaId, TestTenantId.ToString(), data);
 
         // Assert
         result.Should().NotBeNull();

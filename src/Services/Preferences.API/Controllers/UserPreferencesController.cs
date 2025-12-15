@@ -65,14 +65,15 @@ public class UserPreferencesController : ControllerBase
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 TenantId = Guid.Parse(tenantId),
-                DisplayPreferences = JsonSerializer.Serialize(dto.Display),
-                NotificationPreferences = JsonSerializer.Serialize(dto.Notifications),
-                DashboardPreferences = JsonSerializer.Serialize(dto.Dashboard),
-                DataPreferences = JsonSerializer.Serialize(dto.Data),
-                Favorites = JsonSerializer.Serialize(dto.Favorites),
-                RecentlyViewed = JsonSerializer.Serialize(dto.RecentlyViewed),
-                Bookmarks = JsonSerializer.Serialize(dto.Bookmarks),
-                PageHistory = JsonSerializer.Serialize(dto.PageHistory)
+                DisplayPreferences = SerializeJsonElement(dto.Display),
+                NotificationPreferences = SerializeJsonElement(dto.Notifications),
+                DashboardPreferences = SerializeJsonElement(dto.Dashboard),
+                DataPreferences = SerializeJsonElement(dto.Data),
+                Favorites = SerializeJsonElement(dto.Favorites),
+                RecentlyViewed = SerializeJsonElement(dto.RecentlyViewed),
+                Bookmarks = SerializeJsonElement(dto.Bookmarks),
+                PageHistory = SerializeJsonElement(dto.PageHistory),
+                CustomNavigation = SerializeJsonElement(dto.CustomNavigation, isArray: true)
             };
 
             var created = await _repository.CreateAsync(newPreference);
@@ -81,14 +82,15 @@ public class UserPreferencesController : ControllerBase
         else
         {
             // Update existing
-            existing.DisplayPreferences = JsonSerializer.Serialize(dto.Display);
-            existing.NotificationPreferences = JsonSerializer.Serialize(dto.Notifications);
-            existing.DashboardPreferences = JsonSerializer.Serialize(dto.Dashboard);
-            existing.DataPreferences = JsonSerializer.Serialize(dto.Data);
-            existing.Favorites = JsonSerializer.Serialize(dto.Favorites);
-            existing.RecentlyViewed = JsonSerializer.Serialize(dto.RecentlyViewed);
-            existing.Bookmarks = JsonSerializer.Serialize(dto.Bookmarks);
-            existing.PageHistory = JsonSerializer.Serialize(dto.PageHistory);
+            existing.DisplayPreferences = SerializeJsonElement(dto.Display);
+            existing.NotificationPreferences = SerializeJsonElement(dto.Notifications);
+            existing.DashboardPreferences = SerializeJsonElement(dto.Dashboard);
+            existing.DataPreferences = SerializeJsonElement(dto.Data);
+            existing.Favorites = SerializeJsonElement(dto.Favorites);
+            existing.RecentlyViewed = SerializeJsonElement(dto.RecentlyViewed);
+            existing.Bookmarks = SerializeJsonElement(dto.Bookmarks);
+            existing.PageHistory = SerializeJsonElement(dto.PageHistory);
+            existing.CustomNavigation = SerializeJsonElement(dto.CustomNavigation, isArray: true);
 
             var updated = await _repository.UpdateAsync(existing);
             return Ok(MapToDto(updated));
@@ -129,15 +131,37 @@ public class UserPreferencesController : ControllerBase
             RecentlyViewed = DeserializeJsonOrDefault(preference.RecentlyViewed),
             Bookmarks = DeserializeJsonOrDefault(preference.Bookmarks),
             PageHistory = DeserializeJsonOrDefault(preference.PageHistory),
+            CustomNavigation = DeserializeJsonOrDefault(preference.CustomNavigation, isArray: true),
             UpdatedAt = preference.UpdatedAt?.ToString("O")
         };
     }
 
-    private static JsonElement DeserializeJsonOrDefault(string? json)
+    private static string SerializeJsonElement(JsonElement element, bool isArray = false)
     {
+        if (element.ValueKind == JsonValueKind.Undefined || element.ValueKind == JsonValueKind.Null)
+        {
+            return isArray ? "[]" : "{}";
+        }
+
+        try
+        {
+            // Use GetRawText() to get the JSON string directly without re-serialization
+            return element.GetRawText();
+        }
+        catch
+        {
+            // Fallback to serialization if GetRawText fails
+            return JsonSerializer.Serialize(element);
+        }
+    }
+
+    private static JsonElement DeserializeJsonOrDefault(string? json, bool isArray = false)
+    {
+        var defaultValue = isArray ? "[]" : "{}";
+        
         if (string.IsNullOrWhiteSpace(json))
         {
-            return JsonSerializer.Deserialize<JsonElement>("{}");
+            return JsonSerializer.Deserialize<JsonElement>(defaultValue);
         }
 
         try
@@ -146,7 +170,7 @@ public class UserPreferencesController : ControllerBase
         }
         catch
         {
-            return JsonSerializer.Deserialize<JsonElement>("{}");
+            return JsonSerializer.Deserialize<JsonElement>(defaultValue);
         }
     }
 }
@@ -162,5 +186,6 @@ public record UserPreferenceDto
     public JsonElement RecentlyViewed { get; init; }
     public JsonElement Bookmarks { get; init; }
     public JsonElement PageHistory { get; init; }
+    public JsonElement CustomNavigation { get; init; }
     public string? UpdatedAt { get; init; }
 }

@@ -9,7 +9,23 @@ import { serviceUrls, apiConfig } from './config';
 import type { ApiResponse, PaginationParams } from './types';
 
 // Create dedicated client for Device.API
-const deviceApiClient = new ApiClient(serviceUrls.device, apiConfig.timeout);
+export const deviceApiClient = new ApiClient(serviceUrls.device, apiConfig.timeout);
+
+// Set default tenant ID
+const DEFAULT_TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '00000000-0000-0000-0000-000000000001';
+deviceApiClient.setTenantId(DEFAULT_TENANT_ID);
+
+export interface FieldMapping {
+  fieldName: string;
+  friendlyName: string;
+  description?: string;
+  unit?: string;
+  dataType: string;
+  isQueryable: boolean;
+  isVisible: boolean;
+  category?: string;
+  defaultAggregation?: string;
+}
 
 export interface Device {
   id: string;
@@ -20,6 +36,7 @@ export interface Device {
   deviceTypeName?: string;
   serialNumber?: string;
   customFieldValues: Record<string, unknown>;
+  fieldMappings?: FieldMapping[]; // NEW: Field metadata
   location?: {
     latitude: number;
     longitude: number;

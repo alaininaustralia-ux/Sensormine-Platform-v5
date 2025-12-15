@@ -7,13 +7,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertCircle, Bell, BellOff, Edit, Search, Trash2, Plus } from 'lucide-react';
-import { alertRulesApi, AlertRule, AlertSeverity, AlertTargetType } from '@/lib/api';
+import { alertRulesApi, AlertRule, ApiAlertSeverity, AlertTargetType } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AlertRulesPage() {
@@ -84,15 +85,14 @@ export default function AlertRulesPage() {
     }
   };
 
-  const getSeverityBadge = (severity: AlertSeverity) => {
-    const variants: Record<AlertSeverity, string> = {
+  const getSeverityBadge = (severity: ApiAlertSeverity) => {
+    const variants: Record<ApiAlertSeverity, 'destructive' | 'default' | 'secondary'> = {
       Critical: 'destructive',
       Warning: 'default',
       Info: 'secondary',
-      Error: 'destructive',
     };
     return (
-      <Badge variant={variants[severity] as any}>
+      <Badge variant={variants[severity]}>
         {severity}
       </Badge>
     );
@@ -122,10 +122,12 @@ export default function AlertRulesPage() {
             Configure alert rules for devices and device types
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Alert Rule
-        </Button>
+        <Link href="/settings/alert-rules/create">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Alert Rule
+          </Button>
+        </Link>
       </div>
 
       <Card>

@@ -1,6 +1,6 @@
 # Infrastructure Architecture
 
-**Last Updated:** December 10, 2025  
+**Last Updated:** December 12, 2025  
 **Status:** Production-Ready  
 **Environment:** Docker Compose (Development), Kubernetes (Production)
 
@@ -32,14 +32,16 @@ The Sensormine Platform infrastructure consists of containerized services orches
 │  └─ MQTT (Ports 1883, 9001) - Device Connectivity         │
 ├─────────────────────────────────────────────────────────────┤
 │  Backend Services (Microservices)                          │
-│  ├─ ApiGateway (Port 5000)                                 │
+│  ├─ ApiGateway (Port 5000)                                │
+│  ├─ AI.API (Port 5401)                                     │
+│  ├─ Sensormine.MCP.Server (Port 5400)                      │
 │  ├─ Device.API (Port 5293)                                 │
 │  ├─ SchemaRegistry.API (Port 5021)                         │
 │  ├─ DigitalTwin.API (Port 5297)                            │
 │  ├─ Dashboard.API (Port 5299)                              │
 │  ├─ Query.API (Port 5079)                                  │
 │  ├─ Ingestion.Service (Port 5022)                          │
-│  ├─ Edge.Gateway (Port 5023)                               │
+│  ├─ Edge.Gateway (Port 5187)                               │
 │  ├─ Alerts.API (Port 5295)                                 │
 │  └─ [Additional Services...]                               │
 ├─────────────────────────────────────────────────────────────┤

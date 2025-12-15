@@ -132,6 +132,11 @@ const AssetNode: React.FC<AssetNodeProps> = ({ node, style, dragHandle, onEdit, 
 
       <span className="flex-1 truncate text-sm font-medium">
         {node.data.name}
+        {node.data.deviceCount > 0 && (
+          <span className="ml-1 text-xs text-muted-foreground">
+            ({node.data.deviceCount})
+          </span>
+        )}
       </span>
 
       <div className="flex items-center gap-2 shrink-0">

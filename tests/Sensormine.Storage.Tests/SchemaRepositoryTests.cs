@@ -72,7 +72,7 @@ public class SchemaRepositoryTests : IDisposable
         await _repository.CreateAsync(schema);
 
         // Act
-        var result = await _repository.GetByIdAsync(schema.Id, TestTenantId);
+        var result = await _repository.GetByIdAsync(schema.Id, TestTenantId.ToString());
 
         // Assert
         result.Should().NotBeNull();
@@ -84,7 +84,7 @@ public class SchemaRepositoryTests : IDisposable
     public async Task GetByIdAsync_ShouldReturnNull_WhenNotExists()
     {
         // Act
-        var result = await _repository.GetByIdAsync(Guid.NewGuid(), TestTenantId);
+        var result = await _repository.GetByIdAsync(Guid.NewGuid(), TestTenantId.ToString());
 
         // Assert
         result.Should().BeNull();
@@ -122,7 +122,7 @@ public class SchemaRepositoryTests : IDisposable
         await _repository.CreateAsync(schema);
 
         // Act
-        var result = await _repository.GetByNameAsync("VibrationSensor", TestTenantId);
+        var result = await _repository.GetByNameAsync("VibrationSensor", TestTenantId.ToString());
 
         // Assert
         result.Should().NotBeNull();
@@ -134,7 +134,7 @@ public class SchemaRepositoryTests : IDisposable
     public async Task GetByNameAsync_ShouldReturnNull_WhenNotExists()
     {
         // Act
-        var result = await _repository.GetByNameAsync("NonExistentSchema", TestTenantId);
+        var result = await _repository.GetByNameAsync("NonExistentSchema", TestTenantId.ToString());
 
         // Assert
         result.Should().BeNull();
@@ -219,7 +219,7 @@ public class SchemaRepositoryTests : IDisposable
         await _repository.CreateAsync(schema);
 
         // Act
-        await _repository.DeleteAsync(schema.Id, TestTenantId);
+        await _repository.DeleteAsync(schema.Id, TestTenantId.ToString());
 
         // Assert
         var deletedSchema = await _context.Schemas
@@ -236,7 +236,7 @@ public class SchemaRepositoryTests : IDisposable
     {
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => 
-            _repository.DeleteAsync(Guid.NewGuid(), TestTenantId));
+            _repository.DeleteAsync(Guid.NewGuid(), TestTenantId.ToString()));
     }
 
     [Fact]
@@ -328,7 +328,7 @@ public class SchemaRepositoryTests : IDisposable
         await _repository.CreateVersionAsync(version2);
 
         // Act
-        var result = await _repository.GetDefaultVersionAsync(schema.Id, TestTenantId);
+        var result = await _repository.GetDefaultVersionAsync(schema.Id, TestTenantId.ToString());
 
         // Assert
         result.Should().NotBeNull();
@@ -408,7 +408,7 @@ public class SchemaRepositoryTests : IDisposable
         }
 
         // Act
-        var versions = await _repository.ListVersionsAsync(schema.Id, TestTenantId);
+        var versions = await _repository.ListVersionsAsync(schema.Id, TestTenantId.ToString());
 
         // Assert
         versions.Should().HaveCount(3);

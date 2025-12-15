@@ -16,7 +16,7 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
         // Use a connection string for migrations - this is only used at design time
         // The actual connection string is configured in appsettings.json for each service
         optionsBuilder.UseNpgsql(
-            "Host=localhost;Port=5433;Database=sensormine;Username=postgres;Password=postgres",
+            "Host=localhost;Port=5452;Database=sensormine_metadata;Username=sensormine;Password=sensormine123",
             npgsqlOptions =>
             {
                 npgsqlOptions.EnableRetryOnFailure(

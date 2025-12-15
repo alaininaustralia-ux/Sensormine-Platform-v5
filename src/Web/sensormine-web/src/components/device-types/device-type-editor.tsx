@@ -20,7 +20,8 @@ import {
   History, 
   BarChart3,
   FileText,
-  Settings
+  Settings,
+  Settings2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 

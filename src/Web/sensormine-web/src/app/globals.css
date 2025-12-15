@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "leaflet/dist/leaflet.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -133,11 +134,18 @@
 .react-grid-layout {
   position: relative;
   transition: height 200ms ease;
+  min-height: 100%;
 }
 
 .react-grid-item {
   transition: all 200ms ease;
   transition-property: left, top, width, height;
+  will-change: transform;
+}
+
+.widget-container {
+  height: 100%;
+  width: 100%;
 }
 
 .react-grid-item img {
@@ -277,4 +285,29 @@
 .widget-container {
   height: 100%;
   position: relative;
+}
+
+.widget-container > div {
+  height: 100%;
+}
+
+/* Improve resize handle visibility in dark mode */
+.dark .react-grid-item > .react-resizable-handle::after {
+  border-right-color: rgba(255, 255, 255, 0.4);
+  border-bottom-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Smooth transitions for widget shadows */
+.widget-container > div {
+  transition: box-shadow 200ms ease;
+}
+
+/* 3D Canvas pointer events - critical for dashboard widgets */
+canvas {
+  pointer-events: auto !important;
+}
+
+.dashboard-widget canvas,
+#canvas-container canvas {
+  pointer-events: auto !important;
 }

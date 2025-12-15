@@ -89,7 +89,7 @@ public class DevicesWithTelemetryController : ControllerBase
             }
 
             // Get latest telemetry for all devices in batch
-            var deviceIds = devices.Select(d => d.DeviceId).ToList();
+            var deviceIds = devices.Select(d => Guid.TryParse(d.DeviceId, out var guid) ? guid : Guid.Empty).Where(g => g != Guid.Empty).ToList();
             var latestTelemetry = await _timeSeriesRepository.GetLatestTelemetryForDevicesAsync(
                 deviceIds,
                 cancellationToken);
@@ -103,7 +103,8 @@ public class DevicesWithTelemetryController : ControllerBase
             
             foreach (var device in devices)
             {
-                var telemetryData = latestTelemetry.TryGetValue(device.DeviceId, out var telemetry)
+                var deviceGuidKey = Guid.TryParse(device.DeviceId, out var deviceGuidVal) ? deviceGuidVal : Guid.Empty;
+                var telemetryData = deviceGuidKey != Guid.Empty && latestTelemetry.TryGetValue(deviceGuidKey, out var telemetry)
                     ? telemetry
                     : null;
 
@@ -120,7 +121,7 @@ public class DevicesWithTelemetryController : ControllerBase
                 result.Add(new DeviceWithTelemetry
                 {
                     Id = device.Id,
-                    DeviceId = device.DeviceId,
+                    DeviceId = deviceGuidKey != Guid.Empty ? deviceGuidKey : device.Id,
                     Name = device.Name,
                     DeviceTypeId = device.DeviceTypeId,
                     DeviceTypeName = device.DeviceType?.Name,
@@ -130,7 +131,7 @@ public class DevicesWithTelemetryController : ControllerBase
                     Metadata = device.Metadata?.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value),
                     LatestTelemetry = telemetryData != null ? new TelemetryData
                     {
-                        DeviceId = device.DeviceId,
+                        DeviceId = deviceGuidKey != Guid.Empty ? deviceGuidKey : device.Id,
                         Timestamp = telemetryData.Timestamp,
                         TenantId = tenantId,
                         CustomFields = parsedCustomFields ?? new Dictionary<string, object>()
@@ -210,7 +211,7 @@ public class DevicesWithTelemetryController : ControllerBase
             }
 
             // Get latest telemetry for all devices in batch
-            var deviceIds = devices.Select(d => d.DeviceId).ToList();
+            var deviceIds = devices.Select(d => Guid.TryParse(d.DeviceId, out var guid) ? guid : Guid.Empty).Where(g => g != Guid.Empty).ToList();
             var latestTelemetry = await _timeSeriesRepository.GetLatestTelemetryForDevicesAsync(
                 deviceIds,
                 cancellationToken);
@@ -220,7 +221,8 @@ public class DevicesWithTelemetryController : ControllerBase
             
             foreach (var device in devices)
             {
-                var telemetryData = latestTelemetry.TryGetValue(device.DeviceId, out var telemetry)
+                var deviceGuidKey2 = Guid.TryParse(device.DeviceId, out var deviceGuidVal2) ? deviceGuidVal2 : Guid.Empty;
+                var telemetryData = deviceGuidKey2 != Guid.Empty && latestTelemetry.TryGetValue(deviceGuidKey2, out var telemetry)
                     ? telemetry
                     : null;
 
@@ -237,7 +239,7 @@ public class DevicesWithTelemetryController : ControllerBase
                 result.Add(new DeviceWithTelemetry
                 {
                     Id = device.Id,
-                    DeviceId = device.DeviceId,
+                    DeviceId = Guid.TryParse(device.DeviceId, out var deviceGuid2) ? deviceGuid2 : device.Id,
                     Name = device.Name,
                     DeviceTypeId = device.DeviceTypeId,
                     DeviceTypeName = device.DeviceType?.Name,
@@ -247,7 +249,7 @@ public class DevicesWithTelemetryController : ControllerBase
                     Metadata = device.Metadata?.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value),
                     LatestTelemetry = telemetryData != null ? new TelemetryData
                     {
-                        DeviceId = device.DeviceId,
+                        DeviceId = Guid.TryParse(device.DeviceId, out var telDeviceGuid2) ? telDeviceGuid2 : device.Id,
                         Timestamp = telemetryData.Timestamp,
                         TenantId = tenantId,
                         CustomFields = parsedCustomFields ?? new Dictionary<string, object>()

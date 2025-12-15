@@ -3,6 +3,11 @@ namespace Query.API.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Query.API.Models;
 using Sensormine.Storage.Interfaces;
+using Sensormine.Storage.Repositories;
+using Sensormine.Core.Interfaces;
+using Sensormine.Core.Repositories;
+using Sensormine.Core.Models;
+using Query.API.Services;
 
 /// <summary>
 /// Controller for widget-specific data queries
@@ -14,15 +19,274 @@ using Sensormine.Storage.Interfaces;
 public class WidgetDataController : ControllerBase
 {
     private readonly ITimeSeriesRepository _repository;
+    private readonly IDeviceRepository _deviceRepository;
+    private readonly IAssetRepository _assetRepository;
+    private readonly IFieldMappingRepository _fieldMappingRepository;
+    private readonly ITenantProvider _tenantProvider;
+    private readonly ITelemetryParserService _telemetryParser;
     private readonly ILogger<WidgetDataController> _logger;
     private const string DefaultMeasurement = "telemetry";
 
     public WidgetDataController(
         ITimeSeriesRepository repository,
+        IDeviceRepository deviceRepository,
+        IAssetRepository assetRepository,
+        IFieldMappingRepository fieldMappingRepository,
+        ITenantProvider tenantProvider,
+        ITelemetryParserService telemetryParser,
         ILogger<WidgetDataController> logger)
     {
         _repository = repository;
+        _deviceRepository = deviceRepository;
+        _assetRepository = assetRepository;
+        _fieldMappingRepository = fieldMappingRepository;
+        _tenantProvider = tenantProvider;
+        _telemetryParser = telemetryParser;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Get devices with latest telemetry for device list widgets
+    /// </summary>
+    [HttpGet("device-list")]
+    [ProducesResponseType(typeof(DeviceListWidgetResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDeviceList(
+        [FromQuery] Guid? deviceTypeId = null,
+        [FromQuery] Guid? assetId = null,
+        [FromQuery] bool includeStatus = true,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var tenantId = _tenantProvider.GetTenantId();
+
+            // Get devices from Device.API (via repository)
+            var devices = await _deviceRepository.SearchAsync(
+                tenantId,
+                deviceTypeId: deviceTypeId,
+                status: null,
+                searchTerm: null,
+                page: page,
+                pageSize: pageSize);
+
+            if (!devices.Any())
+            {
+                return Ok(new DeviceListWidgetResponse
+                {
+                    Devices = new List<DeviceListWidgetItem>(),
+                    TotalCount = 0,
+                    Page = page,
+                    PageSize = pageSize
+                });
+            }
+
+            // Get latest telemetry for these devices
+            var deviceIds = devices.Select(d => Guid.TryParse(d.DeviceId, out var guid) ? guid : Guid.Empty).Where(g => g != Guid.Empty).ToList();
+            var latestTelemetry = await _repository.GetLatestTelemetryForDevicesAsync(
+                deviceIds,
+                cancellationToken);
+
+            // Combine device metadata with telemetry
+            var result = new List<DeviceListWidgetItem>();
+            
+            foreach (var device in devices)
+            {
+                var deviceGuidKey = Guid.TryParse(device.DeviceId, out var deviceGuidVal) ? deviceGuidVal : Guid.Empty;
+                var telemetryData = deviceGuidKey != Guid.Empty && latestTelemetry.TryGetValue(deviceGuidKey, out var telemetry)
+                    ? telemetry
+                    : null;
+
+                Dictionary<string, object>? parsedCustomFields = null;
+                if (telemetryData != null && telemetryData.CustomFields != null)
+                {
+                    parsedCustomFields = await _telemetryParser.ParseCustomFieldsAsync(
+                        telemetryData.CustomFields,
+                        device.DeviceType?.SchemaId,
+                        cancellationToken);
+                }
+
+                result.Add(new DeviceListWidgetItem
+                {
+                    Id = device.Id.ToString(),
+                    DeviceId = device.DeviceId.ToString(),
+                    Name = device.Name,
+                    SerialNumber = device.SerialNumber,
+                    Status = device.Status,
+                    LastSeenAt = device.LastSeenAt?.UtcDateTime,
+                    Metadata = device.Metadata?.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value),
+                    CustomFields = parsedCustomFields ?? new Dictionary<string, object>()
+                });
+            }
+
+            var totalCount = await _deviceRepository.GetCountAsync(tenantId, deviceTypeId, null);
+
+            return Ok(new DeviceListWidgetResponse
+            {
+                Devices = result,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching device list for widget");
+            return StatusCode(500, new { error = "Failed to fetch device list", message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Get time-series data for chart widgets
+    /// </summary>
+    [HttpPost("timeseries")]
+    [ProducesResponseType(typeof(TimeSeriesWidgetResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTimeSeries(
+        [FromBody] TimeSeriesWidgetRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var tenantId = _tenantProvider.GetTenantId();
+            var (startTime, endTime) = ParseTimeRange(request.TimeRange, request.StartTime, request.EndTime);
+
+            // Parse device IDs from request
+            List<Guid> deviceIds = new();
+            if (request.DeviceIds != null && request.DeviceIds.Any())
+            {
+                foreach (var deviceIdString in request.DeviceIds)
+                {
+                    if (Guid.TryParse(deviceIdString, out var deviceId))
+                    {
+                        deviceIds.Add(deviceId);
+                    }
+                }
+            }
+            else if (request.DeviceTypeId.HasValue)
+            {
+                var devices = await _deviceRepository.SearchAsync(
+                    tenantId, deviceTypeId: request.DeviceTypeId, status: null, 
+                    searchTerm: null, page: 1, pageSize: 100);
+                deviceIds = devices.Select(d => d.Id).ToList();
+            }
+
+            if (!deviceIds.Any())
+            {
+                return Ok(new TimeSeriesWidgetResponse
+                {
+                    Series = new List<TimeSeriesSeriesData>(),
+                    TotalPoints = 0,
+                    TimeRange = new TimeRangeInfo { Start = startTime, End = endTime }
+                });
+            }
+
+            var series = new List<TimeSeriesSeriesData>();
+
+            // Query telemetry for each device
+            foreach (var deviceId in deviceIds.Take(10))
+            {
+                var device = await _deviceRepository.GetByIdAsync(deviceId, tenantId);
+                if (device == null) continue;
+
+                var filters = new Dictionary<string, object> { ["deviceId"] = deviceId };
+                var query = new TimeSeriesQuery
+                {
+                    StartTime = startTime,
+                    EndTime = endTime,
+                    Filters = filters,
+                    Limit = request.Limit,
+                    OrderBy = "timestamp ASC"
+                };
+
+                var telemetryData = await _repository.QueryAsync<TimeSeriesDataPointResponse>(
+                    DefaultMeasurement, query, cancellationToken);
+
+                _logger.LogInformation(
+                    "Query returned {Count} telemetry records for device {DeviceId}",
+                    telemetryData.Count(), deviceId);
+
+                if (!telemetryData.Any()) continue;
+
+                // Extract requested fields from telemetry data
+                foreach (var field in request.Fields)
+                {
+                    var dataPoints = new List<TimeSeriesPoint>();
+                    
+                    foreach (var record in telemetryData)
+                    {
+                        // Values dictionary contains all fields from custom_fields JSONB
+                        if (record.Values != null && record.Values.TryGetValue(field, out var value))
+                        {
+                            if (value != null)
+                            {
+                                dataPoints.Add(new TimeSeriesPoint
+                                {
+                                    Timestamp = record.Timestamp.ToString("o"),
+                                    Value = value
+                                });
+                            }
+                        }
+                    }
+
+                    if (dataPoints.Any())
+                    {
+                        series.Add(new TimeSeriesSeriesData
+                        {
+                            Field = field,
+                            FriendlyName = field,
+                            DeviceId = deviceId.ToString(),
+                            DeviceName = device.Name,
+                            DataPoints = dataPoints,
+                            Unit = null
+                        });
+                    }
+                }
+            }
+
+            _logger.LogInformation(
+                "Returning {SeriesCount} series with {TotalPoints} total data points",
+                series.Count, series.Sum(s => s.DataPoints.Count));
+
+            return Ok(new TimeSeriesWidgetResponse
+            {
+                Series = series,
+                TotalPoints = series.Sum(s => s.DataPoints.Count),
+                TimeRange = new TimeRangeInfo { Start = startTime, End = endTime },
+                Aggregation = request.Aggregation != null && request.Aggregation != "none"
+                    ? new AggregationInfo
+                    {
+                        Function = request.Aggregation,
+                        Interval = request.AggregationInterval ?? "5m"
+                    }
+                    : null
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching time-series data for widget");
+            return StatusCode(500, new { error = "Failed to fetch time-series data", message = ex.Message });
+        }
+    }
+
+    private static (DateTimeOffset startTime, DateTimeOffset endTime) ParseTimeRange(
+        string? timeRange, string? startTime, string? endTime)
+    {
+        if (!string.IsNullOrEmpty(startTime) && !string.IsNullOrEmpty(endTime))
+        {
+            return (DateTimeOffset.Parse(startTime), DateTimeOffset.Parse(endTime));
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        return timeRange switch
+        {
+            "last-1h" => (now.AddHours(-1), now),
+            "last-6h" => (now.AddHours(-6), now),
+            "last-24h" => (now.AddHours(-24), now),
+            "last-7d" => (now.AddDays(-7), now),
+            "last-30d" => (now.AddDays(-30), now),
+            _ => (now.AddHours(-24), now) // Default to last 24 hours
+        };
     }
 
     /// <summary>
@@ -50,7 +314,7 @@ public class WidgetDataController : ControllerBase
             }
 
             // Parse deviceIds filter
-            var filters = new Dictionary<string, string>();
+            var filters = new Dictionary<string, object>();
             if (!string.IsNullOrWhiteSpace(deviceIds))
             {
                 // For now, only support single device ID (can be enhanced for multiple)
@@ -79,7 +343,7 @@ public class WidgetDataController : ControllerBase
                 Timestamp = DateTimeOffset.UtcNow,
                 DataPoints = result.Select(d => new WidgetDataPoint
                 {
-                    DeviceId = d.DeviceId,
+                    DeviceId = d.DeviceId.ToString(),
                     Timestamp = d.Timestamp,
                     Values = d.Values
                 }).ToList(),
@@ -116,7 +380,7 @@ public class WidgetDataController : ControllerBase
     {
         try
         {
-            var filters = new Dictionary<string, string>();
+            var filters = new Dictionary<string, object>();
             if (!string.IsNullOrWhiteSpace(deviceIds))
             {
                 var deviceIdList = deviceIds.Split(',', StringSplitOptions.RemoveEmptyEntries);
@@ -142,7 +406,7 @@ public class WidgetDataController : ControllerBase
                 Timestamp = DateTimeOffset.UtcNow,
                 DataPoints = result.Select(d => new WidgetDataPoint
                 {
-                    DeviceId = d.DeviceId,
+                    DeviceId = d.DeviceId.ToString(),
                     Timestamp = d.Timestamp,
                     Values = d.Values
                 }).ToList(),
@@ -192,7 +456,7 @@ public class WidgetDataController : ControllerBase
                 return BadRequest(new { error = "At least one field is required" });
             }
 
-            var filters = new Dictionary<string, string>();
+            var filters = new Dictionary<string, object>();
             if (!string.IsNullOrWhiteSpace(deviceIds))
             {
                 var deviceIdList = deviceIds.Split(',', StringSplitOptions.RemoveEmptyEntries);
@@ -217,7 +481,7 @@ public class WidgetDataController : ControllerBase
             
             foreach (var field in fieldList)
             {
-                var fieldFilters = new Dictionary<string, string>(filters)
+                var fieldFilters = new Dictionary<string, object>(filters)
                 {
                     ["_field"] = field
                 };
@@ -307,7 +571,7 @@ public class WidgetDataController : ControllerBase
                 return BadRequest(new { error = "groupBy parameter is required" });
             }
 
-            var filters = new Dictionary<string, string>();
+            var filters = new Dictionary<string, object>();
             if (!string.IsNullOrWhiteSpace(deviceIds))
             {
                 var deviceIdList = deviceIds.Split(',', StringSplitOptions.RemoveEmptyEntries);
@@ -453,4 +717,76 @@ public class AggregatedDataPoint
     public DateTimeOffset Timestamp { get; set; }
     public decimal Value { get; set; }
     public long Count { get; set; }
+}
+
+// ============================================
+// Device List Widget Models
+// ============================================
+
+public class DeviceListWidgetResponse
+{
+    public List<DeviceListWidgetItem> Devices { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+}
+
+public class DeviceListWidgetItem
+{
+    public string Id { get; set; } = string.Empty;
+    public string DeviceId { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? SerialNumber { get; set; }
+    public string? Status { get; set; }
+    public DateTime? LastSeenAt { get; set; }
+    public Dictionary<string, object>? Metadata { get; set; }
+    public Dictionary<string, object> CustomFields { get; set; } = new();
+}
+
+// ============================================
+// Time-Series Chart Widget Models
+// ============================================
+
+public class TimeSeriesWidgetRequest
+{
+    public Guid? DeviceTypeId { get; set; }
+    public Guid? AssetId { get; set; }
+    public List<string>? DeviceIds { get; set; }
+    public List<string> Fields { get; set; } = new();
+    public string? TimeRange { get; set; } // 'last-1h', 'last-24h', etc.
+    public string? StartTime { get; set; }
+    public string? EndTime { get; set; }
+    public string? Aggregation { get; set; } // 'none', 'avg', 'sum', etc.
+    public string? AggregationInterval { get; set; } // '1m', '5m', etc.
+    public int Limit { get; set; } = 1000;
+}
+
+public class TimeSeriesWidgetResponse
+{
+    public List<TimeSeriesSeriesData> Series { get; set; } = new();
+    public int TotalPoints { get; set; }
+    public TimeRangeInfo TimeRange { get; set; } = new();
+    public AggregationInfo? Aggregation { get; set; }
+}
+
+public class TimeSeriesSeriesData
+{
+    public string Field { get; set; } = string.Empty;
+    public string? FriendlyName { get; set; }
+    public string DeviceId { get; set; } = string.Empty;
+    public string? DeviceName { get; set; }
+    public string? Unit { get; set; }
+    public List<TimeSeriesPoint> DataPoints { get; set; } = new();
+}
+
+public class TimeSeriesPoint
+{
+    public string Timestamp { get; set; } = string.Empty;
+    public object? Value { get; set; }
+}
+
+public class AggregationInfo
+{
+    public string Function { get; set; } = string.Empty;
+    public string Interval { get; set; } = string.Empty;
 }

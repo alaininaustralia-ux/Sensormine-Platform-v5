@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useBreadcrumb } from '@/lib/contexts/breadcrumb-context';
 import {
   ArrowLeftIcon,
   SaveIcon,
@@ -33,8 +34,9 @@ export default function EditDevicePage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
+  const { setName } = useBreadcrumb();
   const deviceId = params.id as string;
-
+  
   const [device, setDevice] = useState<Device | null>(null);
   const [deviceType, setDeviceType] = useState<DeviceType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,7 +44,14 @@ export default function EditDevicePage() {
   const [error, setError] = useState<string | null>(null);
 
   // Form state
-  const [name, setName] = useState('');
+  const [name, setDeviceName] = useState('');
+
+  // Update breadcrumb when device name changes
+  useEffect(() => {
+    if (name) {
+      setName(deviceId, name, 'device');
+    }
+  }, [name, deviceId, setName]);
   const [status, setStatus] = useState('Active');
   const [serialNumber, setSerialNumber] = useState('');
   const [latitude, setLatitude] = useState('');
@@ -68,7 +77,7 @@ export default function EditDevicePage() {
         }
 
         setDevice(deviceData);
-        setName(deviceData.name);
+        setDeviceName(deviceData.name);
         setStatus(deviceData.status);
         setSerialNumber(deviceData.serialNumber || '');
         setLatitude(deviceData.location?.latitude?.toString() || '');
@@ -238,7 +247,7 @@ export default function EditDevicePage() {
                 <Input
                   id="name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => setDeviceName(e.target.value)}
                   placeholder="Enter device name"
                 />
               </div>

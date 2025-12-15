@@ -62,7 +62,7 @@ public class TelemetryDataType : ObjectType<TelemetryData>
 /// </summary>
 public class TelemetryData
 {
-    public string DeviceId { get; set; } = string.Empty;
+    public Guid DeviceId { get; set; }
     public DateTime Timestamp { get; set; }
     public string TenantId { get; set; } = string.Empty;
     public string DeviceType { get; set; } = string.Empty;
@@ -82,7 +82,7 @@ public class TelemetryQueryInput
 {
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
-    public List<string>? DeviceIds { get; set; }
+    public List<Guid>? DeviceIds { get; set; }
     public string? DeviceType { get; set; }
     public int? Limit { get; set; }
     public string? OrderBy { get; set; }
@@ -94,7 +94,7 @@ public class TelemetryQueryInput
 public class DeviceWithTelemetry
 {
     public Guid Id { get; set; }
-    public string DeviceId { get; set; } = string.Empty;
+    public Guid DeviceId { get; set; }
     public string Name { get; set; } = string.Empty;
     public Guid DeviceTypeId { get; set; }
     public string? DeviceTypeName { get; set; }
@@ -111,7 +111,7 @@ public class DeviceWithTelemetry
 public class DeviceWithTelemetryInput
 {
     public Guid? DeviceTypeId { get; set; }
-    public List<string>? DeviceIds { get; set; }
+    public List<Guid>? DeviceIds { get; set; }
     public string? Status { get; set; }
     public int? Limit { get; set; }
 }
@@ -123,7 +123,7 @@ public class TelemetryAggregateInput
 {
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
-    public List<string>? DeviceIds { get; set; }
+    public List<Guid>? DeviceIds { get; set; }
     public string? DeviceType { get; set; }
     public string Field { get; set; } = "value";
     public string AggregateFunction { get; set; } = "avg";
@@ -137,7 +137,7 @@ public class TelemetryAggregateInput
 public class TelemetryAggregate
 {
     public DateTime? Bucket { get; set; }
-    public string? DeviceId { get; set; }
+    public Guid? DeviceId { get; set; }
     public string? DeviceType { get; set; }
     public double? Value { get; set; }
     public long Count { get; set; }

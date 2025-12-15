@@ -11,11 +11,6 @@ public class Dashboard : BaseEntity
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Tenant ID for multi-tenancy (shadows BaseEntity.TenantId)
-    /// </summary>
-    public new string TenantId { get; set; } = string.Empty;
-
-    /// <summary>
     /// Dashboard name
     /// </summary>
     public string Name { get; set; } = string.Empty;
@@ -79,6 +74,16 @@ public class Dashboard : BaseEntity
     /// Type of dashboard: Root, DeviceDetail, DeviceTypeList, Custom
     /// </summary>
     public DashboardType DashboardType { get; set; } = DashboardType.Root;
+
+    /// <summary>
+    /// Version number for optimistic locking (incremented on each update)
+    /// </summary>
+    public int Version { get; set; } = 1;
+
+    /// <summary>
+    /// User ID who last modified the dashboard
+    /// </summary>
+    public string? LastModifiedBy { get; set; }
 
     /// <summary>
     /// Soft delete flag

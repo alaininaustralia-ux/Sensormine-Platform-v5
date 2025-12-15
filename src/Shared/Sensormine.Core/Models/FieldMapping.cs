@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Sensormine.Core.Models;
 
 /// <summary>
@@ -25,6 +27,14 @@ public class FieldMapping : BaseEntity
     /// Source of the field: 'schema', 'custom_field', or 'system'
     /// </summary>
     public FieldSource FieldSource { get; set; }
+
+    /// <summary>
+    /// JSON path for extracting the value from custom_fields JSONB column
+    /// Example: "$.customFields.temperature" or "$.temperature"
+    /// Used to build PostgreSQL JSONB extraction queries
+    /// </summary>
+    [Column("json_path")]
+    public string? JsonPath { get; set; }
 
     /// <summary>
     /// User-friendly display name (e.g., "Room Temperature", "CO2 Level")

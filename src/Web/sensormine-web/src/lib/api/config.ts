@@ -6,27 +6,35 @@
  */
 
 export const apiConfig = {
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000',
+  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5134',
   timeout: parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '30000', 10),
   retryAttempts: 3,
   retryDelay: 1000,
 } as const;
 
 /**
- * Service-specific base URLs for microservices architecture
- * Each service can have its own URL in local development
- * NOTE: Service-specific env vars should be checked BEFORE NEXT_PUBLIC_API_BASE_URL
- * to allow per-service overrides. NEXT_PUBLIC_API_BASE_URL serves as the API Gateway.
+ * Service-specific base URLs - ALL DEFAULT TO API GATEWAY
+ * The API Gateway (port 5134) routes requests to backend services
+ * 
+ * IMPORTANT: In production, all services go through the gateway (single entry point)
+ * For local development debugging, you can override individual services via env vars:
+ * - NEXT_PUBLIC_DEVICE_API_URL=http://localhost:5293 (bypass gateway for Device.API)
+ * - NEXT_PUBLIC_ALERTS_API_URL=http://localhost:5295 (bypass gateway for Alerts.API)
+ * 
+ * By default, everything uses the gateway for centralized port management
  */
+const gatewayUrl = apiConfig.baseUrl;
+
 export const serviceUrls = {
-  device: process.env.NEXT_PUBLIC_DEVICE_API_URL || 'http://localhost:5293',
-  schema: process.env.NEXT_PUBLIC_SCHEMA_API_URL || 'http://localhost:5021',
-  query: process.env.NEXT_PUBLIC_QUERY_API_URL || 'http://localhost:5079',
-  alerts: process.env.NEXT_PUBLIC_ALERTS_API_URL || 'http://localhost:5295',
-  preferences: process.env.NEXT_PUBLIC_PREFERENCES_API_URL || 'http://localhost:5296',
-  dashboard: process.env.NEXT_PUBLIC_DASHBOARD_API_URL || 'http://localhost:5298',
-  digitalTwin: process.env.NEXT_PUBLIC_DIGITAL_TWIN_API_URL || 'http://localhost:5297',
-  simulation: process.env.NEXT_PUBLIC_SIMULATION_API_URL || 'http://localhost:5200',
+  device: process.env.NEXT_PUBLIC_DEVICE_API_URL || gatewayUrl,
+  schema: process.env.NEXT_PUBLIC_SCHEMA_API_URL || gatewayUrl,
+  query: process.env.NEXT_PUBLIC_QUERY_API_URL || gatewayUrl,
+  alerts: process.env.NEXT_PUBLIC_ALERTS_API_URL || gatewayUrl,
+  preferences: process.env.NEXT_PUBLIC_PREFERENCES_API_URL || gatewayUrl,
+  dashboard: process.env.NEXT_PUBLIC_DASHBOARD_API_URL || gatewayUrl,
+  digitalTwin: process.env.NEXT_PUBLIC_DIGITAL_TWIN_API_URL || gatewayUrl,
+  simulation: process.env.NEXT_PUBLIC_SIMULATION_API_URL || gatewayUrl,
+  identity: process.env.NEXT_PUBLIC_IDENTITY_API_URL || gatewayUrl,
 } as const;
 
 export const endpoints = {

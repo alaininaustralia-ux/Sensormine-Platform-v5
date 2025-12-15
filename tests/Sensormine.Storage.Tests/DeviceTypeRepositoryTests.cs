@@ -129,7 +129,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         var deviceType = await CreateTestDeviceType("Pressure Sensor");
 
         // Act
-        var result = await _repository.GetByIdAsync(deviceType.Id, _testTenantId);
+        var result = await _repository.GetByIdAsync(deviceType.Id, _testTenantId.ToString());
 
         // Assert
         result.Should().NotBeNull();
@@ -141,7 +141,7 @@ public class DeviceTypeRepositoryTests : IDisposable
     public async Task GetByIdAsync_ShouldReturnNull_WhenNotExists()
     {
         // Act
-        var result = await _repository.GetByIdAsync(Guid.NewGuid(), _testTenantId);
+        var result = await _repository.GetByIdAsync(Guid.NewGuid(), _testTenantId.ToString());
 
         // Assert
         result.Should().BeNull();
@@ -169,7 +169,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _repository.GetByIdAsync(deviceType.Id, _testTenantId);
+        var result = await _repository.GetByIdAsync(deviceType.Id, _testTenantId.ToString());
 
         // Assert
         result.Should().BeNull(); // Query filter excludes inactive
@@ -191,7 +191,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         await CreateTestDeviceType("Other Tenant Device", _otherTenantId);
 
         // Act
-        var (items, totalCount) = await _repository.GetAllAsync(_testTenantId);
+        var (items, totalCount) = await _repository.GetAllAsync(_testTenantId.ToString());
 
         // Assert
         items.Should().HaveCount(3);
@@ -209,7 +209,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         }
 
         // Act - Get page 2 with 10 items
-        var (items, totalCount) = await _repository.GetAllAsync(_testTenantId, page: 2, pageSize: 10);
+        var (items, totalCount) = await _repository.GetAllAsync(_testTenantId.ToString(), page: 2, pageSize: 10);
 
         // Assert
         items.Should().HaveCount(10);
@@ -228,7 +228,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var (items, totalCount) = await _repository.GetAllAsync(_testTenantId);
+        var (items, totalCount) = await _repository.GetAllAsync(_testTenantId.ToString());
 
         // Assert
         items.Should().HaveCount(2);
@@ -306,13 +306,13 @@ public class DeviceTypeRepositoryTests : IDisposable
         var deviceType = await CreateTestDeviceType("To Delete");
 
         // Act
-        var result = await _repository.DeleteAsync(deviceType.Id, _testTenantId);
+        var result = await _repository.DeleteAsync(deviceType.Id, _testTenantId.ToString());
 
         // Assert
         result.Should().BeTrue();
 
         // Verify soft delete
-        var deleted = await _repository.GetByIdAsync(deviceType.Id, _testTenantId);
+        var deleted = await _repository.GetByIdAsync(deviceType.Id, _testTenantId.ToString());
         deleted.Should().BeNull(); // Query filter excludes inactive
 
         // Verify still in database but inactive
@@ -326,7 +326,7 @@ public class DeviceTypeRepositoryTests : IDisposable
     public async Task DeleteAsync_ShouldReturnFalse_WhenNotExists()
     {
         // Act
-        var result = await _repository.DeleteAsync(Guid.NewGuid(), _testTenantId);
+        var result = await _repository.DeleteAsync(Guid.NewGuid(), _testTenantId.ToString());
 
         // Assert
         result.Should().BeFalse();
@@ -345,7 +345,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         result.Should().BeFalse();
         
         // Verify not deleted
-        var stillExists = await _repository.GetByIdAsync(deviceType.Id, _testTenantId);
+        var stillExists = await _repository.GetByIdAsync(deviceType.Id, _testTenantId.ToString());
         stillExists.Should().NotBeNull();
     }
 
@@ -360,7 +360,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         await CreateTestDeviceType("Existing Device");
 
         // Act
-        var result = await _repository.ExistsAsync("Existing Device", _testTenantId);
+        var result = await _repository.ExistsAsync("Existing Device", _testTenantId.ToString());
 
         // Assert
         result.Should().BeTrue();
@@ -370,7 +370,7 @@ public class DeviceTypeRepositoryTests : IDisposable
     public async Task ExistsAsync_ShouldReturnFalse_WhenDeviceTypeDoesNotExist()
     {
         // Act
-        var result = await _repository.ExistsAsync("Non-Existent Device", _testTenantId);
+        var result = await _repository.ExistsAsync("Non-Existent Device", _testTenantId.ToString());
 
         // Assert
         result.Should().BeFalse();
@@ -396,7 +396,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         var deviceType = await CreateTestDeviceType("Update Check");
 
         // Act - Should return false when excluding the existing device's ID
-        var result = await _repository.ExistsAsync("Update Check", _testTenantId, deviceType.Id);
+        var result = await _repository.ExistsAsync("Update Check", _testTenantId.ToString(), deviceType.Id);
 
         // Assert
         result.Should().BeFalse();
@@ -411,7 +411,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _repository.ExistsAsync("Inactive Check", _testTenantId);
+        var result = await _repository.ExistsAsync("Inactive Check", _testTenantId.ToString());
 
         // Assert
         result.Should().BeFalse();
@@ -556,7 +556,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         var deviceType = await CreateTestDeviceType("Test Device");
 
         // Act
-        var versions = await _repository.GetVersionHistoryAsync(deviceType.Id, _testTenantId);
+        var versions = await _repository.GetVersionHistoryAsync(deviceType.Id, _testTenantId.ToString());
 
         // Assert
         versions.Should().NotBeNull();
@@ -577,7 +577,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         await _repository.UpdateAsync(deviceType);
 
         // Act
-        var versions = await _repository.GetVersionHistoryAsync(deviceType.Id, _testTenantId);
+        var versions = await _repository.GetVersionHistoryAsync(deviceType.Id, _testTenantId.ToString());
 
         // Assert
         versions.Should().HaveCount(3);
@@ -594,7 +594,7 @@ public class DeviceTypeRepositoryTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _repository.GetVersionHistoryAsync(nonExistentId, _testTenantId));
+            () => _repository.GetVersionHistoryAsync(nonExistentId, _testTenantId.ToString()));
     }
 
     [Fact]
@@ -605,12 +605,12 @@ public class DeviceTypeRepositoryTests : IDisposable
         var deviceType2 = await CreateTestDeviceType("Device 2", _otherTenantId);
 
         // Act
-        var versions1 = await _repository.GetVersionHistoryAsync(deviceType1.Id, _testTenantId);
+        var versions1 = await _repository.GetVersionHistoryAsync(deviceType1.Id, _testTenantId.ToString());
         
         // Assert
         versions1.Should().HaveCount(1);
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _repository.GetVersionHistoryAsync(deviceType2.Id, _testTenantId));
+            () => _repository.GetVersionHistoryAsync(deviceType2.Id, _testTenantId.ToString()));
     }
 
     #endregion
@@ -639,7 +639,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         rolledBack.Name.Should().NotBe(currentVersion);
         
         // Verify new version was created
-        var versions = await _repository.GetVersionHistoryAsync(deviceType.Id, _testTenantId);
+        var versions = await _repository.GetVersionHistoryAsync(deviceType.Id, _testTenantId.ToString());
         versions.Should().HaveCount(3); // Original + Update + Rollback
         versions[0].Version.Should().Be(3);
         versions[0].ChangeSummary.Should().Contain("Rolled back to version 1");
@@ -679,7 +679,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         await _repository.RollbackToVersionAsync(deviceType.Id, 1, _testTenantId, "admin@test.com");
 
         // Assert
-        var auditLogs = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId, 1, 10);
+        var auditLogs = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId.ToString(), 1, 10);
         auditLogs.Item1.Should().Contain(log => log.Action == "Rollback");
     }
 
@@ -694,7 +694,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         var deviceType = await CreateTestDeviceType("Test Device");
 
         // Act
-        var statistics = await _repository.GetUsageStatisticsAsync(deviceType.Id, _testTenantId);
+        var statistics = await _repository.GetUsageStatisticsAsync(deviceType.Id, _testTenantId.ToString());
 
         // Assert
         statistics.Should().NotBeNull();
@@ -713,7 +713,7 @@ public class DeviceTypeRepositoryTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _repository.GetUsageStatisticsAsync(nonExistentId, _testTenantId));
+            () => _repository.GetUsageStatisticsAsync(nonExistentId, _testTenantId.ToString()));
     }
 
     #endregion
@@ -734,7 +734,7 @@ public class DeviceTypeRepositoryTests : IDisposable
         await _repository.UpdateAsync(deviceType);
 
         // Act
-        var (logs, totalCount) = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId, 1, 10);
+        var (logs, totalCount) = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId.ToString(), 1, 10);
 
         // Assert
         logs.Should().NotBeEmpty();
@@ -758,11 +758,11 @@ public class DeviceTypeRepositoryTests : IDisposable
         await _repository.UpdateAsync(deviceType);
 
         // Act
-        var (logs, _) = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId, 1, 10);
+        var (logs, _) = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId.ToString(), 1, 10);
 
         // Assert
         logs.Should().HaveCountGreaterThan(1);
-        for (int i = 0; i < logs.Count - 1; i++)
+        for (int i = 0; i < logs.Count() - 1; i++)
         {
             logs[i].Timestamp.Should().BeOnOrAfter(logs[i + 1].Timestamp);
         }
@@ -782,8 +782,8 @@ public class DeviceTypeRepositoryTests : IDisposable
         }
 
         // Act
-        var (page1, totalCount) = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId, 1, 3);
-        var (page2, _) = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId, 2, 3);
+        var (page1, totalCount) = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId.ToString(), 1, 3);
+        var (page2, _) = await _repository.GetAuditLogsAsync(deviceType.Id, _testTenantId.ToString(), 2, 3);
 
         // Assert
         page1.Should().HaveCount(3);
@@ -799,7 +799,7 @@ public class DeviceTypeRepositoryTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _repository.GetAuditLogsAsync(nonExistentId, _testTenantId, 1, 10));
+            () => _repository.GetAuditLogsAsync(nonExistentId, _testTenantId.ToString(), 1, 10));
     }
 
     #endregion

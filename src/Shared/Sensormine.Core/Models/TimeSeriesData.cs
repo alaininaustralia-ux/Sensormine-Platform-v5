@@ -6,9 +6,9 @@ namespace Sensormine.Core.Models;
 public class TimeSeriesData
 {
     /// <summary>
-    /// Device identifier
+    /// Device identifier (UUID)
     /// </summary>
-    public string DeviceId { get; set; } = string.Empty;
+    public Guid DeviceId { get; set; }
 
     /// <summary>
     /// Tenant identifier

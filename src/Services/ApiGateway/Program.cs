@@ -22,6 +22,10 @@ builder.Services.AddAuthentication().AddJwtBearer();
 // Add HttpClient for calling Identity.API
 builder.Services.AddHttpClient();
 
+// Add Yarp Reverse Proxy
+builder.Services.AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -35,6 +39,9 @@ app.UseCors();
 // app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Map Reverse Proxy (before MapControllers to handle API routes first)
+app.MapReverseProxy();
 
 app.MapControllers();
 

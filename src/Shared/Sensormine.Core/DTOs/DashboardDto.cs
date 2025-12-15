@@ -23,6 +23,8 @@ public class DashboardDto
     public List<SubPageSummaryDto> SubPages { get; set; } = new();
     public int DisplayOrder { get; set; }
     public DashboardType DashboardType { get; set; } = DashboardType.Root;
+    public int Version { get; set; }
+    public string? LastModifiedBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }
@@ -59,6 +61,7 @@ public class UpdateDashboardRequest
     public string[]? SharedWith { get; set; }
     public string[]? Tags { get; set; }
     public int? DisplayOrder { get; set; }
+    public int? ExpectedVersion { get; set; }  // For optimistic locking
 }
 
 /// <summary>

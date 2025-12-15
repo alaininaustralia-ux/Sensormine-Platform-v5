@@ -120,9 +120,9 @@ public class TelemetryController : ControllerBase
 
             foreach (var msg in request.Messages)
             {
-                if (string.IsNullOrWhiteSpace(msg.DeviceId))
+                if (msg.DeviceId == Guid.Empty)
                 {
-                    results.Add(new { deviceId = msg.DeviceId, success = false, error = "Device ID is required" });
+                    results.Add(new { deviceId = msg.DeviceId.ToString(), success = false, error = "Device ID is required" });
                     continue;
                 }
 
@@ -131,18 +131,18 @@ public class TelemetryController : ControllerBase
                     var payloadJson = JsonSerializer.Serialize(msg.Payload);
                     var message = new Message<string, string>
                     {
-                        Key = msg.DeviceId,
+                        Key = msg.DeviceId.ToString(),
                         Value = payloadJson,
                         Timestamp = Timestamp.Default
                     };
 
                     var result = await _kafkaProducer!.ProduceAsync(kafkaTopic, message);
-                    results.Add(new { deviceId = msg.DeviceId, success = true, offset = result.Offset.Value });
+                    results.Add(new { deviceId = msg.DeviceId.ToString(), success = true, offset = result.Offset.Value });
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error processing bulk telemetry for device {DeviceId}", msg.DeviceId);
-                    results.Add(new { deviceId = msg.DeviceId, success = false, error = ex.Message });
+                    results.Add(new { deviceId = msg.DeviceId.ToString(), success = false, error = ex.Message });
                 }
             }
 
@@ -178,6 +178,6 @@ public class BulkTelemetryRequest
 /// </summary>
 public class TelemetryMessage
 {
-    public string DeviceId { get; set; } = string.Empty;
+    public Guid DeviceId { get; set; }
     public JsonElement Payload { get; set; }
 }

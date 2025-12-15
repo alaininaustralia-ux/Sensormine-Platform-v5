@@ -9,7 +9,7 @@ import { serviceUrls, apiConfig } from './config';
 import type { ApiResponse, PaginationParams } from './types';
 
 // Create dedicated client for DigitalTwin.API
-const digitalTwinApiClient = new ApiClient(serviceUrls.digitalTwin || 'http://localhost:5297', apiConfig.timeout);
+export const digitalTwinApiClient = new ApiClient(serviceUrls.digitalTwin, apiConfig.timeout);
 
 // Set default tenant ID for development/testing
 // In production, this should be set by AuthProvider after login

@@ -33,15 +33,15 @@ public interface ITimeSeriesQueryService
     /// </summary>
     Task<TimeSeriesDataPointResponse?> GetLatestAsync(
         string measurement,
-        string deviceId,
+        Guid deviceId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get data for multiple devices
     /// </summary>
-    Task<Dictionary<string, TimeSeriesDataPointResponse>> GetLatestForDevicesAsync(
+    Task<Dictionary<Guid, TimeSeriesDataPointResponse>> GetLatestForDevicesAsync(
         string measurement,
-        IEnumerable<string> deviceIds,
+        IEnumerable<Guid> deviceIds,
         CancellationToken cancellationToken = default);
 }
 
@@ -143,7 +143,7 @@ public partial class TimeSeriesQueryService : ITimeSeriesQueryService
         };
 
         // Add field to filters for aggregate
-        query.Filters ??= new Dictionary<string, string>();
+        query.Filters ??= new Dictionary<string, object>();
         query.Filters["_field"] = request.Field;
 
         // Execute query
@@ -181,14 +181,14 @@ public partial class TimeSeriesQueryService : ITimeSeriesQueryService
     /// <inheritdoc />
     public async Task<TimeSeriesDataPointResponse?> GetLatestAsync(
         string measurement,
-        string deviceId,
+        Guid deviceId,
         CancellationToken cancellationToken = default)
     {
         var query = new TimeSeriesQuery
         {
             StartTime = DateTimeOffset.UtcNow.AddDays(-30),
             EndTime = DateTimeOffset.UtcNow,
-            Filters = new Dictionary<string, string> { ["deviceId"] = deviceId },
+            Filters = new Dictionary<string, object> { ["deviceId"] = deviceId },
             Limit = 1,
             OrderBy = "timestamp"
         };
@@ -200,12 +200,12 @@ public partial class TimeSeriesQueryService : ITimeSeriesQueryService
     }
 
     /// <inheritdoc />
-    public async Task<Dictionary<string, TimeSeriesDataPointResponse>> GetLatestForDevicesAsync(
+    public async Task<Dictionary<Guid, TimeSeriesDataPointResponse>> GetLatestForDevicesAsync(
         string measurement,
-        IEnumerable<string> deviceIds,
+        IEnumerable<Guid> deviceIds,
         CancellationToken cancellationToken = default)
     {
-        var results = new Dictionary<string, TimeSeriesDataPointResponse>();
+        var results = new Dictionary<Guid, TimeSeriesDataPointResponse>();
         
         foreach (var deviceId in deviceIds)
         {
@@ -219,13 +219,13 @@ public partial class TimeSeriesQueryService : ITimeSeriesQueryService
         return results;
     }
 
-    private static Dictionary<string, string>? BuildFilters(TimeSeriesQueryRequest request)
+    private static Dictionary<string, object>? BuildFilters(TimeSeriesQueryRequest request)
     {
-        var filters = new Dictionary<string, string>();
+        var filters = new Dictionary<string, object>();
 
-        if (!string.IsNullOrEmpty(request.DeviceId))
+        if (request.DeviceId.HasValue)
         {
-            filters["deviceId"] = request.DeviceId;
+            filters["deviceId"] = request.DeviceId.Value;
         }
 
         if (request.Filters != null)

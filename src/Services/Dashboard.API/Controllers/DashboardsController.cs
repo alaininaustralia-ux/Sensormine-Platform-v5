@@ -31,7 +31,7 @@ public class DashboardsController : ControllerBase
     {
         // TODO: Get from JWT claims in production
         userId ??= "demo-user";
-        tenantId ??= "default";
+        tenantId ??= "00000000-0000-0000-0000-000000000001";
 
         var dashboards = await _repository.GetByUserIdAsync(userId, tenantId);
         return Ok(dashboards.Select(MapToDto));
@@ -46,7 +46,7 @@ public class DashboardsController : ControllerBase
         [FromHeader(Name = "X-User-Id")] string? userId,
         [FromHeader(Name = "X-Tenant-Id")] string? tenantId)
     {
-        tenantId ??= "default";
+        tenantId ??= "00000000-0000-0000-0000-000000000001";
 
         var dashboard = await _repository.GetByIdAsync(id, tenantId);
         
@@ -69,7 +69,7 @@ public class DashboardsController : ControllerBase
     {
         // TODO: Get from JWT claims in production
         userId ??= "demo-user";
-        tenantId ??= "default";
+        tenantId ??= "00000000-0000-0000-0000-000000000001";
 
         // If ParentDashboardId is provided, verify parent exists
         if (request.ParentDashboardId.HasValue)
@@ -85,7 +85,7 @@ public class DashboardsController : ControllerBase
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            TenantId = tenantId,
+            TenantId = Guid.Parse(tenantId),
             Name = request.Name,
             Description = request.Description,
             Layout = JsonSerializer.Serialize(request.Layout ?? new object[] {}),
@@ -119,13 +119,26 @@ public class DashboardsController : ControllerBase
         [FromHeader(Name = "X-User-Id")] string? userId,
         [FromHeader(Name = "X-Tenant-Id")] string? tenantId)
     {
-        tenantId ??= "default";
+        userId ??= "demo-user";
+        tenantId ??= "00000000-0000-0000-0000-000000000001";
 
         var dashboard = await _repository.GetByIdAsync(id, tenantId);
         
         if (dashboard == null)
         {
             return NotFound(new { message = "Dashboard not found" });
+        }
+
+        // Optimistic locking: Check version if provided
+        if (request.ExpectedVersion.HasValue && dashboard.Version != request.ExpectedVersion.Value)
+        {
+            _logger.LogWarning("Dashboard {DashboardId} version conflict. Expected: {Expected}, Current: {Current}", 
+                id, request.ExpectedVersion.Value, dashboard.Version);
+            return Conflict(new { 
+                message = "Dashboard was modified by another user. Please reload and try again.",
+                currentVersion = dashboard.Version,
+                expectedVersion = request.ExpectedVersion.Value
+            });
         }
 
         // Update fields if provided
@@ -156,9 +169,15 @@ public class DashboardsController : ControllerBase
         if (request.DisplayOrder.HasValue)
             dashboard.DisplayOrder = request.DisplayOrder.Value;
 
+        // Increment version and track modifier
+        dashboard.Version++;
+        dashboard.LastModifiedBy = userId;
+        dashboard.UpdatedAt = DateTime.UtcNow;
+
         var updated = await _repository.UpdateAsync(dashboard);
         
-        _logger.LogInformation("Dashboard {DashboardId} updated", id);
+        _logger.LogInformation("Dashboard {DashboardId} updated to version {Version} by user {UserId}", 
+            id, updated.Version, userId);
         
         return Ok(MapToDto(updated));
     }
@@ -172,7 +191,7 @@ public class DashboardsController : ControllerBase
         [FromHeader(Name = "X-User-Id")] string? userId,
         [FromHeader(Name = "X-Tenant-Id")] string? tenantId)
     {
-        tenantId ??= "default";
+        tenantId ??= "00000000-0000-0000-0000-000000000001";
 
         var success = await _repository.DeleteAsync(id, tenantId);
         
@@ -195,7 +214,7 @@ public class DashboardsController : ControllerBase
         [FromQuery] string[]? tags,
         [FromHeader(Name = "X-Tenant-Id")] string? tenantId)
     {
-        tenantId ??= "default";
+        tenantId ??= "00000000-0000-0000-0000-000000000001";
 
         var dashboards = await _repository.SearchAsync(tenantId, q, tags);
         return Ok(dashboards.Select(MapToDto));
@@ -210,7 +229,7 @@ public class DashboardsController : ControllerBase
         [FromHeader(Name = "X-Tenant-Id")] string? tenantId)
     {
         userId ??= "demo-user";
-        tenantId ??= "default";
+        tenantId ??= "00000000-0000-0000-0000-000000000001";
 
         var dashboards = await _repository.GetRootDashboardsAsync(tenantId, userId);
         return Ok(dashboards.Select(MapToDto));
@@ -224,7 +243,7 @@ public class DashboardsController : ControllerBase
         Guid id,
         [FromHeader(Name = "X-Tenant-Id")] string? tenantId)
     {
-        tenantId ??= "default";
+        tenantId ??= "00000000-0000-0000-0000-000000000001";
 
         var subPages = await _repository.GetSubPagesAsync(id, tenantId);
         return Ok(subPages.Select(MapToDto));
@@ -241,7 +260,7 @@ public class DashboardsController : ControllerBase
         [FromHeader(Name = "X-Tenant-Id")] string? tenantId)
     {
         userId ??= "demo-user";
-        tenantId ??= "default";
+        tenantId ??= "00000000-0000-0000-0000-000000000001";
 
         // Verify parent exists
         var parent = await _repository.GetByIdAsync(parentId, tenantId);
@@ -254,7 +273,7 @@ public class DashboardsController : ControllerBase
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            TenantId = tenantId,
+            TenantId = Guid.Parse(tenantId),
             Name = request.Name,
             Description = request.Description,
             Layout = JsonSerializer.Serialize(request.Layout ?? new object[] {}),
@@ -288,7 +307,7 @@ public class DashboardsController : ControllerBase
         [FromBody] Dictionary<Guid, int> displayOrders,
         [FromHeader(Name = "X-Tenant-Id")] string? tenantId)
     {
-        tenantId ??= "default";
+        tenantId ??= "00000000-0000-0000-0000-000000000001";
 
         var success = await _repository.ReorderSubPagesAsync(parentId, tenantId, displayOrders);
         
@@ -316,7 +335,7 @@ public class DashboardsController : ControllerBase
         {
             Id = dashboard.Id,
             UserId = dashboard.UserId,
-            TenantId = dashboard.TenantId,
+            TenantId = dashboard.TenantId.ToString(),
             Name = dashboard.Name,
             Description = dashboard.Description,
             Layout = JsonSerializer.Deserialize<object>(dashboard.Layout) ?? new object(),
@@ -329,6 +348,8 @@ public class DashboardsController : ControllerBase
             Tags = dashboard.Tags != null 
                 ? JsonSerializer.Deserialize<string[]>(dashboard.Tags) 
                 : null,
+            Version = dashboard.Version,
+            LastModifiedBy = dashboard.LastModifiedBy,
             CreatedAt = dashboard.CreatedAt,
             UpdatedAt = dashboard.UpdatedAt ?? dashboard.CreatedAt,
             ParentDashboardId = dashboard.ParentDashboardId,

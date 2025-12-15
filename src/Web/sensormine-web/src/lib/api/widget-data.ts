@@ -16,7 +16,7 @@ import type {
 } from './types';
 
 // Create Query API-specific client
-const queryApiClient = new ApiClient(serviceUrls.query, apiConfig.timeout);
+export const queryApiClient = new ApiClient(serviceUrls.query, apiConfig.timeout);
 
 /**
  * Query parameters for realtime widget data
@@ -136,6 +136,8 @@ export async function getAggregatedWidgetData(
 export async function getKpiData(
   params: KpiQueryParams
 ): Promise<ApiResponse<KpiDataResponse>> {
+  console.log('[getKpiData] Request params:', params);
+  
   const searchParams = new URLSearchParams();
   searchParams.append('field', params.field);
   if (params.aggregation) searchParams.append('aggregation', params.aggregation);
@@ -144,9 +146,17 @@ export async function getKpiData(
   if (params.comparisonType) searchParams.append('comparisonType', params.comparisonType);
   if (params.deviceIds) searchParams.append('deviceIds', params.deviceIds);
 
-  return queryApiClient.get<KpiDataResponse>(
-    `/api/kpidata?${searchParams.toString()}`
-  );
+  const url = `/api/kpidata?${searchParams.toString()}`;
+  console.log('[getKpiData] Request URL:', url);
+
+  try {
+    const response = await queryApiClient.get<KpiDataResponse>(url);
+    console.log('[getKpiData] Response:', response);
+    return response;
+  } catch (error) {
+    console.error('[getKpiData] Error:', error);
+    throw error;
+  }
 }
 
 /**
@@ -207,4 +217,64 @@ export async function getKpiWithTrend(
     includeTrend: true,
     deviceIds,
   });
+}
+
+// =============================================================================
+// Asset-Based Query Functions
+// =============================================================================
+
+export interface AssetRollupQueryParams {
+  assetId: string;
+  fields: string;
+  startTime: string;
+  endTime: string;
+  aggregation?: 'avg' | 'sum' | 'min' | 'max' | 'count' | 'first' | 'last';
+  interval?: string;
+  includeChildren?: boolean; // Rollup data from child assets
+  groupByAsset?: boolean; // Return data grouped by asset
+}
+
+/**
+ * Query data rolled up by asset hierarchy
+ * Aggregates data from devices mapped to an asset and optionally its children
+ */
+export async function getAssetRollupData(
+  params: AssetRollupQueryParams
+): Promise<ApiResponse<AggregatedWidgetDataResponse>> {
+  const searchParams = new URLSearchParams();
+  searchParams.append('assetId', params.assetId);
+  searchParams.append('fields', params.fields);
+  searchParams.append('startTime', params.startTime);
+  searchParams.append('endTime', params.endTime);
+  if (params.aggregation) searchParams.append('aggregation', params.aggregation);
+  if (params.interval) searchParams.append('interval', params.interval);
+  if (params.includeChildren !== undefined) searchParams.append('includeChildren', params.includeChildren.toString());
+  if (params.groupByAsset !== undefined) searchParams.append('groupByAsset', params.groupByAsset.toString());
+
+  return queryApiClient.get<AggregatedWidgetDataResponse>(
+    `/api/query/by-asset?${searchParams.toString()}`
+  );
+}
+
+export interface AssetDevicesQueryParams {
+  assetId: string;
+  includeChildren?: boolean;
+}
+
+/**
+ * Get all devices mapped to an asset (and optionally its children)
+ * Used to determine which devices to query for asset-based widgets
+ */
+export async function getDevicesByAsset(
+  params: AssetDevicesQueryParams
+): Promise<ApiResponse<string[]>> {
+  const searchParams = new URLSearchParams();
+  searchParams.append('assetId', params.assetId);
+  if (params.includeChildren !== undefined) {
+    searchParams.append('includeChildren', params.includeChildren.toString());
+  }
+
+  return queryApiClient.get<string[]>(
+    `/api/query/asset-devices?${searchParams.toString()}`
+  );
 }

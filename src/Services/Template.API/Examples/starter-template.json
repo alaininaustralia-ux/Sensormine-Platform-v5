@@ -1,0 +1,200 @@
+{
+  "template": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "Starter Pack",
+    "version": "1.0.0",
+    "schemaVersion": "1.0",
+    "description": "Basic monitoring setup with temperature and humidity sensors. Perfect for getting started with IoT monitoring.",
+    "author": "Sensormine",
+    "authorEmail": "support@sensormine.com",
+    "createdAt": "2025-12-13T00:00:00Z",
+    "updatedAt": "2025-12-13T00:00:00Z",
+    "tags": ["starter", "temperature", "humidity", "basic"],
+    "category": "General",
+    "license": "MIT",
+    "dependencies": [],
+    "compatibility": {
+      "minPlatformVersion": "5.0.0",
+      "maxPlatformVersion": null
+    },
+    "metadata": {}
+  },
+  "resources": {
+    "schemas": [
+      {
+        "localId": "schema_1",
+        "name": "Temperature and Humidity Sensor",
+        "version": "1.0.0",
+        "schemaDefinition": {
+          "type": "record",
+          "name": "TemperatureHumiditySensor",
+          "fields": [
+            {"name": "temperature", "type": "float"},
+            {"name": "humidity", "type": "float"},
+            {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"}
+          ]
+        },
+        "description": "Basic temperature and humidity sensor schema"
+      }
+    ],
+    "deviceTypes": [
+      {
+        "localId": "deviceType_1",
+        "name": "Temperature & Humidity Sensor",
+        "description": "Standard temperature and humidity monitoring device",
+        "schemaRef": "schema_1",
+        "customFields": {
+          "manufacturer": "Generic",
+          "model": "TH-100"
+        },
+        "fieldMappings": [
+          {
+            "fieldName": "temperature",
+            "friendlyName": "Temperature",
+            "description": "Ambient temperature",
+            "unit": "°C",
+            "dataType": "Float",
+            "isQueryable": true,
+            "isVisible": true,
+            "fieldSource": "Schema"
+          },
+          {
+            "fieldName": "humidity",
+            "friendlyName": "Humidity",
+            "description": "Relative humidity",
+            "unit": "%",
+            "dataType": "Float",
+            "isQueryable": true,
+            "isVisible": true,
+            "fieldSource": "Schema"
+          }
+        ],
+        "icon": "thermometer",
+        "color": "#FF6B6B"
+      }
+    ],
+    "assets": [
+      {
+        "localId": "asset_1",
+        "name": "Main Building",
+        "type": "Building",
+        "parentRef": null,
+        "icon": "building",
+        "metadata": {
+          "address": "123 Main St",
+          "city": "Springfield"
+        },
+        "location": null
+      }
+    ],
+    "dashboards": [
+      {
+        "localId": "dashboard_1",
+        "name": "Temperature Overview",
+        "description": "Real-time temperature and humidity monitoring",
+        "layout": {
+          "columns": 12,
+          "rowHeight": 60
+        },
+        "widgets": [
+          {
+            "id": "widget_1",
+            "type": "chart",
+            "position": {"x": 0, "y": 0, "w": 8, "h": 4},
+            "config": {
+              "chartType": "line",
+              "title": "Temperature Trends",
+              "deviceTypeRef": "deviceType_1",
+              "fields": ["temperature"],
+              "timeRange": "24h",
+              "aggregation": "avg",
+              "refreshInterval": 30
+            }
+          },
+          {
+            "id": "widget_2",
+            "type": "gauge",
+            "position": {"x": 8, "y": 0, "w": 4, "h": 2},
+            "config": {
+              "title": "Current Temperature",
+              "deviceTypeRef": "deviceType_1",
+              "field": "temperature",
+              "min": 0,
+              "max": 50,
+              "thresholds": [
+                {"value": 25, "color": "green"},
+                {"value": 30, "color": "orange"},
+                {"value": 35, "color": "red"}
+              ]
+            }
+          },
+          {
+            "id": "widget_3",
+            "type": "gauge",
+            "position": {"x": 8, "y": 2, "w": 4, "h": 2},
+            "config": {
+              "title": "Current Humidity",
+              "deviceTypeRef": "deviceType_1",
+              "field": "humidity",
+              "min": 0,
+              "max": 100,
+              "unit": "%"
+            }
+          }
+        ],
+        "filters": {
+          "assetRef": "asset_1"
+        }
+      }
+    ],
+    "alertRules": [
+      {
+        "localId": "alert_1",
+        "name": "High Temperature Alert",
+        "description": "Triggers when temperature exceeds 30°C",
+        "condition": "temperature > 30",
+        "deviceTypeRef": "deviceType_1",
+        "deviceRef": null,
+        "severity": 2,
+        "isEnabled": true,
+        "actions": [
+          {
+            "type": "email",
+            "config": {
+              "subject": "High Temperature Alert",
+              "body": "Temperature has exceeded 30°C"
+            }
+          }
+        ],
+        "cooldownMinutes": 15
+      },
+      {
+        "localId": "alert_2",
+        "name": "High Humidity Alert",
+        "description": "Triggers when humidity exceeds 80%",
+        "condition": "humidity > 80",
+        "deviceTypeRef": "deviceType_1",
+        "deviceRef": null,
+        "severity": 1,
+        "isEnabled": true,
+        "actions": [],
+        "cooldownMinutes": 30
+      }
+    ],
+    "nexusConfigurations": [],
+    "navigation": []
+  },
+  "mappings": {
+    "references": {
+      "schema_1": ["deviceType_1"],
+      "deviceType_1": ["dashboard_1", "alert_1", "alert_2"],
+      "asset_1": ["dashboard_1"]
+    }
+  },
+  "importOptions": {
+    "conflictResolution": "skip",
+    "preserveIds": false,
+    "importDevices": false,
+    "importData": false
+  }
+}

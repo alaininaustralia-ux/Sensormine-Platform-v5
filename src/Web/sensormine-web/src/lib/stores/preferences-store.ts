@@ -69,6 +69,13 @@ interface PreferencesState {
   addRecentlyViewedSchema: (schemaId: string) => void;
   clearRecentlyViewed: () => void;
   
+  // Custom Navigation
+  addCustomNavItem: (item: Omit<import('../types/preferences').CustomNavigationItem, 'id' | 'createdAt' | 'order'>) => void;
+  updateCustomNavItem: (id: string, updates: Partial<Omit<import('../types/preferences').CustomNavigationItem, 'id' | 'createdAt'>>) => void;
+  removeCustomNavItem: (id: string) => void;
+  reorderCustomNavItems: (items: import('../types/preferences').CustomNavigationItem[]) => void;
+  getCustomNavItems: () => import('../types/preferences').CustomNavigationItem[];
+  
   // Utility
   resetToDefaults: () => void;
   exportPreferences: () => string;
@@ -511,6 +518,94 @@ export const usePreferencesStore = create<PreferencesState>()(
         
         set({ preferences: updated });
         userPreferencesApi.upsert(updated).catch(error => console.error('Sync failed:', error));
+      },
+      
+      // Custom Navigation
+      addCustomNavItem: (item) => {
+        const { preferences } = get();
+        if (!preferences) return;
+        
+        const customNavigation = preferences.customNavigation || [];
+        const newItem: import('../types/preferences').CustomNavigationItem = {
+          ...item,
+          id: `nav-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          order: customNavigation.length,
+          createdAt: new Date().toISOString(),
+        };
+        
+        const updated = {
+          ...preferences,
+          customNavigation: [...customNavigation, newItem],
+          updatedAt: new Date().toISOString(),
+        };
+        
+        set({ preferences: updated });
+        userPreferencesApi.upsert(updated).catch(error => console.error('Sync failed:', error));
+      },
+      
+      updateCustomNavItem: (id, updates) => {
+        const { preferences } = get();
+        if (!preferences || !preferences.customNavigation) return;
+        
+        const updated = {
+          ...preferences,
+          customNavigation: preferences.customNavigation.map(item =>
+            item.id === id
+              ? { ...item, ...updates, updatedAt: new Date().toISOString() }
+              : item
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+        
+        set({ preferences: updated });
+        userPreferencesApi.upsert(updated).catch(error => console.error('Sync failed:', error));
+      },
+      
+      removeCustomNavItem: (id) => {
+        const { preferences } = get();
+        if (!preferences || !preferences.customNavigation) return;
+        
+        const updated = {
+          ...preferences,
+          customNavigation: preferences.customNavigation.filter(item => item.id !== id),
+          updatedAt: new Date().toISOString(),
+        };
+        
+        set({ preferences: updated });
+        userPreferencesApi.upsert(updated).catch(error => console.error('Sync failed:', error));
+      },
+      
+      reorderCustomNavItems: (items) => {
+        const { preferences } = get();
+        if (!preferences) return;
+        
+        const reordered = items.map((item, index) => ({
+          ...item,
+          order: index,
+        }));
+        
+        const updated = {
+          ...preferences,
+          customNavigation: reordered,
+          updatedAt: new Date().toISOString(),
+        };
+        
+        set({ preferences: updated });
+        userPreferencesApi.upsert(updated).catch(error => console.error('Sync failed:', error));
+      },
+      
+      getCustomNavItems: () => {
+        const { preferences } = get();
+        if (!preferences || !preferences.customNavigation) return [];
+        
+        // Defensive check: ensure customNavigation is actually an array
+        const navItems = preferences.customNavigation;
+        if (!Array.isArray(navItems)) {
+          console.warn('customNavigation is not an array:', navItems);
+          return [];
+        }
+        
+        return [...navItems].sort((a, b) => a.order - b.order);
       },
       
       // Utility

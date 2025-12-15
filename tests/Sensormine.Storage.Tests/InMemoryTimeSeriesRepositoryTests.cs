@@ -86,15 +86,16 @@ public class InMemoryTimeSeriesRepositoryTests
         {
             StartTime = now.AddHours(-1),
             EndTime = now.AddHours(1),
-            Filters = new Dictionary<string, string> { ["deviceId"] = "device-1" }
+            Filters = new Dictionary<string, object> { ["deviceId"] = "device-1" }
         };
 
         // Act
         var results = await _repository.QueryAsync<TimeSeriesData>(Measurement, query);
 
         // Assert
+        var expectedDeviceId = Guid.Parse("device-1".PadRight(32, '0'));
         results.Should().HaveCount(2);
-        results.Should().OnlyContain(r => r.DeviceId == "device-1");
+        results.Should().OnlyContain(r => r.DeviceId == expectedDeviceId);
     }
 
     [Fact]
@@ -103,10 +104,10 @@ public class InMemoryTimeSeriesRepositoryTests
         // Arrange
         var now = DateTimeOffset.UtcNow;
         var data1 = CreateTestDataPoint("device-1", 25.5, now);
-        data1.Tags = new Dictionary<string, string> { ["location"] = "warehouse-a" };
+        data1.Tags = new Dictionary<string, object> { ["location"] = "warehouse-a" };
         
         var data2 = CreateTestDataPoint("device-2", 26.5, now);
-        data2.Tags = new Dictionary<string, string> { ["location"] = "warehouse-b" };
+        data2.Tags = new Dictionary<string, object> { ["location"] = "warehouse-b" };
         
         await _repository.WriteBatchAsync(Measurement, new[] { data1, data2 });
 
@@ -114,7 +115,7 @@ public class InMemoryTimeSeriesRepositoryTests
         {
             StartTime = now.AddHours(-1),
             EndTime = now.AddHours(1),
-            Filters = new Dictionary<string, string> { ["tag.location"] = "warehouse-a" }
+            Filters = new Dictionary<string, object> { ["tag.location"] = "warehouse-a" }
         };
 
         // Act
@@ -165,7 +166,7 @@ public class InMemoryTimeSeriesRepositoryTests
             StartTime = now.AddHours(-1),
             EndTime = now.AddHours(1),
             AggregateFunction = "avg",
-            Filters = new Dictionary<string, string> { ["_field"] = "value" }
+            Filters = new Dictionary<string, object> { ["_field"] = "value" }
         };
 
         // Act
@@ -193,7 +194,7 @@ public class InMemoryTimeSeriesRepositoryTests
             StartTime = now.AddHours(-1),
             EndTime = now.AddHours(1),
             AggregateFunction = "sum",
-            Filters = new Dictionary<string, string> { ["_field"] = "value" }
+            Filters = new Dictionary<string, object> { ["_field"] = "value" }
         };
 
         // Act
@@ -221,7 +222,7 @@ public class InMemoryTimeSeriesRepositoryTests
             StartTime = now.AddHours(-1),
             EndTime = now.AddHours(1),
             AggregateFunction = "min",
-            Filters = new Dictionary<string, string> { ["_field"] = "value" }
+            Filters = new Dictionary<string, object> { ["_field"] = "value" }
         };
         var minResults = await _repository.QueryAggregateAsync<AggregateResult>(Measurement, minQuery);
 
@@ -231,7 +232,7 @@ public class InMemoryTimeSeriesRepositoryTests
             StartTime = now.AddHours(-1),
             EndTime = now.AddHours(1),
             AggregateFunction = "max",
-            Filters = new Dictionary<string, string> { ["_field"] = "value" }
+            Filters = new Dictionary<string, object> { ["_field"] = "value" }
         };
         var maxResults = await _repository.QueryAggregateAsync<AggregateResult>(Measurement, maxQuery);
 
@@ -260,7 +261,7 @@ public class InMemoryTimeSeriesRepositoryTests
             EndTime = baseTime.AddHours(3),
             AggregateFunction = "avg",
             GroupByInterval = TimeSpan.FromHours(1),
-            Filters = new Dictionary<string, string> { ["_field"] = "value" }
+            Filters = new Dictionary<string, object> { ["_field"] = "value" }
         };
 
         // Act
@@ -330,11 +331,11 @@ public class InMemoryTimeSeriesRepositoryTests
         otherResults.First().Values["value"].Should().Be(30.0);
     }
 
-    private static TimeSeriesData CreateTestDataPoint(string deviceId, double value, DateTimeOffset? timestamp = null)
+    private TimeSeriesData CreateTestDataPoint(string deviceId, double value, DateTimeOffset? timestamp = null)
     {
         return new TimeSeriesData
         {
-            DeviceId = deviceId,
+            DeviceId = Guid.TryParse(deviceId, out var guid) ? guid : Guid.Parse(deviceId.PadRight(32, '0')),
             TenantId = TenantId,
             Timestamp = timestamp ?? DateTimeOffset.UtcNow,
             Values = new Dictionary<string, object> { ["value"] = value }

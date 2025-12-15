@@ -18,9 +18,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/lib/auth';
-import { Bell, Search, HelpCircle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { Breadcrumbs } from './Breadcrumbs';
 import { BookmarkButton } from './BookmarkButton';
+import { AlertBadge } from '@/components/alerts/AlertBadge';
 
 interface HeaderProps {
   onHelpClick?: () => void;
@@ -69,11 +70,6 @@ export function Header({ onHelpClick }: HeaderProps) {
 
         {/* Right side - Actions and user menu */}
         <div className="flex items-center gap-4">
-          {/* Search */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Search className="h-5 w-5" />
-          </Button>
-
           {/* Bookmark current page */}
           <BookmarkButton />
 
@@ -88,11 +84,8 @@ export function Header({ onHelpClick }: HeaderProps) {
             <HelpCircle className="h-5 w-5" />
           </Button>
 
-          {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
-          </Button>
+          {/* Alert Notifications */}
+          <AlertBadge />
 
           {/* User menu */}
           {user && (
@@ -121,6 +114,9 @@ export function Header({ onHelpClick }: HeaderProps) {
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Link href="/profile" className="w-full">Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/settings/billing" className="w-full">Billing</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-red-600">

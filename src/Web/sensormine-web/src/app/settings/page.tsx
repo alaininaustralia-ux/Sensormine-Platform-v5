@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
   Cpu, Database, Users, Shield, Bell, Palette, Settings2, Network,
-  Bookmark, Clock, Star, Trash2, ExternalLink 
+  Bookmark, Clock, Star, Trash2, ExternalLink, Package
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { getBookmarks, getPageHistory, removeBookmark } from '@/lib/services/navigation-tracking';
@@ -69,6 +69,12 @@ const settingsCategories = [
     description: 'Customize dashboard themes and layouts',
     icon: Palette,
     href: '/settings/appearance',
+  },
+  {
+    title: 'Solution Kits',
+    description: 'Export and import configuration templates as solution kits',
+    icon: Package,
+    href: '/settings/solution-kits',
   },
 ];
 

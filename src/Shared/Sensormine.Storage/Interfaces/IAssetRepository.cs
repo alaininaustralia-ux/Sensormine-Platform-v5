@@ -37,4 +37,7 @@ public interface IAssetRepository
     // Device count
     Task<int> GetDeviceCountAsync(Guid assetId, string tenantId, CancellationToken cancellationToken = default);
     Task<Dictionary<Guid, int>> GetBulkDeviceCountsAsync(List<Guid> assetIds, string tenantId, CancellationToken cancellationToken = default);
+    
+    // Path utilities
+    Task<string> GetPathNamesAsync(Guid assetId, string tenantId, CancellationToken cancellationToken = default);
 }

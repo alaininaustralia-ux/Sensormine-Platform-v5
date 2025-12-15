@@ -33,6 +33,13 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
     /// <inheritdoc />
     public async Task WriteAsync<T>(string measurement, T data, CancellationToken cancellationToken = default) where T : class
     {
+        // If data is already TelemetryData, write it directly without conversion
+        if (data is TelemetryData telemetryData)
+        {
+            await WriteTelemetryDataDirectlyAsync(measurement, telemetryData, cancellationToken);
+            return;
+        }
+        
         var timeSeriesData = ConvertToTimeSeriesData(data);
         await WriteTimeSeriesDataAsync(measurement, timeSeriesData, cancellationToken);
     }
@@ -65,10 +72,7 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
         
         foreach (var param in parameters)
         {
-            var dbParam = command.CreateParameter();
-            dbParam.ParameterName = param.Key;
-            dbParam.Value = param.Value;
-            command.Parameters.Add(dbParam);
+            AddParameter(command, param.Key, param.Value);
         }
 
         EnsureConnectionOpen();
@@ -78,7 +82,7 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
         {
             var item = new TimeSeriesData
             {
-                DeviceId = reader.GetString(reader.GetOrdinal("DeviceId")),
+                DeviceId = reader.GetGuid(reader.GetOrdinal("DeviceId")),
                 TenantId = reader.GetGuid(reader.GetOrdinal("TenantId")),
                 Timestamp = reader.GetDateTime(reader.GetOrdinal("Timestamp")),
                 Values = new Dictionary<string, object>()
@@ -145,7 +149,7 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
         var valueField = "value";
         if (query.Filters != null && query.Filters.TryGetValue("_field", out var field))
         {
-            valueField = field;
+            valueField = field?.ToString() ?? "value";
             query.Filters.Remove("_field");
         }
 
@@ -159,10 +163,7 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
         
         foreach (var param in parameters)
         {
-            var dbParam = command.CreateParameter();
-            dbParam.ParameterName = param.Key;
-            dbParam.Value = param.Value;
-            command.Parameters.Add(dbParam);
+            AddParameter(command, param.Key, param.Value);
         }
 
         EnsureConnectionOpen();
@@ -203,7 +204,7 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
                 var deviceOrdinal = reader.GetOrdinal("DeviceId");
                 if (!reader.IsDBNull(deviceOrdinal))
                 {
-                    result.DeviceId = reader.GetString(deviceOrdinal);
+                    result.DeviceId = reader.GetGuid(deviceOrdinal);
                 }
             }
             catch (IndexOutOfRangeException)
@@ -247,15 +248,52 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
         AddParameter(command, "@longitude", telemetryData.Longitude);
         AddParameter(command, "@altitude", telemetryData.Altitude);
         
-        // JSONB fields
-        AddParameter(command, "@customFields", 
+        // JSONB fields - Pass objects directly to Npgsql for proper JSONB handling
+        // Must explicitly set NpgsqlDbType to Jsonb for Dictionary parameters
+        AddJsonbParameter(command, "@customFields", 
             telemetryData.CustomFields.Count > 0 
-                ? JsonSerializer.Serialize(telemetryData.CustomFields, _jsonOptions) 
-                : "{}");
-        AddParameter(command, "@quality", 
-            telemetryData.Quality != null 
-                ? JsonSerializer.Serialize(telemetryData.Quality, _jsonOptions) 
-                : null);
+                ? telemetryData.CustomFields 
+                : new Dictionary<string, object>());
+        AddJsonbParameter(command, "@quality", 
+            telemetryData.Quality);
+
+        await ExecuteNonQueryAsync(command, cancellationToken);
+    }
+
+    private async Task WriteTelemetryDataDirectlyAsync(string measurement, TelemetryData telemetryData, CancellationToken cancellationToken)
+    {
+        var tableName = GetTableName(measurement);
+        
+        // Set tenant context for Row Level Security
+        await SetTenantContextAsync(telemetryData.TenantId.ToString(), isServiceAccount: true, cancellationToken);
+        
+        var sql = TimeSeriesQueryBuilder.BuildInsertQuery(tableName);
+
+        EnsureConnectionOpen();
+
+        // Write single row with JSONB custom_fields
+        using var command = _connection.CreateCommand();
+        command.CommandText = sql;
+
+        AddParameter(command, "@timestamp", telemetryData.Time.UtcDateTime);
+        AddParameter(command, "@deviceId", telemetryData.DeviceId);
+        AddParameter(command, "@tenantId", telemetryData.TenantId.ToString());
+        AddParameter(command, "@deviceType", telemetryData.DeviceType);
+        
+        // System fields
+        AddParameter(command, "@batteryLevel", telemetryData.BatteryLevel);
+        AddParameter(command, "@signalStrength", telemetryData.SignalStrength);
+        AddParameter(command, "@latitude", telemetryData.Latitude);
+        AddParameter(command, "@longitude", telemetryData.Longitude);
+        AddParameter(command, "@altitude", telemetryData.Altitude);
+        
+        // JSONB fields - Pass CustomFields dictionary directly
+        AddJsonbParameter(command, "@customFields", 
+            telemetryData.CustomFields.Count > 0 
+                ? telemetryData.CustomFields 
+                : new Dictionary<string, object>());
+        AddJsonbParameter(command, "@quality", 
+            telemetryData.Quality);
 
         await ExecuteNonQueryAsync(command, cancellationToken);
     }
@@ -298,6 +336,28 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
         var param = command.CreateParameter();
         param.ParameterName = name;
         param.Value = value ?? DBNull.Value;
+        
+        // Cast to NpgsqlParameter to set proper type for Guid (UUID in PostgreSQL)
+        if (param is Npgsql.NpgsqlParameter npgsqlParam && value is Guid)
+        {
+            npgsqlParam.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
+        }
+        
+        command.Parameters.Add(param);
+    }
+
+    private static void AddJsonbParameter(IDbCommand command, string name, object? value)
+    {
+        var param = command.CreateParameter();
+        param.ParameterName = name;
+        param.Value = value ?? DBNull.Value;
+        
+        // Cast to NpgsqlParameter to set JSONB type
+        if (param is Npgsql.NpgsqlParameter npgsqlParam)
+        {
+            npgsqlParam.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
+        }
+        
         command.Parameters.Add(param);
     }
 
@@ -340,7 +400,9 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
                 switch (kvp.Key.ToLowerInvariant())
                 {
                     case "deviceid":
-                        result.DeviceId = kvp.Value.GetString() ?? string.Empty;
+                        var deviceIdStr = kvp.Value.GetString();
+                        if (!string.IsNullOrEmpty(deviceIdStr) && Guid.TryParse(deviceIdStr, out var deviceGuid))
+                            result.DeviceId = deviceGuid;
                         break;
                     case "timestamp":
                         if (kvp.Value.TryGetDateTimeOffset(out var ts))
@@ -510,11 +572,11 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
     }
 
     /// <inheritdoc />
-    public async Task<Dictionary<string, LatestTelemetryData>> GetLatestTelemetryForDevicesAsync(
-        IEnumerable<string> deviceIds, 
+    public async Task<Dictionary<Guid, LatestTelemetryData>> GetLatestTelemetryForDevicesAsync(
+        IEnumerable<Guid> deviceIds, 
         CancellationToken cancellationToken = default)
     {
-        var result = new Dictionary<string, LatestTelemetryData>();
+        var result = new Dictionary<Guid, LatestTelemetryData>();
         var deviceIdList = deviceIds.ToList();
 
         if (!deviceIdList.Any())
@@ -549,7 +611,7 @@ public class TimescaleDbRepository : ITimeSeriesRepository, IDisposable
         using var reader = await ExecuteReaderAsync(command, cancellationToken);
         while (await ReadAsync(reader, cancellationToken))
         {
-            var deviceId = reader.GetString(reader.GetOrdinal("device_id"));
+            var deviceId = reader.GetGuid(reader.GetOrdinal("device_id"));
             var timestamp = reader.GetDateTime(reader.GetOrdinal("time"));
             var customFields = DeserializeJson<Dictionary<string, object>>(reader, "custom_fields") 
                 ?? new Dictionary<string, object>();
@@ -576,9 +638,9 @@ public class AggregateResult
     public DateTime? Bucket { get; set; }
 
     /// <summary>
-    /// Device ID if grouped by device
+    /// Device ID if grouped by device (UUID)
     /// </summary>
-    public string? DeviceId { get; set; }
+    public Guid? DeviceId { get; set; }
 
     /// <summary>
     /// Aggregated value

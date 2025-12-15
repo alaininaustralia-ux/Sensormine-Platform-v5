@@ -79,6 +79,10 @@ public class TelemetryConsumerService : BackgroundService
 
         try
         {
+            // DEBUG: Log raw Kafka payload
+            _logger.LogWarning("[INGESTION.SERVICE] Raw Kafka Payload for device {DeviceId}: {Payload}", 
+                deviceId, payload);
+            
             _logger.LogDebug("Processing message from device {DeviceId}: {Payload}", deviceId, payload);
 
             // Extract tenant ID from Kafka message headers (set by Edge Gateway from MQTT topic)
@@ -114,6 +118,16 @@ public class TelemetryConsumerService : BackgroundService
                 await SendToDlq(deviceId, payload, "Failed to parse JSON payload");
                 return;
             }
+            
+            // DEBUG: Log parsed telemetry structure
+            _logger.LogWarning("[INGESTION.SERVICE] Parsed telemetry keys: {Keys}", 
+                string.Join(", ", telemetryData.Keys));
+            if (telemetryData.ContainsKey("customFields"))
+            {
+                _logger.LogWarning("[INGESTION.SERVICE] Found 'customFields' key! Value type: {Type}, Value: {Value}",
+                    telemetryData["customFields"]?.GetType().Name ?? "null",
+                    telemetryData["customFields"]);
+            }
 
             // Get device tenant information
             using var scope = _serviceProvider.CreateScope();
@@ -136,18 +150,27 @@ public class TelemetryConsumerService : BackgroundService
             // Separate system fields from custom fields
             var systemFields = new HashSet<string>
             {
-                "timestamp", "time", "device_id", "deviceId",
+                "timestamp", "time", "device_id", "deviceId", "deviceType", "device_type",
                 "battery_level", "batteryLevel", "battery",
                 "signal_strength", "signalStrength", "rssi",
                 "latitude", "lat", "longitude", "lng", "lon",
                 "altitude", "alt"
+                // NOTE: "customFields" is NOT in this list - it's handled specially in ExtractCustomFields
             };
             
             // Create telemetry data with JSONB custom fields
+            // Parse deviceId as Guid (now UUID in database)
+            if (!Guid.TryParse(deviceId, out var deviceGuid))
+            {
+                _logger.LogError("Invalid device ID format (must be GUID): {DeviceId}", deviceId);
+                await SendToDlq(deviceId, payload, "Invalid device ID format (must be GUID)");
+                return;
+            }
+            
             var telemetry = new TelemetryData
             {
                 Time = ExtractTimestamp(telemetryData),
-                DeviceId = deviceId,
+                DeviceId = deviceGuid,
                 TenantId = Guid.Parse(tenantId),
                 DeviceType = deviceType,
                 
@@ -167,13 +190,14 @@ public class TelemetryConsumerService : BackgroundService
                     ?? ExtractDouble(telemetryData, "alt"),
                 
                 // Everything else goes into custom_fields
-                CustomFields = telemetryData
-                    .Where(kvp => !systemFields.Contains(kvp.Key, StringComparer.OrdinalIgnoreCase))
-                    .ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => ConvertValue(kvp.Value)
-                    )
+                CustomFields = ExtractCustomFields(telemetryData, systemFields)
             };
+            
+            // DEBUG: Log final customFields structure
+            _logger.LogWarning("[INGESTION.SERVICE] Final customFields keys: {Keys}",
+                string.Join(", ", telemetry.CustomFields.Keys));
+            _logger.LogWarning("[INGESTION.SERVICE] CustomFields JSON: {Json}",
+                JsonSerializer.Serialize(telemetry.CustomFields));
 
             // Write to TimescaleDB using scoped repository
             var repository = scope.ServiceProvider.GetRequiredService<ITimeSeriesRepository>();
@@ -277,6 +301,46 @@ public class TelemetryConsumerService : BackgroundService
         };
     }
 
+    private Dictionary<string, object> ExtractCustomFields(Dictionary<string, object> telemetryData, HashSet<string> systemFields)
+    {
+        var customFields = new Dictionary<string, object>();
+        
+        foreach (var kvp in telemetryData.Where(kvp => !systemFields.Contains(kvp.Key, StringComparer.OrdinalIgnoreCase)))
+        {
+            // Special handling for nested customFields JSON string
+            if (kvp.Key.Equals("customFields", StringComparison.OrdinalIgnoreCase))
+            {
+                var nestedValue = ConvertValue(kvp.Value);
+                if (nestedValue is string jsonString)
+                {
+                    try
+                    {
+                        // Parse the nested JSON string
+                        var nestedData = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonString);
+                        if (nestedData != null)
+                        {
+                            // Flatten nested fields into root
+                            foreach (var nested in nestedData)
+                            {
+                                customFields[nested.Key] = ConvertValue(nested.Value);
+                            }
+                        }
+                        continue;
+                    }
+                    catch
+                    {
+                        // If parsing fails, just add as string
+                        customFields[kvp.Key] = nestedValue;
+                    }
+                }
+            }
+            
+            customFields[kvp.Key] = ConvertValue(kvp.Value);
+        }
+        
+        return customFields;
+    }
+
     private object ConvertValue(object value)
     {
         if (value is JsonElement jsonElement)
@@ -288,10 +352,32 @@ public class TelemetryConsumerService : BackgroundService
                 JsonValueKind.True => true,
                 JsonValueKind.False => false,
                 JsonValueKind.Null => DBNull.Value,
+                JsonValueKind.Object => ConvertJsonObject(jsonElement),
+                JsonValueKind.Array => ConvertJsonArray(jsonElement),
                 _ => value
             };
         }
         return value;
+    }
+
+    private Dictionary<string, object> ConvertJsonObject(JsonElement jsonElement)
+    {
+        var result = new Dictionary<string, object>();
+        foreach (var property in jsonElement.EnumerateObject())
+        {
+            result[property.Name] = ConvertValue(property.Value);
+        }
+        return result;
+    }
+
+    private List<object> ConvertJsonArray(JsonElement jsonElement)
+    {
+        var result = new List<object>();
+        foreach (var item in jsonElement.EnumerateArray())
+        {
+            result.Add(ConvertValue(item));
+        }
+        return result;
     }
 
     public override void Dispose()

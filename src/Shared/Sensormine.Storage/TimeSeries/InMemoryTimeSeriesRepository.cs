@@ -87,8 +87,8 @@ public class InMemoryTimeSeriesRepository : ITimeSeriesRepository
         var valueField = "value";
         if (query.Filters != null && query.Filters.TryGetValue("_field", out var field))
         {
-            valueField = field;
-            var newFilters = new Dictionary<string, string>(query.Filters);
+            valueField = field?.ToString() ?? "value";
+            var newFilters = new Dictionary<string, object>(query.Filters);
             newFilters.Remove("_field");
             query.Filters = newFilters;
         }
@@ -159,9 +159,9 @@ public class InMemoryTimeSeriesRepository : ITimeSeriesRepository
             {
                 result.Bucket = bucket.UtcDateTime;
             }
-            else if (group.Key is string deviceId && deviceId != "all")
+            else if (group.Key is string deviceId && deviceId != "all" && Guid.TryParse(deviceId, out var deviceGuid))
             {
-                result.DeviceId = deviceId;
+                result.DeviceId = deviceGuid;
             }
 
             result.Value = query.AggregateFunction.ToLowerInvariant() switch
@@ -179,7 +179,7 @@ public class InMemoryTimeSeriesRepository : ITimeSeriesRepository
         return results.OrderBy(r => r.Bucket).ToList();
     }
 
-    private bool MatchesFilters(TimeSeriesDataPoint dataPoint, Dictionary<string, string>? filters)
+    private bool MatchesFilters(TimeSeriesDataPoint dataPoint, Dictionary<string, object>? filters)
     {
         if (filters == null || filters.Count == 0)
             return true;
@@ -188,18 +188,21 @@ public class InMemoryTimeSeriesRepository : ITimeSeriesRepository
         {
             if (filter.Key.Equals("deviceId", StringComparison.OrdinalIgnoreCase))
             {
-                if (dataPoint.DeviceId != filter.Value)
+                var filterValueStr = filter.Value is Guid guidValue ? guidValue.ToString() : filter.Value?.ToString();
+                if (dataPoint.DeviceId != filterValueStr)
                     return false;
             }
             else if (filter.Key.StartsWith("tag.", StringComparison.OrdinalIgnoreCase))
             {
                 var tagKey = filter.Key[4..];
-                if (dataPoint.Tags == null || !dataPoint.Tags.TryGetValue(tagKey, out var tagValue) || tagValue != filter.Value)
+                var filterValueStr = filter.Value?.ToString();
+                if (dataPoint.Tags == null || !dataPoint.Tags.TryGetValue(tagKey, out var tagValue) || tagValue != filterValueStr)
                     return false;
             }
             else
             {
-                if (!dataPoint.Values.TryGetValue(filter.Key, out var value) || value?.ToString() != filter.Value)
+                var filterValueStr = filter.Value?.ToString();
+                if (!dataPoint.Values.TryGetValue(filter.Key, out var value) || value?.ToString() != filterValueStr)
                     return false;
             }
         }
@@ -213,7 +216,7 @@ public class InMemoryTimeSeriesRepository : ITimeSeriesRepository
         {
             return new TimeSeriesDataPoint
             {
-                DeviceId = tsData.DeviceId,
+                DeviceId = tsData.DeviceId.ToString(),
                 TenantId = _tenantId,
                 Timestamp = tsData.Timestamp,
                 Values = tsData.Values,
@@ -238,7 +241,7 @@ public class InMemoryTimeSeriesRepository : ITimeSeriesRepository
         {
             return results.Select(r => new Core.Models.TimeSeriesData
             {
-                DeviceId = r.DeviceId,
+                DeviceId = Guid.Parse(r.DeviceId),
                 TenantId = Guid.Parse(r.TenantId),
                 Timestamp = r.Timestamp,
                 Values = r.Values,
@@ -259,11 +262,11 @@ public class InMemoryTimeSeriesRepository : ITimeSeriesRepository
     }
 
     /// <inheritdoc />
-    public Task<Dictionary<string, LatestTelemetryData>> GetLatestTelemetryForDevicesAsync(
-        IEnumerable<string> deviceIds, 
+    public Task<Dictionary<Guid, LatestTelemetryData>> GetLatestTelemetryForDevicesAsync(
+        IEnumerable<Guid> deviceIds, 
         CancellationToken cancellationToken = default)
     {
-        var result = new Dictionary<string, LatestTelemetryData>();
+        var result = new Dictionary<Guid, LatestTelemetryData>();
         var deviceIdList = deviceIds.ToList();
 
         if (!deviceIdList.Any())
@@ -279,8 +282,10 @@ public class InMemoryTimeSeriesRepository : ITimeSeriesRepository
             // Get latest telemetry for each device
             foreach (var deviceId in deviceIdList)
             {
+                // DeviceId is stored as string internally, convert to compare
+                var deviceIdStr = deviceId.ToString();
                 var latest = list
-                    .Where(d => d.TenantId == _tenantId && d.DeviceId == deviceId)
+                    .Where(d => d.TenantId == _tenantId && d.DeviceId == deviceIdStr)
                     .OrderByDescending(d => d.Timestamp)
                     .FirstOrDefault();
 

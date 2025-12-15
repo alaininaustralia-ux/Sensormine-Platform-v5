@@ -1,9 +1,16 @@
 using Microsoft.EntityFrameworkCore;
+using Sensormine.Core.Interfaces;
 using Sensormine.Core.Repositories;
 using Sensormine.Storage.Data;
 using Sensormine.Storage.Repositories;
+using Sensormine.Storage.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure file storage
+builder.Services.Configure<LocalFileStorageOptions>(
+    builder.Configuration.GetSection(LocalFileStorageOptions.SectionName));
+builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
 // Add services to the container
 builder.Services.AddControllers();

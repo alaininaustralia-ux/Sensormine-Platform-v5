@@ -232,6 +232,7 @@ export interface DeviceType {
   tags: string[];
   isActive: boolean;
   fields?: FieldMapping[];
+  deviceCount?: number; // Device count from aggregation
   createdAt: string;
   updatedAt: string;
   createdBy?: string;

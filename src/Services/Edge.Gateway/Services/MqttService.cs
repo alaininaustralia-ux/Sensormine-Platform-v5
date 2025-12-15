@@ -96,6 +96,10 @@ public class MqttService : BackgroundService
             var payload = Encoding.UTF8.GetString(args.ApplicationMessage.PayloadSegment);
             var (tenantId, deviceId) = ExtractTenantAndDeviceId(topic);
 
+            // DEBUG: Log raw MQTT payload
+            _logger.LogWarning("[EDGE.GATEWAY] Raw MQTT Payload from topic {Topic}: {Payload}", 
+                topic, payload);
+
             _logger.LogInformation("Received message from device {DeviceId} (tenant: {TenantId}) on topic {Topic}", deviceId, tenantId, topic);
 
             // Check rate limiting
@@ -121,6 +125,10 @@ public class MqttService : BackgroundService
                 
                 foreach (var msg in messages)
                 {
+                    // DEBUG: Log what we're forwarding to Kafka
+                    _logger.LogWarning("[EDGE.GATEWAY] Forwarding to Kafka - Device: {DeviceId}, Payload: {Payload}",
+                        msg.DeviceId, msg.Payload);
+                    
                     var message = new Message<string, string>
                     {
                         Key = msg.DeviceId,

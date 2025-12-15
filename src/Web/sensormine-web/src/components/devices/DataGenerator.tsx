@@ -83,10 +83,10 @@ function computeTopic(device: Device, strategy: TopicStrategy): string {
   const tenantId = device.tenantId || DEFAULT_TENANT_ID;
 
   if (strategy === 'multi-tenant') {
-    return `sensormine/tenants/${tenantId}/devices/${device.deviceId}/telemetry`;
+    return `sensormine/tenants/${tenantId}/devices/${device.id}/telemetry`;
   }
 
-  return `devices/${device.deviceId}/telemetry`;
+  return `devices/${device.id}/telemetry`;
 }
 
 interface DataGeneratorProps {
@@ -144,7 +144,7 @@ export function DataGenerator({ device, onClose, onSimulationStart, onSimulation
     const checkActiveSimulation = async () => {
       try {
         const response = await getActiveSimulations();
-        const isRunning = response.data.some(d => d.deviceId === device.deviceId);
+        const isRunning = response.data.some(d => d.deviceId === device.id);
         if (isRunning) {
           setState(prev => ({ ...prev, isRunning: true }));
           addLog('Simulation is already running for this device');
@@ -154,7 +154,7 @@ export function DataGenerator({ device, onClose, onSimulationStart, onSimulation
       }
     };
     checkActiveSimulation();
-  }, [device.deviceId, addLog]);
+  }, [device.id, addLog]);
 
   const handleTopicStrategyChange = useCallback((strategy: TopicStrategy) => {
     setState(prev => ({
@@ -199,7 +199,7 @@ export function DataGenerator({ device, onClose, onSimulationStart, onSimulation
       addLog(`Sensors: ${sensors.length}`);
 
       await startSimulation({
-        deviceId: device.deviceId,
+        deviceId: device.id, // Use database GUID, not device identifier string
         name: device.name,
         protocol: 'MQTT',
         interval: state.interval * 1000, // Convert seconds to milliseconds
@@ -237,7 +237,7 @@ export function DataGenerator({ device, onClose, onSimulationStart, onSimulation
     try {
       addLog(`Stopping simulation for device ${device.name}...`);
       
-      await stopSimulation(device.deviceId);
+      await stopSimulation(device.id);
 
       setState(prev => ({ ...prev, isRunning: false }));
       addLog('✓ Simulation stopped successfully');

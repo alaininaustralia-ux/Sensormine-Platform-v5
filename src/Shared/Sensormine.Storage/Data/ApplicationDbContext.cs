@@ -45,6 +45,15 @@ public class ApplicationDbContext : DbContext
     public DbSet<AssetRollupConfig> AssetRollupConfigs { get; set; } = null!;
     public DbSet<AssetRollupData> AssetRollupData { get; set; } = null!;
 
+    // Template Management
+    public DbSet<Template> Templates { get; set; } = null!;
+    public DbSet<TemplateImportHistory> TemplateImportHistories { get; set; } = null!;
+
+    // Custom Widget Management  
+    public DbSet<CustomWidget> CustomWidgets { get; set; } = null!;
+    public DbSet<WidgetPermission> WidgetPermissions { get; set; } = null!;
+    public DbSet<WidgetUsageLog> WidgetUsageLogs { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -58,6 +67,7 @@ public class ApplicationDbContext : DbContext
         ConfigureDashboardEntities(modelBuilder);
         ConfigureAlertEntities(modelBuilder);
         ConfigureAssetEntities(modelBuilder);
+        ConfigureTemplateEntities(modelBuilder);
     }
 
     private void ConfigureSchemaEntities(ModelBuilder modelBuilder)
@@ -171,10 +181,22 @@ public class ApplicationDbContext : DbContext
                 .HasColumnName("created_at")
                 .IsRequired();
 
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at");
+
             entity.Property(e => e.TenantId)
                 .HasColumnName("tenant_id")
                 .HasMaxLength(100)
                 .IsRequired();
+
+            entity.Property(e => e.CreatedBy)
+                .HasColumnName("created_by")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.Metadata)
+                .HasColumnName("metadata")
+                .HasColumnType("text");
 
             // Store DeviceTypes as JSON array
             entity.Property(e => e.DeviceTypes)
@@ -380,7 +402,7 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.Tags)
                 .HasColumnName("tags")
-                .HasColumnType("text[]");
+                .HasColumnType("jsonb");
 
             entity.Property(e => e.DefaultAggregation)
                 .HasColumnName("default_aggregation")
@@ -388,7 +410,7 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.SupportsAggregations)
                 .HasColumnName("supports_aggregations")
-                .HasColumnType("text[]");
+                .HasColumnType("jsonb");
 
             entity.Property(e => e.FormatString)
                 .HasColumnName("format_string")
@@ -865,6 +887,15 @@ public class ApplicationDbContext : DbContext
                 .HasConversion<int>()
                 .IsRequired();
 
+            entity.Property(e => e.Version)
+                .HasColumnName("version")
+                .HasDefaultValue(1)
+                .IsRequired();
+
+            entity.Property(e => e.LastModifiedBy)
+                .HasColumnName("last_modified_by")
+                .HasMaxLength(255);
+
             // Self-referencing relationship for hierarchy
             entity.HasOne(e => e.ParentDashboard)
                 .WithMany(e => e.SubPages)
@@ -932,13 +963,11 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.DeviceTypeIds)
                 .HasColumnName("device_type_ids")
-                .HasColumnType("jsonb")
-                .IsRequired();
+                .HasColumnType("text[]");
 
             entity.Property(e => e.DeviceIds)
                 .HasColumnName("device_ids")
-                .HasColumnType("jsonb")
-                .IsRequired();
+                .HasColumnType("text[]");
 
             entity.Property(e => e.Conditions)
                 .HasColumnName("conditions")
@@ -963,11 +992,17 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.DeliveryChannels)
                 .HasColumnName("delivery_channels")
-                .HasColumnType("text[]");
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>());
 
             entity.Property(e => e.Recipients)
                 .HasColumnName("recipients")
-                .HasColumnType("text[]");
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>());
 
             entity.Property(e => e.IsEnabled)
                 .HasColumnName("is_enabled")
@@ -1635,6 +1670,190 @@ public class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => new { e.TenantId, e.Time })
                 .HasDatabaseName("idx_rollup_data_tenant");
+        });
+    }
+
+    private void ConfigureTemplateEntities(ModelBuilder modelBuilder)
+    {
+        // Template Configuration
+        modelBuilder.Entity<Template>(entity =>
+        {
+            entity.ToTable("templates");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedNever();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .HasColumnType("uuid")
+                .HasConversion<Guid>()
+                .IsRequired();
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.Version)
+                .HasColumnName("version")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.SchemaVersion)
+                .HasColumnName("schema_version")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.Description)
+                .HasColumnName("description")
+                .HasColumnType("text");
+
+            entity.Property(e => e.Author)
+                .HasColumnName("author")
+                .HasMaxLength(255);
+
+            entity.Property(e => e.AuthorEmail)
+                .HasColumnName("author_email")
+                .HasMaxLength(255);
+
+            entity.Property(e => e.TemplateJson)
+                .HasColumnName("template_json")
+                .HasColumnType("jsonb")
+                .IsRequired();
+
+            entity.Property(e => e.Tags)
+                .HasColumnName("tags")
+                .HasColumnType("text[]");
+
+            entity.Property(e => e.Category)
+                .HasColumnName("category")
+                .HasMaxLength(100);
+
+            entity.Property(e => e.License)
+                .HasColumnName("license")
+                .HasMaxLength(100);
+
+            entity.Property(e => e.IsPublic)
+                .HasColumnName("is_public")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.IsVerified)
+                .HasColumnName("is_verified")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.DownloadCount)
+                .HasColumnName("download_count")
+                .HasDefaultValue(0);
+
+            entity.Property(e => e.Rating)
+                .HasColumnName("rating")
+                .HasColumnType("decimal(3,2)")
+                .HasDefaultValue(0);
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            entity.Property(e => e.CreatedBy)
+                .HasColumnName("created_by")
+                .HasMaxLength(255);
+
+            // Indexes
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("idx_templates_tenant_id");
+
+            entity.HasIndex(e => e.Category)
+                .HasDatabaseName("idx_templates_category");
+
+            entity.HasIndex(e => e.IsPublic)
+                .HasDatabaseName("idx_templates_is_public")
+                .HasFilter("is_public = true");
+
+            entity.HasIndex(e => e.Tags)
+                .HasDatabaseName("idx_templates_tags")
+                .HasMethod("gin");
+        });
+
+        // TemplateImportHistory Configuration
+        modelBuilder.Entity<TemplateImportHistory>(entity =>
+        {
+            entity.ToTable("template_imports");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .ValueGeneratedNever();
+
+            entity.Property(e => e.TenantId)
+                .HasColumnName("tenant_id")
+                .HasColumnType("uuid")
+                .HasConversion<Guid>()
+                .IsRequired();
+
+            entity.Property(e => e.TemplateId)
+                .HasColumnName("template_id")
+                .HasColumnType("uuid")
+                .HasConversion<Guid>()
+                .IsRequired();
+
+            entity.Property(e => e.TemplateVersion)
+                .HasColumnName("template_version")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.ImportedAt)
+                .HasColumnName("imported_at")
+                .IsRequired();
+
+            entity.Property(e => e.ImportedBy)
+                .HasColumnName("imported_by")
+                .HasMaxLength(255);
+
+            entity.Property(e => e.Status)
+                .HasColumnName("status")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.ImportedCount)
+                .HasColumnName("imported_count")
+                .HasColumnType("jsonb");
+
+            entity.Property(e => e.SkippedCount)
+                .HasColumnName("skipped_count")
+                .HasColumnType("jsonb");
+
+            entity.Property(e => e.Errors)
+                .HasColumnName("errors")
+                .HasColumnType("jsonb");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .IsRequired();
+
+            // Relationships
+            entity.HasOne(e => e.Template)
+                .WithMany()
+                .HasForeignKey(e => e.TemplateId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Indexes
+            entity.HasIndex(e => e.TenantId)
+                .HasDatabaseName("idx_template_imports_tenant_id");
+
+            entity.HasIndex(e => e.TemplateId)
+                .HasDatabaseName("idx_template_imports_template_id");
         });
     }
 }

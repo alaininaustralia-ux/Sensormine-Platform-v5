@@ -1,6 +1,6 @@
 # Application Architecture
 
-**Last Updated:** December 10, 2025  
+**Last Updated:** December 12, 2025  
 **Status:** Production-Ready  
 **Architecture Pattern:** Microservices with Event-Driven Communication
 
@@ -48,7 +48,7 @@ The Sensormine Platform follows a microservices architecture with clear separati
 ## 🏢 Service Catalog
 
 ### API Gateway
-**Port:** 5000  
+**Port:** 5000 (HTTP), 7064 (HTTPS)  
 **Purpose:** Single entry point for all client requests  
 **Technology:** ASP.NET Core + Yarp (Reverse Proxy)
 
@@ -65,6 +65,176 @@ The Sensormine Platform follows a microservices architecture with clear separati
 - `/api/query/*` → Query.API
 - `/api/assets/*` → DigitalTwin.API
 - `/api/dashboards/*` → Dashboard.API
+- `/api/ai/*` → AI.API
+- `/api/alert-rules/*` → Alerts.API
+- `/api/alert-instances/*` → Alerts.API
+- `/api/preferences/*` → Preferences.API
+- `/api/users/*` → Identity.API
+- `/api/billing/*` → Billing.API
+- `/api/simulation/*` → Simulation.API
+- `/api/video-analytics/*` → VideoMetadata.API
+
+**Note:** NexusConfiguration.API and Sensormine.MCP.Server are accessed directly (not routed through gateway).
+
+---
+
+### VideoMetadata.API
+**Port:** 5298  
+**Database:** sensormine_metadata  
+**Purpose:** Video analytics configuration and metadata management
+
+**Responsibilities:**
+- Video analytics configuration CRUD
+- Camera stream and Azure Blob source configuration
+- AI/ML processing model management
+- Device ID generation for dashboard integration
+- Connection testing and health monitoring
+
+**Key Endpoints:**
+```
+GET    /api/video-analytics            # List configurations
+POST   /api/video-analytics            # Create configuration
+GET    /api/video-analytics/{id}       # Get configuration
+PUT    /api/video-analytics/{id}       # Update configuration
+DELETE /api/video-analytics/{id}       # Delete configuration
+POST   /api/video-analytics/{id}/enable   # Enable configuration
+POST   /api/video-analytics/{id}/disable  # Disable configuration
+GET    /api/video-analytics/{id}/health   # Get health status
+POST   /api/video-analytics/test-connection # Test connection
+```
+
+**Supported Video Sources:**
+- RTSP streams (IP cameras)
+- Azure Blob Storage (archived videos)
+- HLS streams
+- WebRTC streams
+
+**Supported AI Models:**
+- Object Detection (YOLO-based)
+- Person Detection
+- Vehicle Detection
+- Behavior Analysis
+- Near-Miss Detection
+- Custom ONNX models
+
+---
+
+### Sensormine.MCP.Server
+**Port:** 5400  
+**Database:** None (proxies to Device.API, Query.API, DigitalTwin.API)  
+**Purpose:** Model Context Protocol server for AI agent integration
+
+**Responsibilities:**
+- Implement MCP (JSON-RPC 2.0) protocol
+- Provide resources (devices, assets) for AI queries
+- Expose tools for data retrieval (query_devices, query_telemetry, query_asset_hierarchy)
+- Cache responses in Redis for performance
+- Multi-tenant context propagation
+
+**Key Endpoints:**
+```
+POST   /mcp                            # MCP JSON-RPC endpoint
+GET    /health                         # Health check
+GET    /swagger                        # API documentation
+```
+
+**MCP Protocol Methods:**
+```
+initialize                  # Initialize MCP connection
+resources/list              # List available resources (devices, assets)
+resources/read              # Read specific resource
+tools/list                  # List available tools
+tools/call                  # Execute tool with parameters
+prompts/list               # List available prompts (future)
+```
+
+**Tools:**
+- `query_devices`: Search/filter devices by type, status, location
+- `query_telemetry`: Query time-series data with aggregations
+- `query_asset_hierarchy`: Navigate asset relationships
+
+**Integration:**
+- **AI.API**: Primary consumer for Claude-powered queries
+- **Frontend**: Can call directly for MCP protocol access
+- **Caching**: Redis with 5-minute TTL
+- **Resilience**: Polly retry policies, circuit breakers, timeouts
+
+---
+
+### AI.API
+**Port:** 5401  
+**Database:** None (calls MCP Server and Anthropic API)  
+**Purpose:** Natural language query processing with Claude AI
+
+**Responsibilities:**
+- Receive natural language queries from frontend
+- Use Claude Sonnet 4 to interpret user intent
+- Translate queries to structured MCP tool calls
+- Execute MCP tools via Sensormine.MCP.Server
+- Format responses naturally using Claude
+- Extract chart data for visualization
+
+**Key Endpoints:**
+```
+POST   /api/ai/query                   # Process natural language query
+```
+
+**Request Format:**
+```json
+{
+  "query": "Show me temperature data for the last 24 hours"
+}
+```
+
+**Response Format:**
+```json
+{
+  "response": "I found temperature data from 5 devices over the last 24 hours...",
+  "chartData": {
+    "type": "line",
+    "series": [
+      {
+        "name": "temperature",
+        "data": [
+          { "timestamp": "2025-12-12T10:00:00Z", "value": 22.5 },
+          { "timestamp": "2025-12-12T11:00:00Z", "value": 23.1 }
+        ]
+      }
+    ]
+  },
+  "toolsCalled": ["query_telemetry"]
+}
+```
+
+**Integration:**
+- **Anthropic API**: Claude Sonnet 4 (claude-sonnet-4-20250514)
+- **MCP Server**: Calls http://localhost:5400 for data access
+- **Frontend**: Routes through API Gateway at `/api/ai/*`
+
+**Configuration:**
+```json
+{
+  "Anthropic": {
+    "ApiKey": "",  // Set via environment variable: Anthropic__ApiKey
+    "Model": "claude-sonnet-4-20250514",
+    "MaxTokens": 4096
+  },
+  "McpServer": {
+    "BaseUrl": "http://localhost:5400"
+  }
+}
+```
+
+**Environment Variables:**
+- `Anthropic__ApiKey` - Anthropic API key (required, not stored in source control)
+- `Anthropic__Model` - Claude model to use (optional, defaults to claude-sonnet-4-20250514)
+- `Anthropic__MaxTokens` - Max tokens per request (optional, defaults to 4096)
+
+**Two-Stage LLM Approach:**
+1. **Interpretation**: Claude analyzes user query → suggests MCP tool call (JSON)
+2. **Execution**: Call MCP server with structured request
+3. **Formatting**: Claude formats MCP result → natural language
+4. **Visualization**: Extract chart data if applicable
 
 ---
 
@@ -134,6 +304,12 @@ public class FieldMapping
     public bool IsVisible { get; set; }
 }
 ```
+
+---
+1. **Interpretation**: Claude analyzes user query → suggests MCP tool call (JSON)
+2. **Execution**: Call MCP server with structured request
+3. **Formatting**: Claude formats MCP result → natural language
+4. **Visualization**: Extract chart data if applicable
 
 ---
 
@@ -364,19 +540,73 @@ MQTT/HTTP → Edge.Gateway → Kafka (device.telemetry) → Ingestion.Service �
 **Purpose:** Alert rule management and notification
 
 **Responsibilities:**
-- Alert rule CRUD
+- Alert rule CRUD operations
 - Condition evaluation (threshold, anomaly, pattern)
-- Alert triggering
+- Alert instance management (triggered, acknowledged, resolved)
+- Background alert evaluation service (30-second intervals)
 - Notification delivery (email, SMS, webhook)
-- Alert history
+- Alert history and audit trail
+
+**Key Endpoints:**
+```
+GET    /api/alert-rules                # List alert rules
+POST   /api/alert-rules                # Create alert rule
+GET    /api/alert-rules/{id}           # Get alert rule
+PUT    /api/alert-rules/{id}           # Update alert rule
+DELETE /api/alert-rules/{id}           # Delete alert rule
+
+GET    /api/alert-instances            # List alert instances
+GET    /api/alert-instances/{id}       # Get alert instance
+PUT    /api/alert-instances/{id}/acknowledge  # Acknowledge alert
+PUT    /api/alert-instances/{id}/resolve     # Resolve alert
+```
+
+**Domain Models:**
+```csharp
+public class AlertRule
+{
+    public Guid Id { get; set; }
+    public Guid TenantId { get; set; }
+    public string Name { get; set; }
+    public string Condition { get; set; }  // e.g., "temperature > 75"
+    public Guid? DeviceTypeId { get; set; }
+    public Guid? DeviceId { get; set; }
+    public int Severity { get; set; }  // 0=Info, 1=Warning, 2=Error, 3=Critical
+    public bool IsEnabled { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class AlertInstance
+{
+    public Guid Id { get; set; }
+    public Guid RuleId { get; set; }
+    public Guid DeviceId { get; set; }
+    public string Status { get; set; }  // Active, Acknowledged, Resolved
+    public int Severity { get; set; }
+    public DateTime TriggeredAt { get; set; }
+    public DateTime? AcknowledgedAt { get; set; }
+    public string? AcknowledgedBy { get; set; }
+    public DateTime? ResolvedAt { get; set; }
+    public JsonDocument Value { get; set; }  // Telemetry value that triggered alert
+    public JsonDocument? Threshold { get; set; }
+}
+```
+
+**Background Services:**
+- **AlertEvaluationService**: Continuously evaluates enabled alert rules every 30 seconds
+- Queries latest telemetry from Query.API
+- Evaluates threshold conditions (>, <, ==, !=, >=, <=)
+- Creates/updates alert instances
+- Manages state transitions (Active → Acknowledged → Resolved)
 
 **Alert Rule Example:**
 ```json
 {
   "name": "High Temperature Alert",
   "condition": "temperature > 75",
-  "deviceTypeId": "uuid",
-  "severity": "Critical",
+  "deviceTypeId": "18e59896-f857-4a99-b0c1-9c5c8b5e5e5e",
+  "severity": 3,
+  "isEnabled": true,
   "actions": [
     {"type": "email", "recipients": ["ops@example.com"]},
     {"type": "webhook", "url": "https://example.com/alert"}

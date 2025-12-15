@@ -23,6 +23,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   const isPublicPage = PUBLIC_PAGES.includes(pathname || '');
   const [helpOpen, setHelpOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // Track navigation for authenticated users
   useNavigationTracking();
@@ -45,10 +46,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
+        <Sidebar onCollapsedChange={setSidebarCollapsed} />
         
         {/* Main content area */}
-        <div className="flex flex-1 flex-col lg:pl-64">
+        <div className={`flex flex-1 flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
           <Header onHelpClick={() => setHelpOpen(true)} />
           <main className="flex-1 p-6 lg:p-8">
             {children}

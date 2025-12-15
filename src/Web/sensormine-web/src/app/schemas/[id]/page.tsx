@@ -14,11 +14,13 @@ import { Loader2 } from 'lucide-react';
 import { getSchema } from '@/lib/api/schemas';
 import type { Schema } from '@/lib/types/schema';
 import { useToast } from '@/hooks/use-toast';
+import { useBreadcrumb } from '@/lib/contexts/breadcrumb-context';
 
 export default function SchemaPage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
+  const { setName } = useBreadcrumb();
   const [schema, setSchema] = useState<Schema | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -29,6 +31,9 @@ export default function SchemaPage() {
       try {
         const data = await getSchema(schemaId);
         setSchema(data);
+        if (data?.name) {
+          setName(schemaId, data.name, 'schema');
+        }
       } catch (error) {
         toast({
           title: 'Error',

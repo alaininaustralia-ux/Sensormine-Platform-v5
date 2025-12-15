@@ -184,4 +184,21 @@ public class DeviceRepository : IDeviceRepository
         // Returning null for SchemaName since we don't have FK relationship
         return (device.DeviceType.SchemaId, null);
     }
+
+    public async Task<List<Device>> GetDevicesWithGpsAsync(string tenantId, Guid? deviceTypeId = null)
+    {
+        var tenantGuid = Guid.Parse(tenantId);
+        var query = _context.Devices
+            .Include(d => d.DeviceType)
+            .Where(d => d.TenantId == tenantGuid && d.Location != null);
+
+        if (deviceTypeId.HasValue)
+        {
+            query = query.Where(d => d.DeviceTypeId == deviceTypeId.Value);
+        }
+
+        return await query
+            .OrderBy(d => d.Name)
+            .ToListAsync();
+    }
 }

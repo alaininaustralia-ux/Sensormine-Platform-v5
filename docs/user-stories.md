@@ -870,233 +870,660 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 4: Visualization & Dashboards
+## Epic 4: Dashboard Designer V2 (Complete Redesign)
 
-### Story 4.1: Dashboard Builder
-**As a** operations manager  
-**I want** to create custom dashboards with drag-and-drop widgets  
-**So that** I can visualize data relevant to my operations
+**Status:** 🔴 Planning Phase - Complete Redesign from Scratch  
+**Total Story Points:** 196  
+**Estimated Duration:** 19 weeks (9 sprints)
+
+**Architecture Changes:**
+- ✅ V1 dashboard code archived to `src/archive/dashboard-v1-20251211/`
+- 🔴 Complete rebuild with new requirements
+- Mode-based editing (View/Design/Configure)
+- Digital twin hierarchical filtering
+- Device type-centric field mapping
+- Schema-aware data binding
+- Advanced widget interactions and linking
+
+See [dashboard-designer-v2-plan.md](./dashboard-designer-v2-plan.md) for detailed implementation plan.
+
+---
+
+### Story 4.1: Dashboard Creation & Layout Management
+**As a** dashboard designer  
+**I want** to create, layout, and manage dashboards with drag-and-drop widgets  
+**So that** I can build custom monitoring and analytics dashboards without coding
 
 **Acceptance Criteria:**
 
-**Dashboard Core (✅ Complete):**
-- ✅ Drag-and-drop dashboard editor using react-grid-layout
-- ✅ Widget library: charts, tables, maps, video feeds, gauges
-- ✅ Dashboard layouts with responsive grid
-- ✅ Save and share dashboards
-- ✅ Dashboard toolbar with edit/view modes
+**Dashboard CRUD:**
+- Create new dashboard with name, description, tags
+- List all dashboards with search and filtering
+- Open existing dashboard for viewing or editing
+- Delete dashboard (with confirmation)
+- Duplicate dashboard to create variants
+- Dashboard metadata includes:
+  - Created by, created date
+  - Last modified by, last modified date
+  - Tags for categorization
+  - Visibility settings (private, team, public)
 
-**Widget Data Source Configuration (🔴 Not Started):**
-- Widget configuration panel with tabs:
-  - Data Source tab
-  - Filters tab
-  - Styling tab
-- Data Source Configuration:
-  - Step 1: Select data source type (Schema, Device, Query, API)
-  - Step 2: Schema selector (if schema-based):
-    - Dropdown to select schema
-    - Display schema version and fields
-    - Filter devices by selected schema
-  - Step 3: Field mapping:
-    - Drag schema fields to widget properties
-    - Map fields to X-axis, Y-axis, series, labels, etc.
-    - Set aggregation function per field (avg, sum, min, max, count)
-    - Configure time range and grouping interval
-  - Step 4: Device/data selection:
-    - Multi-select devices using selected schema
-    - Filter by device tags, groups, location
-    - Preview live data from selected devices
-- Real-time data preview in configuration panel:
-  - Show sample data matching schema structure
-  - Update preview when changing field mappings
-  - Display validation errors if data doesn't match schema
-- Save widget configuration:
-  - Store schema ID, version, field mappings
-  - Store device filters and selections
-  - Store aggregation and time range settings
-- Widget refresh settings:
-  - Auto-refresh interval (5s, 10s, 30s, 1m, 5m, manual)
+**Layout Management:**
+- Drag widgets from palette onto canvas
+- Resize widgets by dragging corners/edges
+- Reposition widgets with drag-and-drop
+- Snap-to-grid for alignment
+- Responsive grid layout (desktop/tablet/mobile breakpoints)
+- Undo/redo layout changes
+- Save layout automatically (draft mode)
+- Discard unsaved changes
+
+**Mode Switching:**
+- **View Mode:** Read-only display of published dashboard
+  - No edit controls visible
+  - Optimized for data consumption
+  - Interactive widgets (filters, selection) functional
+- **Design Mode:** Layout editing interface
+  - Widget palette visible
+  - Drag-and-drop enabled
+  - Widget resize handles shown
+  - Layout grid guides displayed
+- **Configure Mode:** Right-hand configuration tray opens
+  - Select any widget to configure
+  - Three-tab interface (Data/Appearance/Behavior)
+  - Live preview of changes
+  - Apply or cancel configuration
+- Mode switcher in toolbar with clear visual indication
+- Mode state persists per dashboard
+
+**Priority:** Critical  
+**Story Points:** 34
+
+---
+
+### Story 4.2: Data Source Selection & Device Type Field Binding
+**As a** dashboard designer  
+**I want** to bind widgets to device types and their mapped fields  
+**So that** widgets display the correct data with human-readable labels
+
+**Acceptance Criteria:**
+
+**Digital Twin Filter Widget:**
+- Display digital twin asset hierarchy as collapsible tree
+- Single-select a node to filter entire dashboard
+- Breadcrumb shows selected asset path
+- Filter cascades to all widgets on dashboard
+- Widget displays "Filtered by: [Asset Name]" indicator
+- Clear filter button to reset to no filter
+
+**Device Type Selection:**
+- In widget configure mode, select device type from dropdown
+- Only device types with assigned schemas are selectable
+- Display device type description and device count
+- Changing device type clears previous field mappings
+
+**Field Mapping System:**
+- Display list of all field mappings for selected device type
+- Show for each field:
+  - Friendly name (human-readable)
+  - Underlying schema field name
+  - Data type (number, string, boolean, timestamp)
+  - Unit of measurement (if applicable)
+  - Sample value from recent data
+- Multi-select fields to bind to widget
+- Drag-and-drop fields onto widget input slots (e.g., Y-axis, X-axis, Series)
+- Validate field compatibility with widget (e.g., chart requires numeric fields)
+- Schema field paths remain linked even if friendly name changes
+
+**Aggregation Options:**
+- For each bound field, configure aggregation function:
+  - **Raw:** No aggregation (all data points)
+  - **Average (avg):** Average value over time window
+  - **Sum:** Total value
+  - **Min:** Minimum value
+  - **Max:** Maximum value
+  - **Count:** Number of data points
+  - **Last:** Most recent value
+- Time Range Selection:
+  - **Relative:** Last 1h, 6h, 24h, 7d, 30d
+  - **Absolute:** Custom start and end date/time
+  - **Rolling:** Continuous window (e.g., "always show last 24h")
+- Time Bucket/Interval:
+  - 1 second, 10 seconds, 1 minute, 5 minutes, 15 minutes, 1 hour, 1 day
+  - Auto-select based on time range
+
+**Data Preview:**
+- Live preview of data matching configuration
+- Show sample rows (10-20) from actual devices
+- Display field values with friendly names
+- Update preview when changing selections
+- Show validation errors if no data available
+
+**Priority:** Critical  
+**Story Points:** 21
+
+---
+
+### Story 4.3: Widget Catalog - Time-Series Charts
+**As a** dashboard designer  
+**I want** to add time-series charts with multiple visualization types  
+**So that** I can display historical data trends and patterns
+
+**Acceptance Criteria:**
+- **Chart Types:**
+  - Line chart (smooth or linear)
+  - Bar chart (vertical or horizontal)
+  - Area chart (with gradient fill)
+  - Scatter plot (with point sizing)
+  - Step chart (for discrete values)
+- **Multi-Series Support:**
+  - Add multiple fields as separate series
+  - Each series with configurable color
+  - Legend with series names (friendly names)
+  - Toggle series visibility from legend
+- **Time Axis Configuration:**
+  - X-axis displays time with auto-formatting
+  - Time zone selection
+  - Grid lines and tick marks
+- **Zoom and Pan:**
+  - Mouse wheel zoom on time axis
+  - Drag to pan time range
+  - Reset zoom button
+  - Mini-map navigator for full time range
+- **Export:**
+  - PNG, SVG image export
+  - CSV data export with friendly field names
+  - JSON export for API integration
+- **Configuration Options:**
+  - Chart title and subtitle
+  - Axis labels
+  - Colors and styling
+  - Show/hide legend, grid, tooltips
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 4.4: Widget Catalog - KPI Cards & Gauges
+**As a** dashboard designer  
+**I want** to display key metrics as KPI cards and gauges  
+**So that** I can monitor critical values at a glance
+
+**Acceptance Criteria:**
+
+**KPI Card Widget:**
+- Display single value prominently (large font)
+- Label with friendly field name
+- Unit of measurement (auto-populated from field mapping)
+- Trend indicator:
+  - Up/down arrow
+  - Percentage change vs previous period
+  - Configurable comparison period (1h, 24h, 7d)
+- Threshold-based coloring:
+  - Green: Normal range
+  - Yellow: Warning threshold
+  - Red: Critical threshold
+  - Thresholds configurable per KPI
+- Sparkline (mini chart) showing recent trend
+- Click to drill down to full time-series chart
+
+**Gauge Widget:**
+- **Gauge Types:**
+  - Circular (full or half-circle)
+  - Linear horizontal bar
+  - Bullet gauge (target vs actual)
+- **Value Display:**
+  - Current value with unit
+  - Min and max bounds
+  - Target value (optional)
+- **Threshold Zones:**
+  - Colored bands for ranges (green/yellow/red)
+  - Configurable breakpoints
+- **Animation:**
+  - Smooth needle/bar transitions
+  - Animated value updates
+- **Customization:**
+  - Colors for zones and needle
+  - Tick marks and labels
+  - Gauge size and aspect ratio
+
+**Priority:** High  
+**Story Points:** 8
+
+---
+
+### Story 4.5: Widget Catalog - Device Lists & Data Tables
+**As a** dashboard designer  
+**I want** to display devices and their data in tabular format  
+**So that** I can browse and analyze detailed information
+
+**Acceptance Criteria:**
+
+**Device List Widget:**
+- Tabular list of devices filtered by digital twin node and device type
+- Columns:
+  - Device name
+  - Device type
+  - Status (online/offline/alarm)
+  - Location (from device metadata)
+  - Last seen timestamp
+  - Custom fields (from device type custom fields)
+  - Selected field values (from field mappings)
+- **Filtering:**
+  - Text search across device names
+  - Filter by status, tags, location
+  - Respects dashboard-level digital twin filter
+- **Sorting:**
+  - Click column headers to sort ascending/descending
+  - Multi-column sort (hold Shift)
+- **Selection:**
+  - Click row to select device
+  - Selection triggers filter on other widgets (master-detail pattern)
+  - Selected row highlighted
+- **Drill-Down:**
+  - Configurable: click row navigates to device detail page or dashboard subpage
+  - Context (selected device) passed to subpage
+- **Pagination:**
+  - Server-side pagination (10, 25, 50, 100 rows per page)
+  - Page controls (first, previous, next, last)
+  - Total count display
+
+**Data Table Widget:**
+- Generic tabular display of time-series data
+- Columns configured from field mappings
+- Each row represents a data point (timestamp + field values)
+- Sorting, filtering, pagination same as Device List
+- Export to CSV, Excel
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 4.6: Widget Catalog - Map Widgets (ArcGIS & Leaflet)
+**As a** dashboard designer  
+**I want** to display devices on interactive maps  
+**So that** I can visualize spatial distribution and relationships
+
+**Acceptance Criteria:**
+
+**Map Widget - ArcGIS Variant:**
+- ArcGIS JavaScript API integration
+- Device markers plotted at GPS coordinates (from device metadata)
+- **Clustering:**
+  - Automatic clustering of nearby devices
+  - Cluster count badge
+  - Zoom to expand cluster
+- **Marker Customization:**
+  - Color-code by device type, status, or field value
+  - Icon selection per device type
+  - Size based on field value (optional)
+- **Popup:**
+  - Click marker shows device name, type, status
+  - Display selected field values (from field mappings)
+  - Button to filter dashboard by this device
+  - Link to device detail page
+- **Layers:**
+  - Toggle device type layers on/off
+  - Basemap selection (streets, satellite, terrain)
+  - Overlay custom layers (geofences, assets)
+- **Geofencing:**
+  - Display geofence polygons from digital twin assets
+  - Highlight devices within geofence
+- **Heat Map:**
+  - Visualize data values (e.g., temperature) as heat map overlay
+  - Configurable gradient and intensity
+
+**Map Widget - Leaflet Variant:**
+- react-leaflet integration
+- All features of ArcGIS variant
+- Additional tile providers (OpenStreetMap, Mapbox, Stamen, etc.)
+- Lighter weight for performance
+- Plugin support (Leaflet.draw, Leaflet.markercluster, etc.)
+
+**Map Selection & Linking:**
+- Click marker to select device
+- Selected device filters other widgets on dashboard
+- Draw tools to select devices within area (rectangle, polygon, circle)
+- Display device paths/routes over time (if GPS history available)
+
+**Priority:** High  
+**Story Points:** 21
+
+---
+
+### Story 4.7: Widget Catalog - 3D Asset Viewer & Digital Twin Tree
+**As a** dashboard designer  
+**I want** to visualize the digital twin hierarchy and 3D asset models  
+**So that** I can navigate and filter by physical structure
+
+**Acceptance Criteria:**
+
+**Digital Twin Tree Widget:**
+- Displays asset hierarchy from Digital Twin API
+- Tree structure with expand/collapse nodes
+- **Node Display:**
+  - Asset name and type (Site, Building, Floor, Equipment)
+  - Icon per asset type
+  - Device count badge per asset
+  - Rollup indicators (aggregated KPIs)
+- **Interaction:**
+  - Click node to filter entire dashboard by that asset
+  - Selected node highlighted
+  - Breadcrumb trail shows selected path
+  - Expand all / Collapse all buttons
+- **Search:**
+  - Text search filters tree to matching nodes
+  - Highlight matching nodes and ancestors
+- **Drag-and-Drop (optional):**
+  - Drag devices onto tree nodes to assign
+
+**3D Asset Viewer Widget:**
+- three.js or react-three-fiber integration
+- **Model Loading:**
+  - Load GLTF/GLB 3D models from Digital Twin API
+  - Models linked to digital twin assets
+  - Progressive loading for large models
+- **Device Binding:**
+  - Bind devices to 3D model parts
+  - Device markers overlaid on 3D model
+  - Click 3D element to select asset or device
+- **Data Visualization:**
+  - Color-code 3D parts by data values (e.g., temperature heat map)
+  - Animate parts based on real-time data
+  - Display labels/tooltips on hover
+- **Navigation:**
+  - Orbit controls (rotate around model)
+  - Zoom in/out (mouse wheel, pinch)
+  - Pan (middle mouse, two-finger drag)
+  - Reset camera button
+- **Highlighting:**
+  - Highlight selected asset or device in 3D
+  - Outline or glow effect
+- **Selection Propagation:**
+  - Clicking 3D element filters dashboard by selected asset/device
+  - Other widgets update to show related data
+
+**Priority:** Medium  
+**Story Points:** 34
+
+---
+
+### Story 4.8: Widget Interactions & Linking System
+**As a** dashboard designer  
+**I want** widgets to interact and filter each other  
+**So that** I can create dynamic master-detail dashboards
+
+**Acceptance Criteria:**
+
+**Widget Event System:**
+- Centralized event bus for widget communication
+- **Event Types:**
+  - `device:selected` - Device picked from list, map, or 3D viewer
+  - `asset:selected` - Digital twin node selected from tree or 3D viewer
+  - `timeRange:changed` - Time range modified by user
+  - `filter:applied` - Custom filter applied (e.g., status, tag)
+- **Event Payload:**
+  - Event type identifier
+  - Source widget ID
+  - Selected entity (device, asset, etc.)
+  - Timestamp
+
+**Widget Subscriptions:**
+- In configure mode, specify which events a widget subscribes to
+- **Subscription Options:**
+  - Subscribe to all events of type
+  - Subscribe only to events from specific widgets
+  - Ignore events (widget is independent)
+- **Filter Behavior:**
+  - Widget queries data filtered by selected device/asset
+  - Widget UI indicates active filters
+  - Clear filter button per widget
+
+**Link Configuration UI:**
+- Visual link indicator (arrows between linked widgets)
+- Link types:
+  - **Master-Detail:** One widget filters others (e.g., device list → charts)
+  - **Cross-Filter:** Multiple widgets filter each other (e.g., map ← device list)
+  - **Drill-Down:** Widget navigates to subpage with context
+- Drag link from one widget to another in design mode
+- Configure link behavior (which fields to use for filtering)
+
+**Subpage Navigation:**
+- **Subpage Creation:**
+  - Create child dashboards under main dashboard
+  - Subpage inherits digital twin filter from parent
+- **Navigation Triggers:**
+  - Click device list row → navigate to device detail subpage
+  - Click map marker → navigate to device subpage
+  - Click 3D model part → navigate to asset subpage
+- **Context Passing:**
+  - Selected device/asset ID passed to subpage
+  - Subpage automatically filters widgets by context
+  - Breadcrumb shows navigation path (Dashboard > Device Details)
+- **Back Navigation:**
+  - Back button returns to parent dashboard
+  - Context preserved
+
+**Priority:** High  
+**Story Points:** 21
+
+---
+
+### Story 4.9: Dashboard Templates & Reusability
+**As a** dashboard designer  
+**I want** to save and reuse dashboard configurations as templates  
+**So that** I can quickly deploy dashboards for new sites or customers
+
+**Acceptance Criteria:**
+
+**Template Creation:**
+- "Save as Template" action in dashboard toolbar
+- Template metadata:
+  - Template name and description
+  - Category (Operations, Safety, Maintenance, Environmental, etc.)
+  - Tags for discoverability
+  - Preview image (auto-generated screenshot or custom upload)
+  - Author and creation date
+- Template includes:
+  - Widget layout and configuration
+  - Device type bindings
+  - Field mappings
+  - Widget links and interactions
+  - Variables for customization (e.g., {{rootAssetId}}, {{deviceTypeId}})
+
+**Template Library:**
+- Browse all available templates
+- Filter by category, tags, author
+- Search templates by name/description
+- Preview template (see widget layout and configuration)
+- Template cards show:
+  - Template name and description
+  - Preview image
+  - Widget count
+  - Category and tags
+  - Author and creation date
+
+**Template Application:**
+- "Apply Template" action from template library or dashboard list
+- **Variable Substitution:**
+  - Wizard prompts for required variables
+  - Select digital twin root node to filter dashboard
+  - Map template device types to actual device types
+  - Review and confirm mappings
+- Template applied to new dashboard
+- User can customize dashboard after application
+- Template source tracked (for updates)
+
+**Industry Templates:**
+- Pre-built templates for common scenarios:
+  - **Water Management:** Pump stations, reservoirs, treatment plants
+  - **Oil & Gas:** Well monitoring, pipeline integrity, tank farm
+  - **Manufacturing:** Production lines, quality control, OEE
+  - **Facility Management:** HVAC, energy, occupancy, safety
+  - **Environmental Monitoring:** Air quality, weather stations, compliance
+- Templates include sample data and help documentation
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 4.10: Dashboard Publishing & Permissions
+**As a** dashboard designer  
+**I want** to publish dashboards and control who can view or edit them  
+**So that** dashboards are protected from unintentional changes
+
+**Acceptance Criteria:**
+
+**Draft vs Published State:**
+- New dashboards start in "Draft" state
+- Draft dashboards:
+  - Visible only to creator and admins
+  - Editable by creator
+  - Auto-saved periodically
+  - Not visible to end users
+- Published dashboards:
+  - Visible to users with "View" permission
+  - Read-only for viewers
+  - Editable only by users with "Edit" permission
+  - Changes create new draft version
+
+**Publishing Workflow:**
+- "Publish" button in dashboard toolbar
+- Confirmation dialog:
+  - Review dashboard name, description, tags
+  - Preview dashboard in view mode
+  - Confirm data sources are valid
+  - Validate all widgets configured correctly
+- Publish action:
+  - Creates published version with version number
+  - Draft becomes clean slate for future edits
+  - Published version immutable
+- Publish History:
+  - View list of all published versions
+  - Timestamp, version number, published by
+  - Revert to previous version (creates new draft)
+
+**Permission System:**
+- **Roles:**
+  - **Viewer:** Can only view published dashboards
+  - **Designer:** Can create and edit dashboards, save drafts
+  - **Publisher:** Can publish dashboards to production
+  - **Admin:** Full control over all dashboards and permissions
+- **Dashboard-Level Permissions:**
+  - Owner (creator) automatically has all permissions
+  - Share dashboard with specific users or groups
+  - Assign permissions per user/group: View, Edit, Publish
+  - Public dashboards (optional): Viewable by all users
+- **Permission UI:**
+  - "Share" dialog in dashboard toolbar
+  - Search users or groups to add
+  - Select permission level per recipient
+  - Remove access for users/groups
+  - View access list (who has access and at what level)
+
+**Audit Log:**
+- Track all dashboard actions:
+  - Created, edited, published, deleted
+  - Permission changes
+  - Template applied
+- Audit log entries include:
+  - Action type
+  - User who performed action
+  - Timestamp
+  - Details (e.g., which widgets changed)
+- Viewable by admins and dashboard owners
+
+**Priority:** High  
+**Story Points:** 13
+
+---
+
+### Story 4.11: Runtime Optimization & User Experience
+**As a** dashboard user  
+**I want** dashboards to load quickly and provide smooth interactions  
+**So that** I can efficiently monitor and analyze data
+
+**Acceptance Criteria:**
+
+**Performance Optimization:**
+- **Dashboard Loading:**
+  - Initial page load <2 seconds
+  - Widget rendering <500ms per widget
+  - Lazy load widgets below fold
+  - Progressive rendering (show widgets as data arrives)
+- **Data Caching:**
+  - Cache device metadata (names, types, locations)
+  - Cache field mappings
+  - Cache digital twin hierarchy
+  - Cache expires on data change or after TTL (5 minutes)
+- **Query Optimization:**
+  - Debounce filter changes (300ms delay before query)
+  - Batch queries for multiple widgets with same data source
+  - Only query visible widgets (virtualization)
+  - Cancel in-flight queries when filters change
+
+**Data Refresh System:**
+- **Manual Refresh:**
+  - "Refresh" button per widget or entire dashboard
+  - Visual spinner during refresh
   - Last updated timestamp display
-  - Manual refresh button
-- Schema version handling:
-  - Widget continues working if schema updated (backward compatible)
-  - Warning indicator if schema has breaking changes
-  - Option to update widget to new schema version
+- **Auto-Refresh:**
+  - Configurable intervals: 10s, 30s, 1m, 5m, 10m, 30m, never
+  - Global setting for entire dashboard
+  - Per-widget override possible
+  - Pause/resume auto-refresh button
+- **Smart Refresh:**
+  - Only refresh widgets in viewport (visible widgets)
+  - Refresh widgets when they become visible (scroll into view)
+  - Skip refresh if widget is minimized or hidden
+- **Real-Time Updates (Optional):**
+  - WebSocket or SignalR connection for live data push
+  - Delta updates (only changed data points)
+  - Automatic reconnection if connection lost
+  - Fallback to polling if WebSocket unavailable
 
-**Dashboard Templates (🔴 Not Started):**
-- Template library for common use cases
-- Templates include pre-configured widgets with schema bindings
-
-**Priority:** High  
-**Story Points:** 21 (Core Complete) + 13 (Data Source Config) = 34 total
-
----
-
-### Story 4.2: Time-Series Charts
-**As a** analyst  
-**I want** to create line, bar, and scatter charts for time-series data  
-**So that** I can visualize trends and patterns
-
-**Acceptance Criteria:**
-- Chart types: line, bar, area, scatter, step
-- Multiple series per chart
-- Time range selection and zooming
-- Aggregation intervals configurable
-- Chart legends and axis labels
-- Export chart as image or data
-
-**Priority:** High  
-**Story Points:** 13
-
----
-
-### Story 4.3: Video Timeline Widget
-**As a** security analyst  
-**I want** to see video events overlaid on a timeline  
-**So that** I can correlate events with video footage
-
-**Acceptance Criteria:**
-- Timeline shows video events as markers
-- Events color-coded by type
-- Click event to jump to video timestamp
-- Zoom and pan timeline
-- Filter events by type
-- Multiple camera timelines in sync
-
-**Priority:** High  
-**Story Points:** 13
-
----
-
-### Story 4.4: 3D CAD Viewer
-**As a** facility manager  
-**I want** to visualize devices on a 3D CAD model of my facility  
-**So that** I can see device placement in context
-
-**Acceptance Criteria:**
-- Upload GLTF/OBJ CAD models
-- Place device markers on 3D model
-- Click device for details and live data
-- Color-code devices by status or value
-- Rotate, zoom, pan 3D view
-- Layer controls for device types
-
-**Priority:** Medium  
-**Story Points:** 21
-
----
-
-### Story 4.5: LiDAR Point Cloud Viewer
-**As a** surveyor  
-**I want** to view LiDAR point clouds (LAS/LAZ files)  
-**So that** I can visualize 3D scan data
-
-**Acceptance Criteria:**
-- Upload LAS/LAZ files
-- Render point cloud in browser
-- Color by elevation, intensity, or classification
-- Navigation controls (orbit, pan, zoom)
-- Measurement tools
-- Integrate device locations in point cloud
-
-**Priority:** Low  
-**Story Points:** 21
-
----
-
-### Story 4.6: GIS Map Widget
-**As a** GIS analyst  
-**I want** to display devices on an interactive map  
-**So that** I can see geographic distribution
-
-**Acceptance Criteria:**
-- Map widget using Leaflet or Mapbox
-- Device markers with clustering
-- Click marker for device details
-- Color-code by device type or status
-- Heat maps for data values
-- Layer controls for device types
-- Geofencing visualization
+**UX Enhancements:**
+- **Loading States:**
+  - Skeleton loaders for widgets
+  - Progress indicators for data fetching
+  - Shimmer effect during load
+- **Empty States:**
+  - Friendly message when no data available
+  - Suggestions for next steps (e.g., "Add devices to this asset")
+  - "Get Started" guide for new dashboards
+- **Error Handling:**
+  - Clear error messages for API failures
+  - Retry button for failed requests
+  - Contact support link for persistent issues
+  - Error boundary prevents entire dashboard crash
+- **Tooltips & Help:**
+  - Contextual help throughout designer
+  - Tooltips on widget types explaining usage
+  - Inline documentation for configuration options
+  - "?" icon links to help docs
+- **Keyboard Shortcuts:**
+  - Ctrl+S: Save dashboard
+  - Ctrl+Z / Ctrl+Y: Undo/redo
+  - Ctrl+D: Duplicate widget
+  - Delete: Remove selected widget
+  - Escape: Cancel current action
+  - Tab: Cycle through widgets
+- **Accessibility:**
+  - WCAG 2.1 AA compliance
+  - Keyboard navigation for all actions
+  - Screen reader labels for all interactive elements
+  - High contrast mode support
+  - Focus indicators on all controls
 
 **Priority:** High  
 **Story Points:** 13
 
 ---
 
-### Story 4.7: Gauge and KPI Widgets
-**As a** operations manager  
-**I want** to display key metrics as gauges and KPIs  
-**So that** I can monitor system health at a glance
-
-**Acceptance Criteria:**
-- Gauge widget types: circular, linear, bullet
-- KPI cards with current value and trend
-- Configurable thresholds (green, yellow, red)
-- Comparison to historical average or target
-- Auto-refresh intervals
-- Animated transitions
-
-**Priority:** Medium  
-**Story Points:** 8
-
----
-
-### Story 4.8: Dashboard Templates
-**As a** new user  
-**I want** to use pre-built dashboard templates  
-**So that** I can get started quickly
-
-**Acceptance Criteria:**
-- Template library with categories (safety, operations, maintenance)
-- Preview template before applying
-- Templates auto-populate with user's devices
-- Templates are customizable after creation
-- Export/import custom templates
-- Community template sharing (optional)
-
-**Priority:** Low  
-**Story Points:** 8
-
----
-
-### Story 4.9: Real-Time Dashboard Updates
-**As a** control room operator  
-**I want** dashboards to update in real-time without manual refresh  
-**So that** I always see current data
-
-**Acceptance Criteria:**
-- WebSocket or SignalR for real-time updates
-- Configurable refresh intervals per widget
-- Visual indicator when data updates
-- Automatic reconnection if connection lost
-- Bandwidth-efficient delta updates
-- Pause/resume real-time updates
-
-**Priority:** High  
-**Story Points:** 13
-
----
-
-### Story 4.10: Dashboard Annotations and Notes
-**As a** operations manager  
-**I want** to add annotations and notes to dashboards and charts  
-**So that** I can document observations and decisions
-
-**Acceptance Criteria:**
-- Add text annotations to any widget
-- Pin notes to specific timestamps or locations
-- Attach notes to alerts or events
-- Share notes with team members
-- Search notes across dashboards
-- Export dashboards with annotations
-- Note edit history
-
-**Priority:** Low  
-**Story Points:** 8
-
----
-
-### Story 4.11: Dashboard Components for Device Types and Devices
+### Story 4.12: Dashboard Components for Device Types and Devices (Legacy)
 **As a** system administrator or operations manager  
 **I want** to associate dashboard widgets/components with Device Types or specific Devices  
 **So that** I can automatically display relevant visualizations when viewing a device or device type
@@ -1600,9 +2027,36 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 7: Industrial Connectivity & Edge Computing
+## Epic 7: Edge Processing & Custom Logic Framework
 
-### Story 7.1: OPC UA Client Configuration
+**Status:** Planning  
+**Priority:** High  
+**Target Release:** Phase 3
+
+**Overview:**  
+Enable edge computing capabilities and flexible framework for custom data processing logic and AI model deployment. Includes local processing on edge devices, custom data transformation modules, and AI/ML model management.
+
+**📄 Detailed Epic Document:** [epic-edge-processing-custom-logic.md](./user-stories/epic-edge-processing-custom-logic.md)
+
+**Key Features:**
+- Edge data processing configuration with visual workflow builder
+- Store-and-forward for intermittent connectivity
+- Custom data processor framework (.NET, Python, JavaScript)
+- AI/ML model registry and deployment
+- Model inference API (edge and cloud)
+- Anomaly detection and predictive maintenance models
+- Geofencing and time-based automation
+- Pipeline debugging tools and performance monitoring
+
+**User Stories:** 16 stories covering edge processing, custom logic, and AI/ML model management
+
+**See full epic document for complete user stories and implementation roadmap.**
+
+---
+
+## Epic 8: Industrial Connectivity
+
+### Story 8.1: OPC UA Client Configuration
 **As a** industrial engineer  
 **I want** to connect to OPC UA servers and browse their node tree  
 **So that** I can integrate SCADA and PLC data
@@ -1620,7 +2074,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-### Story 7.2: Modbus Connector
+### Story 8.2: Modbus Connector
 **As a** automation engineer  
 **I want** to connect Modbus TCP and RTU devices  
 **So that** I can collect data from PLCs and sensors
@@ -1638,7 +2092,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-### Story 7.3: BACnet Integration
+### Story 8.3: BACnet Integration
 **As a** building automation engineer  
 **I want** to connect to BACnet devices  
 **So that** I can integrate HVAC and building systems
@@ -1782,7 +2236,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 8: Administration & System Management
+## Epic 9: Administration & System Management
 
 ### Story 8.1: User Registration and Authentication
 **As a** system administrator  
@@ -1951,7 +2405,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 9: Reporting & Data Export
+## Epic 10: Reporting & Data Export
 
 ### Story 9.1: CSV Data Export
 **As a** analyst  
@@ -2061,7 +2515,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 10: Mobile Application
+## Epic 11: Mobile Application
 
 ### Story 10.1: Mobile Device Provisioning
 **As a** field technician  
@@ -2171,7 +2625,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 11: Integration & APIs
+## Epic 12: Integration & APIs
 
 ### Story 11.1: REST API Documentation
 **As a** developer  
@@ -2318,7 +2772,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 12: Billing, Metering & Payments
+## Epic 13: Billing, Metering & Payments
 
 ### Story 12.1: Usage Metering Infrastructure
 **As a** platform operator  
@@ -2577,7 +3031,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 13: Performance & Scalability
+## Epic 14: Performance & Scalability
 
 ### Story 13.1: Horizontal Scalability Testing
 **As a** platform engineer  
@@ -2669,7 +3123,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 14: Mobile App - Device Discovery & NFC Operations (.NET MAUI)
+## Epic 15: Mobile App - Device Discovery & NFC Operations (.NET MAUI)
 
 ### Story 14.1: NFC Tap to Identify Device
 **As a** field technician  
@@ -2713,7 +3167,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 15: Mobile App - Device Configuration & Provisioning
+## Epic 16: Mobile App - Device Configuration & Provisioning
 
 ### Story 15.1: Load Device Schemas and Nexus Configuration
 **As a** field technician  
@@ -2799,7 +3253,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 16: Mobile App - Custom Fields & User-Defined Metadata
+## Epic 17: Mobile App - Custom Fields & User-Defined Metadata
 
 ### Story 16.1: Retrieve Custom Fields from Platform
 **As a** technician  
@@ -2843,7 +3297,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 17: Mobile App - Device Lifecycle Management
+## Epic 18: Mobile App - Device Lifecycle Management
 
 ### Story 17.1: Reconfigure Device
 **As a** technician  
@@ -2908,7 +3362,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 18: Mobile App - Offline-First Operation & Sync
+## Epic 19: Mobile App - Offline-First Operation & Sync
 
 ### Story 18.1: Offline Caching of Schemas and Configurations
 **As a** technician in the field  
@@ -2952,7 +3406,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 19: Mobile App - Security, Permissions & Auditability
+## Epic 20: Mobile App - Security, Permissions & Auditability
 
 ### Story 19.1: Secure Access to Platform
 **As a** user  
@@ -3129,7 +3583,7 @@ This document organizes user stories into epics that align with the platform's f
 
 ---
 
-## Epic 13: Digital Twin Asset Hierarchy (NEW - Dec 8, 2025)
+## Epic 21: Digital Twin Asset Hierarchy (NEW - Dec 8, 2025)
 
 The Digital Twin system enables hierarchical asset management and telemetry data point mapping to physical assets. **Phase 1 Complete** with core API and database foundation.
 

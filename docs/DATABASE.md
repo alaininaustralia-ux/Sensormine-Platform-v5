@@ -107,10 +107,39 @@ site_configurations (id, tenant_id, settings, created_at, updated_at)
 #### Alerting
 ```sql
 -- Alert Rules
-alert_rules (id, tenant_id, name, condition, device_type_id, severity, enabled, created_at)
+alert_rules (id, tenant_id, name, condition, device_type_id, device_id, severity, is_enabled, created_at, updated_at)
 
--- Alert Instances
-alert_instances (id, alert_rule_id, device_id, triggered_at, resolved_at, status, metadata)
+-- Alert Instances (21 columns - comprehensive alert tracking)
+alert_instances (
+  id uuid PRIMARY KEY,
+  rule_id uuid NOT NULL,              -- FK to alert_rules (renamed from alert_rule)
+  device_id uuid NOT NULL,            -- Device that triggered alert
+  status varchar(50) NOT NULL,        -- Active/Acknowledged/Resolved (renamed from alert_status)
+  severity int NOT NULL,              -- 0=Info, 1=Warning, 2=Error, 3=Critical
+  triggered_at timestamptz NOT NULL,
+  acknowledged_at timestamptz,
+  acknowledged_by varchar(255),
+  resolved_at timestamptz,
+  value jsonb NOT NULL,               -- Telemetry value that triggered alert
+  threshold jsonb,                    -- Threshold configuration
+  metadata jsonb,                     -- Additional context
+  notification_sent boolean DEFAULT false,
+  notification_sent_at timestamptz,
+  escalation_level int DEFAULT 0,
+  escalation_triggered_at timestamptz,
+  last_updated_at timestamptz NOT NULL,
+  tenant_id uuid NOT NULL,
+  message text,
+  condition_details jsonb,
+  resolution_notes text
+)
+
+-- Indexes
+CREATE INDEX idx_alert_instances_rule_id ON alert_instances(rule_id);
+CREATE INDEX idx_alert_instances_device_id ON alert_instances(device_id);
+CREATE INDEX idx_alert_instances_status ON alert_instances(status);
+CREATE INDEX idx_alert_instances_severity ON alert_instances(severity);
+CREATE INDEX idx_alert_instances_tenant_id ON alert_instances(tenant_id);
 
 -- Delivery Channels
 alert_delivery_channels (id, tenant_id, type, configuration, created_at)
@@ -182,12 +211,15 @@ High-volume time-series telemetry data (OLAP workload)
 -- TimescaleDB Hypertable for sensor data
 telemetry (
     time TIMESTAMPTZ NOT NULL,
-    device_id UUID NOT NULL,
+    device_id UUID NOT NULL,        -- Changed from nullable to NOT NULL (Dec 2025)
     tenant_id UUID NOT NULL,
     data JSONB NOT NULL,           -- Flexible schema for sensor values
     metadata JSONB,                 -- Additional context
-    PRIMARY KEY (time, device_id)
+    PRIMARY KEY (device_id, time)  -- Composite primary key (device_id, time)
 );
+
+-- Type safety enforced at database level
+COMMENT ON COLUMN telemetry.device_id IS 'Device UUID - must be valid GUID format';
 
 -- Hypertable configuration
 SELECT create_hypertable('telemetry', 'time', chunk_time_interval => INTERVAL '1 day');

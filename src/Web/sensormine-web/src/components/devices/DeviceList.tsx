@@ -150,6 +150,8 @@ export function DeviceList() {
   const [expandedDevices, setExpandedDevices] = useState<Set<string>>(new Set());
   const [simulationLogs, setSimulationLogs] = useState<SimulationLogEntry[]>([]);
   const [showTelemetryPanel, setShowTelemetryPanel] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const fetchDevices = async () => {
     try {
@@ -193,30 +195,47 @@ export function DeviceList() {
 
   useEffect(() => {
     fetchDevices();
-    checkActiveSimulations();
   }, []);
 
-  const checkActiveSimulations = async () => {
+  const checkActiveSimulations = useCallback(async () => {
     try {
+      console.log('Checking active simulations...');
       const response = await getActiveSimulations();
+      console.log('Active simulations response:', response.data);
+      
+      // The simulation API returns deviceId as the GUID (device.id), not the string identifier
       const activeDeviceIds = new Set(
         response.data
           .map(sim => {
-            // Find device by deviceId string
-            const device = devices.find(d => d.deviceId === sim.deviceId);
-            return device?.id;
+            console.log(`Found active simulation for device ID: ${sim.deviceId}`);
+            // sim.deviceId is already the UUID, just return it directly
+            return sim.deviceId;
           })
           .filter(Boolean) as string[]
       );
       
+      console.log('Active device IDs:', Array.from(activeDeviceIds));
+      
       if (activeDeviceIds.size > 0) {
         setSimulatingDevices(activeDeviceIds);
         setShowTelemetryPanel(true);
+      } else {
+        // No active simulations, close panel if it's open
+        setShowTelemetryPanel(false);
+        setSimulationLogs([]);
       }
     } catch (error) {
       console.error('Failed to check active simulations:', error);
     }
-  };
+  }, [devices]);
+
+  // Check for active simulations after devices are loaded
+  useEffect(() => {
+    if (devices.length > 0) {
+      console.log('Devices loaded, checking for active simulations...');
+      checkActiveSimulations();
+    }
+  }, [devices.length, checkActiveSimulations]);
 
   // Poll for simulation logs when telemetry panel is open
   useEffect(() => {
@@ -266,6 +285,17 @@ export function DeviceList() {
   const deviceTypes = Array.from(new Set(devices.map(d => d.deviceTypeName).filter(Boolean))) as string[];
   const deviceStatuses = Array.from(new Set(devices.map(d => d.status)));
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredDevices.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedDevices = filteredDevices.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, typeFilter]);
+
   const toggleExpanded = (deviceId: string) => {
     setExpandedDevices(prev => {
       const next = new Set(prev);
@@ -309,7 +339,7 @@ export function DeviceList() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Error Message */}
       {error && (
         <Card className="border-destructive">
@@ -326,8 +356,8 @@ export function DeviceList() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <CardContent className="pt-4 pb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
               <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -403,60 +433,60 @@ export function DeviceList() {
 
       {/* Device List */}
       {!loading && (
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           {/* Left: Device List */}
-          <div className={`flex-1 space-y-2 transition-all ${showTelemetryPanel ? 'lg:mr-[400px]' : ''}`}>
-            {filteredDevices.map((device) => {
+          <div className={`flex-1 space-y-1.5 transition-all ${showTelemetryPanel ? 'lg:mr-[400px]' : ''}`}>
+            {paginatedDevices.map((device) => {
               const isExpanded = expandedDevices.has(device.id);
               const isSimulating = simulatingDevices.has(device.id);
               
               return (
                 <Card key={device.id} className="transition-shadow hover:shadow-sm">
                   <Collapsible open={isExpanded} onOpenChange={() => toggleExpanded(device.id)}>
-                    <div className="p-4">
-                      <div className="flex items-center gap-3">
+                    <div className="p-3">
+                      <div className="flex items-center gap-2">
                         {/* Expand/Collapse Icon */}
                         <CollapsibleTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
                             {isExpanded ? (
-                              <ChevronDownIcon className="h-4 w-4" />
+                              <ChevronDownIcon className="h-3.5 w-3.5" />
                             ) : (
-                              <ChevronRightIcon className="h-4 w-4" />
+                              <ChevronRightIcon className="h-3.5 w-3.5" />
                             )}
                           </Button>
                         </CollapsibleTrigger>
 
                         {/* Device Name & Status */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold truncate">{device.name}</h3>
-                            <Badge variant={statusColors[device.status] || 'secondary'} className="shrink-0">
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="text-sm font-semibold truncate">{device.name}</h3>
+                            <Badge variant={statusColors[device.status] || 'secondary'} className="shrink-0 text-xs px-1.5 py-0">
                               {device.status}
                             </Badge>
                             {isSimulating && (
-                              <Badge variant="default" className="shrink-0 animate-pulse">
-                                <ZapIcon className="h-3 w-3 mr-1" />
+                              <Badge variant="default" className="shrink-0 animate-pulse text-xs px-1.5 py-0">
+                                <ZapIcon className="h-2.5 w-2.5 mr-0.5" />
                                 Simulating
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground font-mono">{device.deviceId}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono leading-tight">{device.deviceId}</p>
                         </div>
 
                         {/* Quick Info */}
-                        <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="truncate max-w-[150px]">
+                        <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground">
+                          <span className="truncate max-w-[120px]">
                             {device.deviceTypeName || 'Unknown Type'}
                           </span>
-                          <span className="truncate max-w-[150px]">
+                          <span className="truncate max-w-[120px]">
                             {device.schemaName || <span className="italic">No schema</span>}
                           </span>
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <Link href={`/devices/${device.id}`}>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
                               View
                             </Button>
                           </Link>
@@ -464,25 +494,27 @@ export function DeviceList() {
                             <Button
                               variant="destructive"
                               size="sm"
+                              className="h-7 px-2 text-xs"
                               onClick={async () => {
                                 try {
-                                  await stopSimulation(device.deviceId);
+                                  await stopSimulation(device.id);
                                   handleSimulationStop(device.id);
                                 } catch (error) {
                                   console.error('Failed to stop simulation:', error);
                                 }
                               }}
                             >
-                              <StopIcon className="h-4 w-4 mr-1" />
+                              <StopIcon className="h-3 w-3 mr-1" />
                               Stop
                             </Button>
                           ) : (
                             <Button
                               variant="default"
                               size="sm"
+                              className="h-7 px-2 text-xs"
                               onClick={() => setSelectedDeviceForSimulator(device)}
                             >
-                              <ZapIcon className="h-4 w-4 mr-1" />
+                              <ZapIcon className="h-3 w-3 mr-1" />
                               Simulate
                             </Button>
                           )}
@@ -490,8 +522,8 @@ export function DeviceList() {
                       </div>
 
                       {/* Expanded Details */}
-                      <CollapsibleContent className="mt-4 pt-4 border-t">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <CollapsibleContent className="mt-2 pt-2 border-t">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                           {device.location && (
                             <div>
                               <span className="text-muted-foreground">Location</span>
@@ -543,6 +575,89 @@ export function DeviceList() {
                 </Card>
               );
             })}
+
+            {/* Pagination Controls */}
+            {filteredDevices.length > itemsPerPage && (
+              <div className="flex items-center justify-between pt-4 pb-2">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <span className="whitespace-nowrap">Showing {startIndex + 1}-{Math.min(endIndex, filteredDevices.length)} of {filteredDevices.length}</span>
+                  <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+                    <SelectTrigger className="w-[110px] h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 / page</SelectItem>
+                      <SelectItem value="25">25 / page</SelectItem>
+                      <SelectItem value="50">50 / page</SelectItem>
+                      <SelectItem value="100">100 / page</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="h-8 px-2"
+                  >
+                    <ChevronRightIcon className="h-3.5 w-3.5 rotate-180" />
+                    <ChevronRightIcon className="h-3.5 w-3.5 rotate-180 -ml-2" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 px-2"
+                  >
+                    <ChevronRightIcon className="h-3.5 w-3.5 rotate-180" />
+                  </Button>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="h-8 w-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-8 px-2"
+                  >
+                    <ChevronRightIcon className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="h-8 px-2"
+                  >
+                    <ChevronRightIcon className="h-3.5 w-3.5" />
+                    <ChevronRightIcon className="h-3.5 w-3.5 -ml-2" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right: Telemetry Panel */}

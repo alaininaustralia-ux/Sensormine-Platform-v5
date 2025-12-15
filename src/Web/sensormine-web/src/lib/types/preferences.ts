@@ -55,6 +55,21 @@ export interface BookmarkItem {
   createdAt: string;
 }
 
+// Custom Navigation Item
+export type NavigationTargetType = 'dashboard' | 'device' | 'asset' | 'form' | 'url';
+
+export interface CustomNavigationItem {
+  id: string;
+  title: string;
+  icon?: string; // lucide-react icon name
+  targetType: NavigationTargetType;
+  targetId?: string; // dashboard ID, device ID, asset ID, etc.
+  url?: string; // for direct URL navigation
+  order: number; // for sorting
+  createdAt: string;
+  updatedAt?: string;
+}
+
 // Page visit history item
 export interface PageVisit {
   path: string;
@@ -82,6 +97,7 @@ export interface UserPreferences {
   };
   bookmarks: BookmarkItem[];
   pageHistory: PageVisit[];
+  customNavigation: CustomNavigationItem[]; // User-defined navigation items
   updatedAt: string;
 }
 
@@ -169,6 +185,7 @@ export const DEFAULT_USER_PREFERENCES: Omit<UserPreferences, 'userId' | 'updated
   },
   bookmarks: [],
   pageHistory: [],
+  customNavigation: [], // User-defined navigation items
 };
 
 export const DEFAULT_SITE_CONFIGURATION: Omit<SiteConfiguration, 'updatedAt' | 'updatedBy'> = {

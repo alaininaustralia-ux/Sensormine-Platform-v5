@@ -1,0 +1,6 @@
+@Provisioning.API_HostAddress = http://localhost:5139
+
+GET {{Provisioning.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

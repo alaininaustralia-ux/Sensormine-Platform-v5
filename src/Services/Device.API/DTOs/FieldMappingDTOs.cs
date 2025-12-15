@@ -14,6 +14,7 @@ public class FieldMappingResponse
     public string? Description { get; set; }
     public string? Unit { get; set; }
     public string DataType { get; set; } = "String";
+    public string? JsonPath { get; set; }
     public double? MinValue { get; set; }
     public double? MaxValue { get; set; }
     public bool IsQueryable { get; set; }
@@ -36,6 +37,7 @@ public class FieldMappingResponse
             Description = entity.Description,
             Unit = entity.Unit,
             DataType = entity.DataType.ToString(),
+            JsonPath = entity.JsonPath,
             MinValue = entity.MinValue,
             MaxValue = entity.MaxValue,
             IsQueryable = entity.IsQueryable,
@@ -59,6 +61,7 @@ public class FieldMappingRequest
     public string FriendlyName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Unit { get; set; }
+    public string? JsonPath { get; set; }
     public double? MinValue { get; set; }
     public double? MaxValue { get; set; }
     public bool IsQueryable { get; set; } = true;

@@ -2,7 +2,7 @@ import { ApiClient } from './client';
 import { apiConfig, serviceUrls } from './config';
 import type { ApiResponse } from './types';
 
-const simulationApiClient = new ApiClient(serviceUrls.simulation, apiConfig.timeout);
+export const simulationApiClient = new ApiClient(serviceUrls.simulation, apiConfig.timeout);
 
 export interface SimulatedSensor {
   name: string;

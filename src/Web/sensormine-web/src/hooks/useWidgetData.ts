@@ -88,7 +88,7 @@ export function useWidgetData(
       const deviceIds = options?.deviceId || '';
       
       let url: string;
-      const baseUrl = 'http://localhost:5079'; // Query API URL
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'; // API Gateway
 
       // Determine which endpoint to call based on data source type
       if (dataSource.type === 'aggregated' && dataSource.aggregation && dataSource.timeRange) {

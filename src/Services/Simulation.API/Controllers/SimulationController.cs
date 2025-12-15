@@ -24,6 +24,12 @@ public class SimulationController : ControllerBase
             return BadRequest(new { error = "DeviceId is required" });
         }
 
+        // Validate DeviceId is a valid GUID
+        if (!Guid.TryParse(device.DeviceId, out _))
+        {
+            return BadRequest(new { error = "DeviceId must be a valid GUID" });
+        }
+
         // Set default topic if not provided
         if (string.IsNullOrWhiteSpace(device.Topic))
         {
@@ -88,7 +94,7 @@ public class SimulationController : ControllerBase
     {
         var device = new SimulatedDevice
         {
-            DeviceId = request.DeviceId ?? $"SIM-{Guid.NewGuid():N}".Substring(0, 12),
+            DeviceId = request.DeviceId ?? Guid.NewGuid().ToString(),
             Name = request.Name ?? "Test Device",
             Interval = request.Interval ?? 5000,
             Sensors = new List<SimulatedSensor>

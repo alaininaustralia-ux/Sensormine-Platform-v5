@@ -28,7 +28,7 @@ public interface ITimeSeriesRepository
     /// <summary>
     /// Get latest telemetry for multiple devices
     /// </summary>
-    Task<Dictionary<string, LatestTelemetryData>> GetLatestTelemetryForDevicesAsync(IEnumerable<string> deviceIds, CancellationToken cancellationToken = default);
+    Task<Dictionary<Guid, LatestTelemetryData>> GetLatestTelemetryForDevicesAsync(IEnumerable<Guid> deviceIds, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -47,7 +47,7 @@ public class TimeSeriesQuery
 {
     public DateTimeOffset StartTime { get; set; }
     public DateTimeOffset EndTime { get; set; }
-    public Dictionary<string, string>? Filters { get; set; }
+    public Dictionary<string, object>? Filters { get; set; }
     public int? Limit { get; set; }
     public string? OrderBy { get; set; }
 }

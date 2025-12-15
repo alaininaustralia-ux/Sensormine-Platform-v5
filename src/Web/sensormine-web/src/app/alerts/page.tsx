@@ -112,7 +112,14 @@ export default function AlertsPage() {
   };
 
   return (
-    <div className="container py-8">
+    <div className="container py-8 relative">
+      {/* Untested Watermark */}
+      <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+        <div className="-rotate-45 text-[120px] font-bold text-red-500/10 select-none">
+          UNTESTED
+        </div>
+      </div>
+
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Alerts</h1>

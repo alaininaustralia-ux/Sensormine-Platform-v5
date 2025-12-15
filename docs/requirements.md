@@ -466,7 +466,7 @@ SensorMine is an industrial IoT and video analytics platform that ingests, model
 **Design principle:**
 - Avoid cloud-specific lock-in where possible
 
-#### 2.7.3 Edge Compute
+#### 2.7.3 Edge Computing Platform
 
 **Ability to run workloads on edge devices:**
 - Data validation & processing
@@ -479,6 +479,272 @@ SensorMine is an industrial IoT and video analytics platform that ingests, model
 - Containers
 - ML models
 - Scripts
+
+#### 2.7.4 Edge Processing Engine
+
+**Local Data Processing Capabilities:**
+
+**Pre-Processing Pipeline:**
+- Data validation and sanitization at the edge
+- Schema compliance checking before cloud transmission
+- Data aggregation (reduce bandwidth by aggregating values locally)
+- Outlier detection and anomaly flagging
+- Data compression and encoding
+- Time-series downsampling
+- Unit conversion and normalization
+
+**Edge Intelligence:**
+- Local threshold-based alerting (critical alerts without cloud latency)
+- Event detection and classification
+- Pattern recognition on time-series data
+- Local ML model inference (TensorFlow Lite, ONNX Runtime)
+- Predictive maintenance calculations
+- Statistical analysis (moving averages, standard deviation)
+
+**Edge Storage & Buffering:**
+- Local time-series database (SQLite, InfluxDB edge)
+- Store-and-forward mechanism for intermittent connectivity
+- Configurable retention policies (keep last N hours/days)
+- Automatic data cleanup on successful upload
+- Critical data prioritization during bandwidth constraints
+
+**Edge Configuration:**
+- Deploy processing rules via cloud UI
+- A/B testing of edge logic before full rollout
+- Version control and rollback capabilities
+- Remote monitoring of edge compute health
+- Resource usage metrics (CPU, memory, disk)
+
+#### 2.7.5 Custom Logic & AI Module Framework
+
+**Plugin Architecture:**
+
+**Custom Data Processing Modules:**
+- Plugin SDK for custom data processors
+- Support for .NET assemblies, Python scripts, JavaScript/Node.js modules
+- Sandboxed execution environment for security
+- Module lifecycle management (load, execute, unload)
+- Hot-reload capabilities without service restart
+
+**AI/ML Model Management:**
+
+**Model Registry:**
+- Centralized repository for AI/ML models
+- Support for multiple model formats:
+  - ONNX (cross-platform)
+  - TensorFlow/TensorFlow Lite
+  - PyTorch
+  - Scikit-learn (pickle)
+  - Custom models via REST API
+- Model versioning and A/B testing
+- Model metadata (accuracy, latency, resource requirements)
+- Model performance tracking and drift detection
+
+**Model Deployment:**
+- Deploy models to edge devices or cloud
+- Automatic model optimization for target hardware
+- Batch inference for efficiency
+- Real-time inference with latency SLAs
+- GPU acceleration support where available
+- Model chaining (output of one model feeds another)
+
+**Custom AI Modules:**
+- **Anomaly Detection**: Train models on normal behavior, flag deviations
+- **Predictive Maintenance**: Predict equipment failures based on sensor trends
+- **Classification**: Categorize events, images, or data patterns
+- **Regression**: Predict future values (forecasting)
+- **Clustering**: Group similar devices or data patterns
+- **Computer Vision**: Object detection, image classification, segmentation
+- **NLP/LLM**: Text analysis, sentiment detection, entity extraction
+
+**Custom Logic Framework:**
+
+**Script-Based Logic:**
+- JavaScript/TypeScript execution engine (V8 or Deno)
+- Python script runner (isolated with resource limits)
+- C# script compilation and execution (Roslyn)
+- SQL-like query language for data transformations
+- Low-code/no-code visual workflow builder
+
+**Logic Types:**
+- **Data Transformation**: Convert, enrich, or filter incoming data
+- **Business Rules**: Apply conditional logic based on device context
+- **Aggregation Functions**: Custom aggregations beyond standard (avg, sum, min, max)
+- **Correlation Logic**: Combine data from multiple devices
+- **Geofencing**: Trigger actions based on device location
+- **Time-Based Actions**: Scheduled or cron-based logic execution
+
+**Logic Configuration UI (Settings):**
+```
+Settings → Custom Logic
+├── Data Processors
+│   ├── List all processors
+│   ├── Create new processor
+│   │   ├── Choose type (script, compiled, model)
+│   │   ├── Upload code/model file
+│   │   ├── Configure inputs/outputs
+│   │   ├── Set resource limits
+│   │   └── Test with sample data
+│   └── Assign to devices/device types
+├── AI Models
+│   ├── Model registry
+│   ├── Upload new model
+│   │   ├── Model file upload
+│   │   ├── Input/output schema definition
+│   │   ├── Performance benchmarks
+│   │   └── Deployment targets (edge/cloud)
+│   ├── Model versioning
+│   └── Model monitoring
+└── Workflows
+    ├── Visual workflow builder
+    ├── Trigger configuration
+    └── Action chains
+```
+
+**Custom Module API:**
+
+**Data Processor Interface:**
+```csharp
+public interface IDataProcessor
+{
+    string Name { get; }
+    string Version { get; }
+    Task<ProcessingResult> ProcessAsync(
+        DeviceData input, 
+        ProcessingContext context, 
+        CancellationToken cancellationToken);
+}
+
+public class ProcessingContext
+{
+    public Device Device { get; set; }
+    public DeviceType DeviceType { get; set; }
+    public Dictionary<string, object> Configuration { get; set; }
+    public ILogger Logger { get; set; }
+    public IMetricsCollector Metrics { get; set; }
+}
+```
+
+**AI Model Interface:**
+```csharp
+public interface IAIModel
+{
+    string ModelId { get; }
+    string ModelType { get; }
+    Task<InferenceResult> InferAsync(
+        ModelInput input, 
+        InferenceOptions options, 
+        CancellationToken cancellationToken);
+    Task WarmupAsync(); // Pre-load model
+}
+```
+
+**Processing Pipeline:**
+
+**Pipeline Configuration:**
+- Chain multiple processors/models in sequence
+- Parallel execution for independent steps
+- Conditional routing based on intermediate results
+- Error handling and fallback logic
+- Dead-letter queue for failed processing
+
+**Pipeline Stages:**
+1. **Ingestion** → Data arrives from device
+2. **Pre-Processing** → Data validation, normalization
+3. **Custom Logic** → User-defined processors execute
+4. **AI Inference** → Models run on processed data
+5. **Post-Processing** → Enrich results, format outputs
+6. **Storage** → Write to database
+7. **Event Publishing** → Trigger alerts, webhooks
+
+**Edge vs Cloud Processing:**
+
+**Decision Criteria:**
+- Latency requirements (edge for <100ms, cloud for batch)
+- Bandwidth constraints (edge for high-frequency data)
+- Model size and compute requirements
+- Data privacy and compliance (edge for PII)
+- Cost optimization (edge reduces cloud egress)
+
+**Hybrid Processing:**
+- Run lightweight models on edge
+- Send reduced dataset to cloud for complex analysis
+- Edge pre-filters data, cloud performs deep learning
+- Cloud trains models, edge executes inference
+
+**Security & Governance:**
+
+**Module Security:**
+- Code signing and verification
+- Sandboxed execution with resource limits (CPU, memory, disk)
+- Network access controls
+- Audit logging of all module executions
+- Module permissions (read-only vs read-write data access)
+
+**Model Security:**
+- Encrypted model storage
+- Model access controls (which tenants/users can deploy)
+- Model output validation
+- Model tampering detection
+- Intellectual property protection
+
+**Performance & Monitoring:**
+
+**Module Performance Metrics:**
+- Execution time per invocation
+- Success/failure rates
+- Resource consumption (CPU, memory, I/O)
+- Throughput (records processed per second)
+- Error rates and types
+
+**Model Performance Metrics:**
+- Inference latency (P50, P95, P99)
+- Accuracy/precision/recall (if ground truth available)
+- Model drift detection (input distribution changes)
+- Resource utilization per inference
+- Cost per inference (cloud deployments)
+
+**Developer Tools:**
+
+**SDK & Documentation:**
+- Comprehensive SDK for .NET, Python, JavaScript
+- Code samples and starter templates
+- Testing framework with mock data
+- Local development environment
+- CI/CD integration for automated deployment
+
+**Testing Tools:**
+- Unit testing framework for modules
+- Integration testing with mock device data
+- Performance benchmarking tools
+- Load testing capabilities
+- Model validation and accuracy testing
+
+**Use Cases:**
+
+**Example 1: Water Quality Monitoring**
+- **Edge Logic**: Validate pH sensor readings, detect anomalies locally
+- **Custom Processor**: Apply temperature compensation to pH values
+- **AI Model**: Predict algae bloom risk based on multiple sensors
+- **Action**: Trigger local alert if immediate danger, send enriched data to cloud
+
+**Example 2: Predictive Maintenance**
+- **Edge Logic**: Monitor vibration sensor for high-frequency anomalies
+- **Custom Processor**: Calculate RMS, peak-to-peak, and FFT features
+- **AI Model**: Classification model predicts bearing failure probability
+- **Action**: Schedule maintenance when probability > 80%
+
+**Example 3: Video Analytics**
+- **Edge Logic**: Motion detection and frame extraction
+- **Custom Processor**: Image pre-processing (resize, normalize)
+- **AI Model**: Object detection (vehicles, people, safety equipment)
+- **Action**: Count objects, detect safety violations, alert on anomalies
+
+**Example 4: Energy Optimization**
+- **Edge Logic**: Monitor power consumption patterns
+- **Custom Processor**: Calculate cost based on time-of-use pricing
+- **AI Model**: Forecast demand for next 24 hours
+- **Action**: Optimize equipment scheduling to reduce costs
 
 ---
 

@@ -48,9 +48,13 @@ public class AssetsController : ControllerBase
         var assets = await _assetRepository.GetAllAsync(tenantId, skip, take);
         var totalCount = await _assetRepository.GetCountAsync(tenantId);
 
+        // Get device counts for all assets
+        var assetIds = assets.Select(a => a.Id).ToList();
+        var deviceCounts = await _assetRepository.GetBulkDeviceCountsAsync(assetIds, tenantId);
+
         return Ok(new AssetListResponse
         {
-            Assets = assets.Select(a => a.ToResponse()).ToList(),
+            Assets = assets.Select(a => a.ToResponse(0, deviceCounts.GetValueOrDefault(a.Id, 0))).ToList(),
             TotalCount = totalCount,
             Skip = skip,
             Take = take
@@ -64,7 +68,12 @@ public class AssetsController : ControllerBase
     public async Task<ActionResult<List<AssetResponse>>> GetRootAssets([FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
         var assets = await _assetRepository.GetRootAssetsAsync(tenantId);
-        return Ok(assets.Select(a => a.ToResponse()).ToList());
+        
+        // Get device counts for all root assets
+        var assetIds = assets.Select(a => a.Id).ToList();
+        var deviceCounts = await _assetRepository.GetBulkDeviceCountsAsync(assetIds, tenantId);
+        
+        return Ok(assets.Select(a => a.ToResponse(0, deviceCounts.GetValueOrDefault(a.Id, 0))).ToList());
     }
 
     /// <summary>
@@ -94,7 +103,12 @@ public class AssetsController : ControllerBase
     public async Task<ActionResult<List<AssetResponse>>> GetChildren(Guid id, [FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
         var assets = await _assetRepository.GetChildrenAsync(id, tenantId);
-        return Ok(assets.Select(a => a.ToResponse()).ToList());
+        
+        // Get device counts for all children
+        var assetIds = assets.Select(a => a.Id).ToList();
+        var deviceCounts = await _assetRepository.GetBulkDeviceCountsAsync(assetIds, tenantId);
+        
+        return Ok(assets.Select(a => a.ToResponse(0, deviceCounts.GetValueOrDefault(a.Id, 0))).ToList());
     }
 
     /// <summary>
@@ -115,6 +129,19 @@ public class AssetsController : ControllerBase
     {
         var assets = await _assetRepository.GetAncestorsAsync(id, tenantId);
         return Ok(assets.Select(a => a.ToResponse()).ToList());
+    }
+
+    /// <summary>
+    /// Get human-readable path (names) for an asset
+    /// </summary>
+    [HttpGet("{id}/path-names")]
+    public async Task<ActionResult<object>> GetAssetPathNames(Guid id, [FromHeader(Name = "X-Tenant-Id")] string tenantId)
+    {
+        var path = await _assetRepository.GetPathNamesAsync(id, tenantId);
+        if (string.IsNullOrEmpty(path))
+            return NotFound();
+
+        return Ok(new { path });
     }
 
     /// <summary>

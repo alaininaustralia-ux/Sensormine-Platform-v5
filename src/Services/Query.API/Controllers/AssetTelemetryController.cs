@@ -178,7 +178,7 @@ public class AssetTelemetryController : ControllerBase
                 {
                     StartTime = start,
                     EndTime = end,
-                    Filters = new Dictionary<string, string> { ["deviceId"] = deviceId },
+                    Filters = new Dictionary<string, object> { ["deviceId"] = deviceId },
                     OrderBy = "time",
                     Limit = limit
                 };
@@ -268,7 +268,7 @@ public class AssetTelemetryController : ControllerBase
                 {
                     StartTime = DateTimeOffset.UtcNow.AddHours(-24),
                     EndTime = DateTimeOffset.UtcNow,
-                    Filters = new Dictionary<string, string> { ["deviceId"] = deviceId },
+                    Filters = new Dictionary<string, object> { ["deviceId"] = deviceId },
                     OrderBy = "time DESC",
                     Limit = 1
                 };

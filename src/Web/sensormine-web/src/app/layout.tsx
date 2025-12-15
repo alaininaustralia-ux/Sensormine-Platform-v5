@@ -5,6 +5,7 @@ import { AuthProvider } from "@/lib/auth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Toaster } from "@/components/ui/toaster";
 import { PreferencesProvider } from "@/components/providers/PreferencesProvider";
+import { BreadcrumbProvider } from "@/lib/contexts/breadcrumb-context";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,8 +28,10 @@ export default function RootLayout({
       <body className={`${poppins.variable} font-sans antialiased`}>
         <AuthProvider>
           <PreferencesProvider>
-            <AppLayout>{children}</AppLayout>
-            <Toaster />
+            <BreadcrumbProvider>
+              <AppLayout>{children}</AppLayout>
+              <Toaster />
+            </BreadcrumbProvider>
           </PreferencesProvider>
         </AuthProvider>
       </body>

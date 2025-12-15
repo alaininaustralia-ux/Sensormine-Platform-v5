@@ -352,9 +352,21 @@ const useDigitalTwinStore = create<DigitalTwinState>()(
             selectedAssetState: response.data,
             isLoadingState: false 
           });
-        } catch (error) {
-          console.error('Failed to fetch asset state:', error);
-          set({ isLoadingState: false });
+        } catch (error: unknown) {
+          // Handle 404 gracefully - asset state may not exist yet
+          const err = error as { name?: string; statusCode?: number };
+          if (err?.name === 'NotFoundError' || err?.statusCode === 404) {
+            set({ 
+              selectedAssetState: null,
+              isLoadingState: false 
+            });
+          } else {
+            console.error('Failed to fetch asset state:', error);
+            set({ 
+              selectedAssetState: null,
+              isLoadingState: false 
+            });
+          }
         }
       },
 

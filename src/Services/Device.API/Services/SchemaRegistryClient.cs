@@ -108,13 +108,18 @@ public class SchemaRegistryClient : ISchemaRegistryClient
             {
                 Id = schemaId,
                 Name = doc.RootElement.GetProperty("name").GetString() ?? "",
-                SchemaType = doc.RootElement.GetProperty("schemaType").GetString() ?? "JsonSchema"
+                SchemaType = "JsonSchema" // All schemas are JSON Schema format
             };
 
-            // Parse schema definition
-            if (doc.RootElement.TryGetProperty("schemaDefinition", out var schemaDef))
+            // Parse schema definition from currentVersion.jsonSchema
+            if (doc.RootElement.TryGetProperty("currentVersion", out var currentVersion) &&
+                currentVersion.TryGetProperty("jsonSchema", out var jsonSchemaProperty))
             {
-                schema.SchemaDefinition = JsonDocument.Parse(schemaDef.GetRawText());
+                var jsonSchemaString = jsonSchemaProperty.GetString();
+                if (!string.IsNullOrEmpty(jsonSchemaString))
+                {
+                    schema.SchemaDefinition = JsonDocument.Parse(jsonSchemaString);
+                }
             }
 
             return schema;

@@ -4,6 +4,7 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -21,7 +22,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Wifi } from 'lucide-react';
+import { Wifi, Loader2, Info } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { nexusConfigurationApi, type CommunicationProtocolInfo } from '@/lib/api/nexusConfiguration';
 import type { CreateNexusConfigurationRequest, CommunicationSettings } from '@/lib/api';
 
 interface StepCommunicationSettingsProps {
@@ -30,6 +33,11 @@ interface StepCommunicationSettingsProps {
 }
 
 export function StepCommunicationSettings({ formData, updateFormData }: StepCommunicationSettingsProps) {
+  const { toast } = useToast();
+  const [protocols, setProtocols] = useState<CommunicationProtocolInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [useCustomTopic, setUseCustomTopic] = useState(false);
+
   const settings = formData.communicationSettings || {
     protocol: 'MQTT',
     transmissionIntervalSeconds: 300,
@@ -38,11 +46,40 @@ export function StepCommunicationSettings({ formData, updateFormData }: StepComm
     enableCompression: false,
   };
 
+  // Load communication protocols from API
+  useEffect(() => {
+    const loadProtocols = async () => {
+      try {
+        setLoading(true);
+        const data = await nexusConfigurationApi.getCommunicationProtocols();
+        setProtocols(data);
+        
+        // If current protocol doesn't exist in loaded protocols, set to first available
+        if (data.length > 0 && !data.find(p => p.protocol === settings.protocol)) {
+          updateSettings({ protocol: data[0].protocol as CommunicationSettings['protocol'] });
+        }
+      } catch (error) {
+        console.error('Error loading communication protocols:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load communication protocols. Using defaults.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProtocols();
+  }, [toast]);
+
   const updateSettings = (updates: Partial<CommunicationSettings>) => {
     updateFormData({
       communicationSettings: { ...settings, ...updates },
     });
   };
+
+  // Get current protocol info
+  const currentProtocol = protocols.find(p => p.protocol === settings.protocol);
 
   return (
     <div className="space-y-6">
@@ -66,25 +103,41 @@ export function StepCommunicationSettings({ formData, updateFormData }: StepComm
         <CardContent className="space-y-6">
           {/* Protocol Selection */}
           <div className="space-y-2">
-            <Label>Protocol</Label>
+            <Label className="flex items-center gap-2">
+              Protocol
+              {loading && <Loader2 className="h-3 w-3 animate-spin" />}
+            </Label>
             <Select
               value={settings.protocol}
               onValueChange={(value) =>
                 updateSettings({ protocol: value as CommunicationSettings['protocol'] })
               }
+              disabled={loading}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="MQTT">MQTT</SelectItem>
-                <SelectItem value="HTTP">HTTP</SelectItem>
-                <SelectItem value="Azure IoT Hub">Azure IoT Hub</SelectItem>
+                {protocols.map((proto) => (
+                  <SelectItem key={proto.protocol} value={proto.protocol}>
+                    <div className="flex flex-col">
+                      <span>{proto.displayName}</span>
+                      {proto.description && (
+                        <span className="text-xs text-muted-foreground">
+                          {proto.description}
+                        </span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground">
-              The communication protocol used to send data to the platform
-            </p>
+            {currentProtocol?.description && (
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Info className="h-3 w-3" />
+                {currentProtocol.description}
+              </p>
+            )}
           </div>
 
           {/* Transmission Interval */}
@@ -180,7 +233,7 @@ export function StepCommunicationSettings({ formData, updateFormData }: StepComm
                       ...settings.mqttSettings,
                       brokerUrl: e.target.value,
                       port: settings.mqttSettings?.port || 1883,
-                      topicPattern: settings.mqttSettings?.topicPattern || 'devices/{deviceId}/telemetry',
+                      topicPattern: settings.mqttSettings?.topicPattern || 'sensormine/tenants/{tenantId}/devices/{deviceId}/telemetry',
                       qoS: settings.mqttSettings?.qoS || 1,
                       useTls: settings.mqttSettings?.useTls || false,
                     },
@@ -201,7 +254,7 @@ export function StepCommunicationSettings({ formData, updateFormData }: StepComm
                         ...settings.mqttSettings,
                         brokerUrl: settings.mqttSettings?.brokerUrl || 'mqtt://localhost',
                         port: parseInt(e.target.value) || 1883,
-                        topicPattern: settings.mqttSettings?.topicPattern || 'devices/{deviceId}/telemetry',
+                        topicPattern: settings.mqttSettings?.topicPattern || 'sensormine/tenants/{tenantId}/devices/{deviceId}/telemetry',
                         qoS: settings.mqttSettings?.qoS || 1,
                         useTls: settings.mqttSettings?.useTls || false,
                       },
@@ -220,7 +273,7 @@ export function StepCommunicationSettings({ formData, updateFormData }: StepComm
                         ...settings.mqttSettings,
                         brokerUrl: settings.mqttSettings?.brokerUrl || 'mqtt://localhost',
                         port: settings.mqttSettings?.port || 1883,
-                        topicPattern: settings.mqttSettings?.topicPattern || 'devices/{deviceId}/telemetry',
+                        topicPattern: settings.mqttSettings?.topicPattern || 'sensormine/tenants/{tenantId}/devices/{deviceId}/telemetry',
                         qoS: parseInt(value),
                         useTls: settings.mqttSettings?.useTls || false,
                       },
@@ -241,25 +294,99 @@ export function StepCommunicationSettings({ formData, updateFormData }: StepComm
 
             <div className="space-y-2">
               <Label>Topic Pattern</Label>
-              <Input
-                placeholder="devices/{deviceId}/telemetry"
-                value={settings.mqttSettings?.topicPattern || 'devices/{deviceId}/telemetry'}
-                onChange={(e) =>
-                  updateSettings({
-                    mqttSettings: {
-                      ...settings.mqttSettings,
-                      brokerUrl: settings.mqttSettings?.brokerUrl || 'mqtt://localhost',
-                      port: settings.mqttSettings?.port || 1883,
-                      topicPattern: e.target.value,
-                      qoS: settings.mqttSettings?.qoS || 1,
-                      useTls: settings.mqttSettings?.useTls || false,
-                    },
-                  })
-                }
-              />
-              <p className="text-sm text-muted-foreground">
-                Use {'{deviceId}'} as placeholder for device ID
-              </p>
+              <div className="space-y-3">
+                {/* Radio buttons for default vs custom */}
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="topic-default"
+                    name="topic-pattern-mode"
+                    checked={!useCustomTopic}
+                    onChange={() => {
+                      setUseCustomTopic(false);
+                      updateSettings({
+                        mqttSettings: {
+                          ...settings.mqttSettings,
+                          brokerUrl: settings.mqttSettings?.brokerUrl || 'mqtt://localhost',
+                          port: settings.mqttSettings?.port || 1883,
+                          topicPattern: 'sensormine/tenants/{tenantId}/devices/{deviceId}/telemetry',
+                          qoS: settings.mqttSettings?.qoS || 1,
+                          useTls: settings.mqttSettings?.useTls || false,
+                        },
+                      });
+                    }}
+                    className="h-4 w-4 text-primary cursor-pointer"
+                  />
+                  <label htmlFor="topic-default" className="text-sm font-medium cursor-pointer">
+                    Use Sensormine Default Pattern
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="topic-custom"
+                    name="topic-pattern-mode"
+                    checked={useCustomTopic}
+                    onChange={() => {
+                      setUseCustomTopic(true);
+                      updateSettings({
+                        mqttSettings: {
+                          ...settings.mqttSettings,
+                          brokerUrl: settings.mqttSettings?.brokerUrl || 'mqtt://localhost',
+                          port: settings.mqttSettings?.port || 1883,
+                          topicPattern: '',
+                          qoS: settings.mqttSettings?.qoS || 1,
+                          useTls: settings.mqttSettings?.useTls || false,
+                        },
+                      });
+                    }}
+                    className="h-4 w-4 text-primary cursor-pointer"
+                  />
+                  <label htmlFor="topic-custom" className="text-sm font-medium cursor-pointer">
+                    Use Custom Pattern
+                  </label>
+                </div>
+
+                {/* Show input only when custom is selected */}
+                {useCustomTopic ? (
+                  <div className="space-y-2 pl-6">
+                    <div className="flex items-start space-x-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                      <Info className="h-4 w-4 text-yellow-600 dark:text-yellow-500 mt-0.5 shrink-0" />
+                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                        <strong>Warning:</strong> Custom topic patterns may not work with Sensormine's ingestion pipeline. Use only if you have a specific integration requirement.
+                      </p>
+                    </div>
+                    <Input
+                      placeholder="your/custom/pattern/{tenantId}/{deviceId}"
+                      value={settings.mqttSettings?.topicPattern || ''}
+                      onChange={(e) =>
+                        updateSettings({
+                          mqttSettings: {
+                            ...settings.mqttSettings,
+                            brokerUrl: settings.mqttSettings?.brokerUrl || 'mqtt://localhost',
+                            port: settings.mqttSettings?.port || 1883,
+                            topicPattern: e.target.value,
+                            qoS: settings.mqttSettings?.qoS || 1,
+                            useTls: settings.mqttSettings?.useTls || false,
+                          },
+                        })
+                      }
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Use {'{tenantId}'} for tenant ID and {'{deviceId}'} for device ID
+                    </p>
+                  </div>
+                ) : (
+                  <div className="pl-6">
+                    <div className="font-mono text-sm bg-muted px-3 py-2 rounded-md break-all">
+                      sensormine/tenants/{'{tenantId}'}/devices/{'{deviceId}'}/telemetry
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Standard Sensormine compliance topic pattern
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

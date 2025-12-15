@@ -52,14 +52,14 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     available: false, // Will be implemented in Story 4.6
   },
   {
-    type: 'video',
-    name: 'Video Feed',
-    description: 'Live or recorded video stream with timeline',
+    type: 'video-player',
+    name: 'Video Player',
+    description: 'Live or recorded video stream from cameras and video sources',
     icon: 'Video',
     defaultSize: { w: 4, h: 3 },
     minSize: { w: 3, h: 2 },
     category: 'media',
-    available: false, // Will be implemented in Story 4.3
+    available: true,
   },
   {
     type: 'gauge',

@@ -17,8 +17,6 @@ public class DeviceTypeController : ControllerBase
     private readonly IFieldMappingService _fieldMappingService;
     private readonly ILogger<DeviceTypeController> _logger;
 
-    // TODO: Get from authentication context
-    private string TenantId => "00000000-0000-0000-0000-000000000001";
     private string UserId => "system-user";
 
     public DeviceTypeController(
@@ -40,15 +38,17 @@ public class DeviceTypeController : ControllerBase
     [ProducesResponseType(typeof(DeviceTypeResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> CreateDeviceType([FromBody] DeviceTypeRequest request)
+    public async Task<IActionResult> CreateDeviceType(
+        [FromBody] DeviceTypeRequest request,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
-        _logger.LogInformation("Creating device type: {Name} for tenant: {TenantId}", request.Name, TenantId);
+        _logger.LogInformation("Creating device type: {Name} for tenant: {TenantId}", request.Name, tenantId);
 
         // Check if device type with same name already exists
-        var exists = await _repository.ExistsAsync(request.Name, TenantId, null);
+        var exists = await _repository.ExistsAsync(request.Name, tenantId, null);
         if (exists)
         {
-            _logger.LogWarning("Device type with name {Name} already exists for tenant {TenantId}", request.Name, TenantId);
+            _logger.LogWarning("Device type with name {Name} already exists for tenant {TenantId}", request.Name, tenantId);
             return Conflict(new { message = $"Device type with name '{request.Name}' already exists" });
         }
 
@@ -56,7 +56,7 @@ public class DeviceTypeController : ControllerBase
         var deviceType = new DeviceType
         {
             Id = Guid.NewGuid(),
-            TenantId = Guid.Parse(TenantId),
+            TenantId = Guid.Parse(tenantId),
             Name = request.Name,
             Description = request.Description,
             Protocol = request.Protocol,
@@ -86,11 +86,13 @@ public class DeviceTypeController : ControllerBase
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(DeviceTypeResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetDeviceTypeById(Guid id)
+    public async Task<IActionResult> GetDeviceTypeById(
+        Guid id,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
-        _logger.LogDebug("Getting device type: {Id} for tenant: {TenantId}", id, TenantId);
+        _logger.LogDebug("Getting device type: {Id} for tenant: {TenantId}", id, tenantId);
 
-        var deviceType = await _repository.GetByIdAsync(id, TenantId);
+        var deviceType = await _repository.GetByIdAsync(id, tenantId);
         if (deviceType == null)
         {
             _logger.LogWarning("Device type not found: {Id}", id);
@@ -100,7 +102,7 @@ public class DeviceTypeController : ControllerBase
         var response = DeviceTypeResponse.FromEntity(deviceType);
         
         // Populate field mappings
-        var fieldMappings = await _fieldMappingService.GetFieldMappingsForDeviceTypeAsync(id, TenantId);
+        var fieldMappings = await _fieldMappingService.GetFieldMappingsForDeviceTypeAsync(id, tenantId);
         response.Fields = fieldMappings.Select(FieldMappingResponse.FromEntity).ToList();
         
         return Ok(response);
@@ -114,18 +116,25 @@ public class DeviceTypeController : ControllerBase
     /// <returns>Paginated list of Device Types</returns>
     [HttpGet]
     [ProducesResponseType(typeof(DeviceTypeListResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetAllDeviceTypes(
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
+        if (string.IsNullOrWhiteSpace(tenantId))
+        {
+            return BadRequest(new { error = "X-Tenant-Id header is required" });
+        }
+
         _logger.LogDebug("Getting device types for tenant: {TenantId}, page: {Page}, pageSize: {PageSize}",
-            TenantId, page, pageSize);
+            tenantId, page, pageSize);
 
         // Validate pagination parameters
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var (items, totalCount) = await _repository.GetAllAsync(TenantId, page, pageSize);
+        var (items, totalCount) = await _repository.GetAllAsync(tenantId, page, pageSize);
 
         var response = new DeviceTypeListResponse
         {
@@ -148,12 +157,15 @@ public class DeviceTypeController : ControllerBase
     [ProducesResponseType(typeof(DeviceTypeResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> UpdateDeviceType(Guid id, [FromBody] DeviceTypeRequest request)
+    public async Task<IActionResult> UpdateDeviceType(
+        Guid id,
+        [FromBody] DeviceTypeRequest request,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
-        _logger.LogInformation("Updating device type: {Id} for tenant: {TenantId}", id, TenantId);
+        _logger.LogInformation("Updating device type: {Id} for tenant: {TenantId}", id, tenantId);
 
         // Check if device type exists
-        var existingDeviceType = await _repository.GetByIdAsync(id, TenantId);
+        var existingDeviceType = await _repository.GetByIdAsync(id, tenantId);
         if (existingDeviceType == null)
         {
             _logger.LogWarning("Device type not found: {Id}", id);
@@ -163,10 +175,10 @@ public class DeviceTypeController : ControllerBase
         // Check if new name conflicts with another device type
         if (existingDeviceType.Name != request.Name)
         {
-            var nameExists = await _repository.ExistsAsync(request.Name, TenantId, id);
+            var nameExists = await _repository.ExistsAsync(request.Name, tenantId, id);
             if (nameExists)
             {
-                _logger.LogWarning("Device type with name {Name} already exists for tenant {TenantId}", request.Name, TenantId);
+                _logger.LogWarning("Device type with name {Name} already exists for tenant {TenantId}", request.Name, tenantId);
                 return Conflict(new { message = $"Device type with name '{request.Name}' already exists" });
             }
         }
@@ -199,11 +211,13 @@ public class DeviceTypeController : ControllerBase
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteDeviceType(Guid id)
+    public async Task<IActionResult> DeleteDeviceType(
+        Guid id,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
-        _logger.LogInformation("Deleting device type: {Id} for tenant: {TenantId}", id, TenantId);
+        _logger.LogInformation("Deleting device type: {Id} for tenant: {TenantId}", id, tenantId);
 
-        var deleted = await _repository.DeleteAsync(id, TenantId);
+        var deleted = await _repository.DeleteAsync(id, tenantId);
         if (!deleted)
         {
             _logger.LogWarning("Device type not found: {Id}", id);
@@ -221,17 +235,19 @@ public class DeviceTypeController : ControllerBase
     /// <returns>Paginated list of matching Device Types</returns>
     [HttpGet("search")]
     [ProducesResponseType(typeof(DeviceTypeListResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> SearchDeviceTypes([FromQuery] SearchDeviceTypesRequest request)
+    public async Task<IActionResult> SearchDeviceTypes(
+        [FromQuery] SearchDeviceTypesRequest request,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
         _logger.LogDebug("Searching device types for tenant: {TenantId}, term: {SearchTerm}, protocol: {Protocol}",
-            TenantId, request.SearchTerm, request.Protocol);
+            tenantId, request.SearchTerm, request.Protocol);
 
         // Validate pagination parameters
         var page = Math.Max(1, request.Page);
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
 
         var (items, totalCount) = await _repository.SearchAsync(
-            TenantId,
+            tenantId,
             request.SearchTerm,
             request.Tags,
             request.Protocol,
@@ -257,13 +273,15 @@ public class DeviceTypeController : ControllerBase
     [HttpGet("{id}/versions")]
     [ProducesResponseType(typeof(List<DeviceTypeVersionResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetVersionHistory(Guid id)
+    public async Task<IActionResult> GetVersionHistory(
+        Guid id,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
         _logger.LogDebug("Getting version history for device type: {Id}", id);
 
         try
         {
-            var versions = await _repository.GetVersionHistoryAsync(id, TenantId);
+            var versions = await _repository.GetVersionHistoryAsync(id, tenantId);
             var response = versions.Select(DeviceTypeVersionResponse.FromEntity).ToList();
             return Ok(response);
         }
@@ -284,13 +302,16 @@ public class DeviceTypeController : ControllerBase
     [ProducesResponseType(typeof(DeviceTypeResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RollbackToVersion(Guid id, [FromBody] RollbackDeviceTypeRequest request)
+    public async Task<IActionResult> RollbackToVersion(
+        Guid id,
+        [FromBody] RollbackDeviceTypeRequest request,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
         _logger.LogInformation("Rolling back device type {Id} to version {Version}", id, request.Version);
 
         try
         {
-            var deviceType = await _repository.RollbackToVersionAsync(id, request.Version, TenantId, UserId);
+            var deviceType = await _repository.RollbackToVersionAsync(id, request.Version, tenantId, UserId);
             var response = DeviceTypeResponse.FromEntity(deviceType);
             return Ok(response);
         }
@@ -309,13 +330,15 @@ public class DeviceTypeController : ControllerBase
     [HttpGet("{id}/usage")]
     [ProducesResponseType(typeof(DeviceTypeUsageStatisticsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetUsageStatistics(Guid id)
+    public async Task<IActionResult> GetUsageStatistics(
+        Guid id,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
         _logger.LogDebug("Getting usage statistics for device type: {Id}", id);
 
         try
         {
-            var stats = await _repository.GetUsageStatisticsAsync(id, TenantId);
+            var stats = await _repository.GetUsageStatisticsAsync(id, tenantId);
             var response = DeviceTypeUsageStatisticsResponse.FromEntity(stats);
             return Ok(response);
         }
@@ -339,6 +362,7 @@ public class DeviceTypeController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAuditLogs(
         Guid id,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
@@ -357,7 +381,7 @@ public class DeviceTypeController : ControllerBase
 
         try
         {
-            var (logs, totalCount) = await _repository.GetAuditLogsAsync(id, TenantId, page, pageSize);
+            var (logs, totalCount) = await _repository.GetAuditLogsAsync(id, tenantId, page, pageSize);
             
             var response = new DeviceTypeAuditLogListResponse
             {
@@ -385,7 +409,10 @@ public class DeviceTypeController : ControllerBase
     [HttpPost("{id}/validate-update")]
     [ProducesResponseType(typeof(DeviceTypeUpdateValidationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ValidateUpdate(Guid id, [FromBody] DeviceTypeRequest request)
+    public async Task<IActionResult> ValidateUpdate(
+        Guid id,
+        [FromBody] DeviceTypeRequest request,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
         _logger.LogDebug("Validating update for device type: {Id}", id);
 
@@ -393,7 +420,7 @@ public class DeviceTypeController : ControllerBase
         var proposedUpdate = new Sensormine.Core.Models.DeviceType
         {
             Id = id,
-            TenantId = Guid.Parse(TenantId),
+            TenantId = Guid.Parse(tenantId),
             Name = request.Name,
             Description = request.Description,
             Protocol = request.Protocol,
@@ -407,7 +434,7 @@ public class DeviceTypeController : ControllerBase
 
         try
         {
-            var result = await _repository.ValidateUpdateAsync(id, proposedUpdate, TenantId);
+            var result = await _repository.ValidateUpdateAsync(id, proposedUpdate, tenantId);
             var response = DeviceTypeUpdateValidationResponse.FromEntity(result);
             return Ok(response);
         }

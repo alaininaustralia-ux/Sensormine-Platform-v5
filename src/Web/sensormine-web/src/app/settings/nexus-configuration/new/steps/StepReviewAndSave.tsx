@@ -4,6 +4,7 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,7 +14,10 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Radio, Wifi, Save } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Check, Radio, Wifi, Save, AlertTriangle, Info, XCircle, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { nexusConfigurationApi, type ValidationResult } from '@/lib/api/nexusConfiguration';
 import type { CreateNexusConfigurationRequest } from '@/lib/api';
 
 interface StepReviewAndSaveProps {
@@ -23,6 +27,49 @@ interface StepReviewAndSaveProps {
 }
 
 export function StepReviewAndSave({ formData, onSave, saving }: StepReviewAndSaveProps) {
+  const { toast } = useToast();
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [validating, setValidating] = useState(false);
+
+  // Validate configuration when component mounts
+  useEffect(() => {
+    const validateConfig = async () => {
+      try {
+        setValidating(true);
+        const result = await nexusConfigurationApi.validateConfiguration(
+          formData as CreateNexusConfigurationRequest
+        );
+        setValidationResult(result);
+        
+        if (!result.isValid) {
+          toast({
+            title: 'Validation Issues Found',
+            description: `${result.errors.length} error(s) found. Please review below.`,
+            variant: 'destructive',
+          });
+        } else if (result.warnings.length > 0) {
+          toast({
+            title: 'Validation Warnings',
+            description: `Configuration is valid, but ${result.warnings.length} warning(s) found.`,
+          });
+        }
+      } catch (error) {
+        console.error('Error validating configuration:', error);
+        toast({
+          title: 'Validation Error',
+          description: 'Failed to validate configuration. You can still save it.',
+          variant: 'destructive',
+        });
+      } finally {
+        setValidating(false);
+      }
+    };
+    
+    if (formData.name) {
+      validateConfig();
+    }
+  }, [formData, toast]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -31,6 +78,77 @@ export function StepReviewAndSave({ formData, onSave, saving }: StepReviewAndSav
           Review your configuration before saving. You can edit it later if needed.
         </p>
       </div>
+
+      {/* Validation Status */}
+      {validating && (
+        <Alert>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <AlertTitle>Validating Configuration...</AlertTitle>
+          <AlertDescription>
+            Checking your configuration for errors and potential issues.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {validationResult && !validating && (
+        <>
+          {/* Validation Errors */}
+          {validationResult.errors.length > 0 && (
+            <Alert variant="destructive">
+              <XCircle className="h-4 w-4" />
+              <AlertTitle>Configuration Errors Found</AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc list-inside space-y-1 mt-2">
+                  {validationResult.errors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Validation Warnings */}
+          {validationResult.warnings.length > 0 && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Configuration Warnings</AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc list-inside space-y-1 mt-2">
+                  {validationResult.warnings.map((warning, index) => (
+                    <li key={index}>{warning}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Suggestions */}
+          {validationResult.suggestions.length > 0 && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Suggestions</AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc list-inside space-y-1 mt-2">
+                  {validationResult.suggestions.map((suggestion, index) => (
+                    <li key={index}>{suggestion}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Success message */}
+          {validationResult.isValid && validationResult.errors.length === 0 && validationResult.warnings.length === 0 && (
+            <Alert className="bg-green-50 text-green-900 border-green-200">
+              <Check className="h-4 w-4 text-green-600" />
+              <AlertTitle>Configuration Valid</AlertTitle>
+              <AlertDescription>
+                Your configuration looks great! Ready to save.
+              </AlertDescription>
+            </Alert>
+          )}
+        </>
+      )}
 
       {/* Basic Information */}
       <Card>
@@ -159,13 +277,11 @@ export function StepReviewAndSave({ formData, onSave, saving }: StepReviewAndSav
         </CardContent>
       </Card>
 
-      {/* Save Button */}
-      <div className="flex justify-center">
-        <Button size="lg" onClick={onSave} disabled={saving}>
-          <Save className="mr-2 h-5 w-5" />
-          {saving ? 'Saving Configuration...' : 'Save Configuration'}
-        </Button>
-      </div>
+      {validationResult?.isValid === false && (
+        <p className="text-center text-sm text-destructive">
+          Please fix validation errors before saving. Use the "Save Configuration" button at the bottom right.
+        </p>
+      )}
     </div>
   );
 }

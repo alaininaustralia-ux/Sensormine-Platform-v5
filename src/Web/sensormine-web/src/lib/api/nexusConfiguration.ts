@@ -5,9 +5,10 @@
  */
 
 import { apiClient } from './client';
+import { apiConfig } from './config';
 
 const BASE_PATH = '/api/NexusConfiguration';
-const NEXUS_CONFIG_API_URL = process.env.NEXT_PUBLIC_NEXUS_CONFIG_API_URL || 'http://localhost:5298';
+const NEXUS_CONFIG_API_URL = process.env.NEXT_PUBLIC_NEXUS_CONFIG_API_URL || apiConfig.baseUrl;
 
 // Types
 export interface ProbeConfig {
@@ -72,6 +73,13 @@ export interface DocumentInfo {
   aiParsed: boolean;
   aiModel?: string;
   aiConfidenceScore?: number;
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  suggestions: string[];
 }
 
 export interface NexusConfiguration {
@@ -185,6 +193,88 @@ export interface DeployConfigurationResponse {
   warnings: string[];
 }
 
+export interface ProbeTypeInfo {
+  type: string;
+  displayName: string;
+  description: string;
+  supportedProtocols: string[];
+  defaultSettings: Record<string, string>;
+}
+
+export interface SensorTypeInfo {
+  type: string;
+  displayName: string;
+  description: string;
+  defaultUnit: string;
+  compatibleProbeTypes: string[];
+  typicalMinValue?: number;
+  typicalMaxValue?: number;
+  commonUnits: string[];
+}
+
+export interface CommunicationProtocolInfo {
+  protocol: string;
+  displayName: string;
+  description: string;
+  requiresBrokerUrl: boolean;
+  supportsCompression: boolean;
+  supportsBatching: boolean;
+  defaultSettings: Record<string, unknown>;
+}
+
+export interface ValidateConfigurationRequest {
+  name: string;
+  probeConfigurations?: ProbeConfig[];
+  schemaFieldMappings?: Record<string, string>;
+  communicationSettings?: CommunicationSettings;
+  customLogic?: string;
+  customLogicLanguage?: string;
+}
+
+export interface ValidateConfigurationResponse {
+  isValid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+  suggestions: string[];
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+  code: string;
+}
+
+export interface ValidationWarning {
+  field: string;
+  message: string;
+}
+
+/**
+ * Helper function to make direct API calls to NexusConfiguration.API
+ */
+async function nexusFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const url = `${NEXUS_CONFIG_API_URL}${path}`;
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`API request failed: ${response.status} ${response.statusText}. ${errorText}`);
+  }
+  
+  // Handle empty responses (like DELETE)
+  if (response.status === 204 || response.headers.get('content-length') === '0') {
+    return undefined as T;
+  }
+  
+  return response.json();
+}
+
 /**
  * Nexus Configuration API Service
  */
@@ -193,22 +283,14 @@ export const nexusConfigurationApi = {
    * Get all configurations
    */
   async getAll(page = 1, pageSize = 20): Promise<NexusConfiguration[]> {
-    const response = await apiClient.get<NexusConfiguration[]>(
-      `${BASE_PATH}?page=${page}&pageSize=${pageSize}`,
-      { baseURL: NEXUS_CONFIG_API_URL }
-    );
-    return response.data;
+    return nexusFetch<NexusConfiguration[]>(`${BASE_PATH}?page=${page}&pageSize=${pageSize}`);
   },
 
   /**
    * Get configuration by ID
    */
   async getById(id: string): Promise<NexusConfiguration> {
-    const response = await apiClient.get<NexusConfiguration>(
-      `${BASE_PATH}/${id}`,
-      { baseURL: NEXUS_CONFIG_API_URL }
-    );
-    return response.data;
+    return nexusFetch<NexusConfiguration>(`${BASE_PATH}/${id}`);
   },
 
   /**
@@ -222,104 +304,115 @@ export const nexusConfigurationApi = {
     if (category) {
       params.append('category', category);
     }
-    
-    const response = await apiClient.get<NexusConfiguration[]>(
-      `${BASE_PATH}/templates?${params.toString()}`,
-      { baseURL: NEXUS_CONFIG_API_URL }
-    );
-    return response.data;
+    return nexusFetch<NexusConfiguration[]>(`${BASE_PATH}/templates?${params.toString()}`);
   },
 
   /**
    * Search configurations
    */
   async search(searchTerm: string, page = 1, pageSize = 20): Promise<NexusConfiguration[]> {
-    const response = await apiClient.get<NexusConfiguration[]>(
-      `${BASE_PATH}/search?searchTerm=${encodeURIComponent(searchTerm)}&page=${page}&pageSize=${pageSize}`,
-      { baseURL: NEXUS_CONFIG_API_URL }
+    return nexusFetch<NexusConfiguration[]>(
+      `${BASE_PATH}/search?searchTerm=${encodeURIComponent(searchTerm)}&page=${page}&pageSize=${pageSize}`
     );
-    return response.data;
   },
 
   /**
    * Create new configuration
    */
   async create(data: CreateNexusConfigurationRequest): Promise<NexusConfiguration> {
-    const response = await apiClient.post<NexusConfiguration>(
-      BASE_PATH,
-      data,
-      { baseURL: NEXUS_CONFIG_API_URL }
-    );
-    return response.data;
+    return nexusFetch<NexusConfiguration>(BASE_PATH, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 
   /**
    * Update configuration
    */
   async update(id: string, data: UpdateNexusConfigurationRequest): Promise<NexusConfiguration> {
-    const response = await apiClient.put<NexusConfiguration>(
-      `${BASE_PATH}/${id}`,
-      data,
-      { baseURL: NEXUS_CONFIG_API_URL }
-    );
-    return response.data;
+    return nexusFetch<NexusConfiguration>(`${BASE_PATH}/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   },
 
   /**
    * Delete configuration
    */
   async delete(id: string): Promise<void> {
-    await apiClient.delete(
-      `${BASE_PATH}/${id}`,
-      { baseURL: NEXUS_CONFIG_API_URL }
-    );
+    return nexusFetch<void>(`${BASE_PATH}/${id}`, {
+      method: 'DELETE',
+    });
   },
 
   /**
    * Parse document to extract configuration
    */
   async parseDocument(data: ParseDocumentRequest): Promise<ParseDocumentResponse> {
-    const response = await apiClient.post<ParseDocumentResponse>(
-      `${BASE_PATH}/parse-document`,
-      data,
-      { baseURL: NEXUS_CONFIG_API_URL }
-    );
-    return response.data;
+    return nexusFetch<ParseDocumentResponse>(`${BASE_PATH}/parse-document`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 
   /**
    * Generate custom logic using AI
    */
   async generateLogic(data: GenerateCustomLogicRequest): Promise<GenerateCustomLogicResponse> {
-    const response = await apiClient.post<GenerateCustomLogicResponse>(
-      `${BASE_PATH}/generate-logic`,
-      data,
-      { baseURL: NEXUS_CONFIG_API_URL }
-    );
-    return response.data;
+    return nexusFetch<GenerateCustomLogicResponse>(`${BASE_PATH}/generate-logic`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 
   /**
    * Validate custom logic code
    */
   async validateLogic(data: ValidateCustomLogicRequest): Promise<ValidateCustomLogicResponse> {
-    const response = await apiClient.post<ValidateCustomLogicResponse>(
-      `${BASE_PATH}/validate-logic`,
-      data,
-      { baseURL: NEXUS_CONFIG_API_URL }
-    );
-    return response.data;
+    return nexusFetch<ValidateCustomLogicResponse>(`${BASE_PATH}/validate-logic`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 
   /**
    * Deploy configuration to platform
    */
   async deploy(data: DeployConfigurationRequest): Promise<DeployConfigurationResponse> {
-    const response = await apiClient.post<DeployConfigurationResponse>(
-      `${BASE_PATH}/deploy`,
-      data,
-      { baseURL: NEXUS_CONFIG_API_URL }
-    );
-    return response.data;
+    return nexusFetch<DeployConfigurationResponse>(`${BASE_PATH}/deploy`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
-};
+
+  /**
+   * Get available probe types for configuration builder
+   */
+  async getProbeTypes(): Promise<ProbeTypeInfo[]> {
+    return nexusFetch<ProbeTypeInfo[]>(`${BASE_PATH}/probe-types`);
+  },
+
+  /**
+   * Get available sensor types (optionally filtered by probe type)
+   */
+  async getSensorTypes(probeType?: string): Promise<SensorTypeInfo[]> {
+    const params = probeType ? `?probeType=${encodeURIComponent(probeType)}` : '';
+    return nexusFetch<SensorTypeInfo[]>(`${BASE_PATH}/sensor-types${params}`);
+  },
+
+  /**
+   * Get available communication protocols
+   */
+  async getCommunicationProtocols(): Promise<CommunicationProtocolInfo[]> {
+    return nexusFetch<CommunicationProtocolInfo[]>(`${BASE_PATH}/communication-protocols`);
+  },
+
+  /**
+   * Validate configuration before saving
+   */
+  async validateConfiguration(data: ValidateConfigurationRequest): Promise<ValidationResult> {
+    return nexusFetch<ValidationResult>(`${BASE_PATH}/validate`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },};

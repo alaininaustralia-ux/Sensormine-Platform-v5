@@ -152,7 +152,7 @@ public class TimeSeriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetLatest(
         string measurement,
-        string deviceId,
+        Guid deviceId,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
@@ -216,7 +216,9 @@ public class TimeSeriesController : ControllerBase
             "Getting latest data for {DeviceCount} devices in measurement {Measurement}",
             deviceIds.Count, measurement);
 
-        var result = await _queryService.GetLatestForDevicesAsync(measurement, deviceIds, cancellationToken);
+        // Convert string list to Guid list
+        var deviceGuids = deviceIds.Select(id => Guid.TryParse(id, out var guid) ? guid : Guid.Empty).Where(g => g != Guid.Empty).ToList();
+        var result = await _queryService.GetLatestForDevicesAsync(measurement, deviceGuids, cancellationToken);
         return Ok(result);
     }
 
@@ -246,7 +248,7 @@ public class TimeSeriesController : ControllerBase
         {
             StartTime = DateTimeOffset.UtcNow.AddHours(-hours),
             EndTime = DateTimeOffset.UtcNow,
-            DeviceId = deviceId,
+            DeviceId = !string.IsNullOrEmpty(deviceId) && Guid.TryParse(deviceId, out var guid) ? guid : (Guid?)null,
             Limit = limit,
             PageSize = limit
         };

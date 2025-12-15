@@ -17,4 +17,5 @@ public interface IDeviceRepository
     Task DeleteAsync(Guid id, string tenantId);
     Task<bool> ExistsAsync(string deviceId, string tenantId);
     Task<(Guid? SchemaId, string? SchemaName)?> GetSchemaInfoAsync(string deviceId, string tenantId);
+    Task<List<Device>> GetDevicesWithGpsAsync(string tenantId, Guid? deviceTypeId = null);
 }

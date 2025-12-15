@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { usePreferencesStore } from '@/lib/stores/preferences-store';
+import { useBreadcrumb } from '@/lib/contexts/breadcrumb-context';
 import {
   ActivityIcon,
   ArrowLeftIcon,
@@ -39,6 +40,7 @@ export default function DevicePage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
+  const { setName } = useBreadcrumb();
   const deviceId = params.id as string;
   const addRecentlyViewedDevice = usePreferencesStore((state) => state.addRecentlyViewedDevice);
 
@@ -47,6 +49,13 @@ export default function DevicePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Update breadcrumb when device loads
+  useEffect(() => {
+    if (device?.name) {
+      setName(deviceId, device.name, 'device');
+    }
+  }, [device?.name, deviceId, setName]);
 
   // Fetch device data
   useEffect(() => {

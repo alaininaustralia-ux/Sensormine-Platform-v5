@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Sensormine.Core.Models;
 
 /// <summary>
@@ -49,4 +51,10 @@ public class UserPreference : BaseEntity
     /// Page visit history stored as JSON array
     /// </summary>
     public string PageHistory { get; set; } = "[]";
+
+    /// <summary>
+    /// Custom navigation items (user-defined sidebar links) stored as JSON array
+    /// </summary>
+    [Column("custom_navigation")]
+    public string CustomNavigation { get; set; } = "[]";
 }

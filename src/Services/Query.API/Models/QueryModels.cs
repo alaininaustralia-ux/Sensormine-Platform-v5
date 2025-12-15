@@ -18,7 +18,7 @@ public class TimeSeriesQueryRequest
     /// <summary>
     /// Optional device ID filter
     /// </summary>
-    public string? DeviceId { get; set; }
+    public Guid? DeviceId { get; set; }
 
     /// <summary>
     /// Optional location filter (lat,lng,radius)
@@ -28,7 +28,7 @@ public class TimeSeriesQueryRequest
     /// <summary>
     /// Optional custom field filters (key=value pairs)
     /// </summary>
-    public Dictionary<string, string>? Filters { get; set; }
+    public Dictionary<string, object>? Filters { get; set; }
 
     /// <summary>
     /// Maximum number of results to return
@@ -163,7 +163,7 @@ public class QueryMetadata
     /// <summary>
     /// Applied filters
     /// </summary>
-    public Dictionary<string, string>? AppliedFilters { get; set; }
+    public Dictionary<string, object>? AppliedFilters { get; set; }
 }
 
 /// <summary>
@@ -174,7 +174,7 @@ public class TimeSeriesDataPointResponse
     /// <summary>
     /// Device identifier
     /// </summary>
-    public string DeviceId { get; set; } = string.Empty;
+    public Guid DeviceId { get; set; }
 
     /// <summary>
     /// Timestamp of the measurement
@@ -210,7 +210,7 @@ public class AggregatedDataPointResponse
     /// <summary>
     /// Device ID (for device-grouped aggregations)
     /// </summary>
-    public string? DeviceId { get; set; }
+    public Guid? DeviceId { get; set; }
 
     /// <summary>
     /// Aggregated value
@@ -292,6 +292,11 @@ public class KpiDataResponse
     /// Percentage change from previous period ((change / previous) * 100)
     /// </summary>
     public decimal? PercentChange { get; set; }
+
+    /// <summary>
+    /// Sparkline data points for mini trend chart (optional)
+    /// </summary>
+    public List<decimal>? SparklineData { get; set; }
 }
 
 /// <summary>
@@ -308,6 +313,62 @@ public class TimeRangeInfo
     /// End of time range
     /// </summary>
     public DateTimeOffset End { get; set; }
+}
+
+/// <summary>
+/// Request model for KPI widget queries
+/// </summary>
+public class KpiWidgetQueryRequest
+{
+    /// <summary>
+    /// Data source type: 'device' or 'deviceType'
+    /// </summary>
+    public string SourceType { get; set; } = "device";
+
+    /// <summary>
+    /// Device ID (required if SourceType = 'device')
+    /// </summary>
+    public Guid? DeviceId { get; set; }
+
+    /// <summary>
+    /// Device Type ID (required if SourceType = 'deviceType')
+    /// </summary>
+    public Guid? DeviceTypeId { get; set; }
+
+    /// <summary>
+    /// Asset ID for filtering devices by location (optional)
+    /// </summary>
+    public Guid? AssetId { get; set; }
+
+    /// <summary>
+    /// Field name to measure/aggregate
+    /// </summary>
+    public string FieldName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Aggregation function: avg, sum, count, min, max, last
+    /// </summary>
+    public string? Aggregation { get; set; } = "avg";
+
+    /// <summary>
+    /// Time range: current, last-1h, last-6h, last-24h, last-7d, last-30d
+    /// </summary>
+    public string? TimeRange { get; set; } = "last-24h";
+
+    /// <summary>
+    /// Show trend comparison
+    /// </summary>
+    public bool ShowTrend { get; set; } = true;
+
+    /// <summary>
+    /// Trend period for comparison: hour, day, week, month
+    /// </summary>
+    public string? TrendPeriod { get; set; } = "day";
+
+    /// <summary>
+    /// Include sparkline data for mini chart
+    /// </summary>
+    public bool ShowSparkline { get; set; } = false;
 }
 
 /// <summary>

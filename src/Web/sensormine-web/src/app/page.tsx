@@ -107,11 +107,11 @@ export default function Home() {
         <section>
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Link href="/dashboard">
+            <Link href="/dashboards">
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>
                   <LayoutDashboard className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle>Dashboard</CardTitle>
+                  <CardTitle>Dashboards</CardTitle>
                   <CardDescription>View your dashboards</CardDescription>
                 </CardHeader>
               </Card>
@@ -161,7 +161,7 @@ export default function Home() {
           and intelligent analytics.
         </p>
         <div className="flex gap-4">
-          <Link href="/dashboard">
+          <Link href="/dashboards">
             <Button size="lg">Get Started</Button>
           </Link>
           <Link href="/docs">

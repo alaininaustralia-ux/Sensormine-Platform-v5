@@ -79,6 +79,16 @@ export interface AlertRule {
   updatedAt?: string;
 }
 
+// Backend DTO with PascalCase
+export interface AlertConditionDto {
+  Field: string;
+  Operator: AlertOperator;
+  Value: any;
+  SecondValue?: any;
+  Unit?: string;
+  Level: AlertSeverity;
+}
+
 export interface CreateAlertRuleRequest {
   name: string;
   description?: string;
@@ -86,7 +96,7 @@ export interface CreateAlertRuleRequest {
   targetType: AlertTargetType;
   deviceTypeIds: string[];
   deviceIds: string[];
-  conditions: AlertCondition[];
+  conditions: AlertConditionDto[];
   conditionLogic: string;
   timeWindowSeconds: number;
   evaluationFrequencySeconds: number;
@@ -172,14 +182,25 @@ export const alertRulesApi = {
     });
     if (search) params.append('search', search);
 
-    return apiClient.get(`${serviceUrls.alerts}/api/alert-rules?${params}`);
+    const response = await apiClient.get<{
+      data: AlertRule[];
+      pagination: {
+        page: number;
+        pageSize: number;
+        totalCount: number;
+        totalPages: number;
+      };
+    }>(`${serviceUrls.alerts}/api/alert-rules?${params}`);
+    
+    return response.data;
   },
 
   /**
    * Get alert rule by ID
    */
   async get(id: string): Promise<AlertRule> {
-    return apiClient.get(`${serviceUrls.alerts}/api/alert-rules/${id}`);
+    const response = await apiClient.get<AlertRule>(`${serviceUrls.alerts}/api/alert-rules/${id}`);
+    return response.data;
   },
 
   /**
@@ -253,14 +274,30 @@ export const alertInstancesApi = {
     if (severity) params.append('severity', severity);
     if (deviceId) params.append('deviceId', deviceId);
 
-    return apiClient.get(`${serviceUrls.alerts}/api/alert-instances?${params}`);
+    const response = await apiClient.get<{
+      data: AlertInstance[];
+      pagination: {
+        page: number;
+        pageSize: number;
+        totalCount: number;
+        totalPages: number;
+      };
+      filters: {
+        status?: AlertStatus;
+        severity?: AlertSeverity;
+        deviceId?: string;
+      };
+    }>(`${serviceUrls.alerts}/api/alert-instances?${params}`);
+    
+    return response.data;
   },
 
   /**
    * Get alert instance by ID
    */
   async get(id: string): Promise<AlertInstance> {
-    return apiClient.get(`${serviceUrls.alerts}/api/alert-instances/${id}`);
+    const response = await apiClient.get<AlertInstance>(`${serviceUrls.alerts}/api/alert-instances/${id}`);
+    return response.data;
   },
 
   /**

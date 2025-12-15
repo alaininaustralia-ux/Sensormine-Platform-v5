@@ -703,10 +703,9 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("template_category");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
+                    b.Property<Guid>("TenantId")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
@@ -1223,12 +1222,12 @@ namespace Sensormine.Storage.Migrations
 
                     b.PrimitiveCollection<List<string>>("SupportsAggregations")
                         .IsRequired()
-                        .HasColumnType("text[]")
+                        .HasColumnType("jsonb")
                         .HasColumnName("supports_aggregations");
 
                     b.PrimitiveCollection<List<string>>("Tags")
                         .IsRequired()
-                        .HasColumnType("text[]")
+                        .HasColumnType("jsonb")
                         .HasColumnName("tags");
 
                     b.Property<Guid>("TenantId")
@@ -1274,10 +1273,13 @@ namespace Sensormine.Storage.Migrations
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("created_by");
 
                     b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
@@ -1306,7 +1308,9 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnName("updated_at");
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("updated_by");
 
                     b.HasKey("Id");
 
@@ -1336,7 +1340,9 @@ namespace Sensormine.Storage.Migrations
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("created_by");
 
                     b.PrimitiveCollection<List<string>>("DeviceTypes")
                         .IsRequired()
@@ -1355,7 +1361,8 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnName("json_schema");
 
                     b.Property<string>("Metadata")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("metadata");
 
                     b.Property<Guid>("SchemaId")
                         .HasColumnType("uuid")
@@ -1373,7 +1380,8 @@ namespace Sensormine.Storage.Migrations
                         .HasColumnName("tenant_id");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<string>("Version")
                         .IsRequired()
@@ -1589,7 +1597,7 @@ namespace Sensormine.Storage.Migrations
 
                             b1.HasKey("AssetId");
 
-                            b1.ToTable("assets", (string)null);
+                            b1.ToTable("assets");
 
                             b1.ToJson("geographic_data");
 
@@ -1611,7 +1619,7 @@ namespace Sensormine.Storage.Migrations
 
                                     b2.HasKey("GeographicDataAssetId");
 
-                                    b2.ToTable("assets", (string)null);
+                                    b2.ToTable("assets");
 
                                     b2.WithOwner()
                                         .HasForeignKey("GeographicDataAssetId");
@@ -1636,7 +1644,7 @@ namespace Sensormine.Storage.Migrations
 
                                             b3.HasKey("GeofenceDataGeographicDataAssetId", "__synthesizedOrdinal");
 
-                                            b3.ToTable("assets", (string)null);
+                                            b3.ToTable("assets");
 
                                             b3.WithOwner()
                                                 .HasForeignKey("GeofenceDataGeographicDataAssetId");

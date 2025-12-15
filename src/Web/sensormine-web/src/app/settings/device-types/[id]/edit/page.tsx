@@ -14,11 +14,13 @@ import { Loader2 } from 'lucide-react';
 import { getDeviceTypeById } from '@/lib/api/deviceTypes';
 import type { DeviceType } from '@/lib/api/types';
 import { useToast } from '@/hooks/use-toast';
+import { useBreadcrumb } from '@/lib/contexts/breadcrumb-context';
 
 export default function EditDeviceTypePage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
+  const { setName } = useBreadcrumb();
   const [deviceType, setDeviceType] = useState<DeviceType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -29,6 +31,9 @@ export default function EditDeviceTypePage() {
       try {
         const data = await getDeviceTypeById(deviceTypeId);
         setDeviceType(data);
+        if (data?.name) {
+          setName(deviceTypeId, data.name, 'deviceType');
+        }
       } catch (error) {
         toast({
           title: 'Error',

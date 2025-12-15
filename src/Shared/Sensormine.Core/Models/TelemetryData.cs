@@ -11,9 +11,9 @@ public class TelemetryData
     public DateTimeOffset Time { get; set; }
 
     /// <summary>
-    /// Device identifier
+    /// Device identifier (UUID)
     /// </summary>
-    public string DeviceId { get; set; } = string.Empty;
+    public Guid DeviceId { get; set; }
 
     /// <summary>
     /// Tenant identifier

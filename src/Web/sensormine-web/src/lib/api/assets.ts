@@ -3,7 +3,18 @@
  * Handles communication with DigitalTwin.API for asset hierarchy operations
  */
 
-const DIGITAL_TWIN_API_URL = process.env.NEXT_PUBLIC_DIGITAL_TWIN_API_URL || 'http://localhost:5297';
+import { ApiClient } from './client';
+import { serviceUrls, apiConfig } from './config';
+
+// Create dedicated client for DigitalTwin.API
+export const digitalTwinApiClient = new ApiClient(serviceUrls.digitalTwin, apiConfig.timeout);
+
+// Set default tenant ID for development/testing
+// In production, this should be set by AuthProvider after login
+const DEFAULT_TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '00000000-0000-0000-0000-000000000001';
+digitalTwinApiClient.setTenantId(DEFAULT_TENANT_ID);
+
+const DIGITAL_TWIN_API_URL = serviceUrls.digitalTwin;
 
 export interface Asset {
   id: string;
@@ -86,158 +97,78 @@ export interface ApiResponse<T> {
  * Get all root assets (assets without parents)
  */
 export async function getRootAssets(): Promise<Asset[]> {
-  const response = await fetch(`${DIGITAL_TWIN_API_URL}/api/assets/roots`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': 'test-tenant-001', // TODO: Get from auth context
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch root assets: ${response.statusText}`);
-  }
-
-  return response.json();
+  const response = await digitalTwinApiClient.get<Asset[]>('/api/assets/roots');
+  return response.data;
 }
 
 /**
  * Get all assets (flat list)
  */
 export async function getAllAssets(): Promise<Asset[]> {
-  const response = await fetch(`${DIGITAL_TWIN_API_URL}/api/assets`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': 'test-tenant-001',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch assets: ${response.statusText}`);
-  }
-
-  return response.json();
+  const response = await digitalTwinApiClient.get<Asset[]>('/api/assets');
+  return response.data;
 }
 
 /**
  * Get asset by ID
  */
 export async function getAssetById(id: string): Promise<Asset> {
-  const response = await fetch(`${DIGITAL_TWIN_API_URL}/api/assets/${id}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': 'test-tenant-001',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch asset: ${response.statusText}`);
-  }
-
-  return response.json();
+  const response = await digitalTwinApiClient.get<Asset>(`/api/assets/${id}`);
+  return response.data;
 }
 
 /**
  * Get children of an asset
  */
 export async function getAssetChildren(parentId: string): Promise<Asset[]> {
-  const response = await fetch(`${DIGITAL_TWIN_API_URL}/api/assets/${parentId}/children`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': 'test-tenant-001',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch asset children: ${response.statusText}`);
-  }
-
-  return response.json();
+  const response = await digitalTwinApiClient.get<Asset[]>(`/api/assets/${parentId}/children`);
+  return response.data;
 }
+
+/**
+ * Get child assets (alias for getAssetChildren for backwards compatibility)
+ */
+export const getChildAssets = getAssetChildren;
 
 /**
  * Get asset hierarchy tree
  */
 export async function getAssetTree(): Promise<AssetWithChildren[]> {
-  const response = await fetch(`${DIGITAL_TWIN_API_URL}/api/assets/tree`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': 'test-tenant-001',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch asset tree: ${response.statusText}`);
-  }
-
-  return response.json();
+  const response = await digitalTwinApiClient.get<AssetWithChildren[]>('/api/assets/tree');
+  return response.data;
 }
 
 /**
  * Get all descendants of an asset
  */
 export async function getAssetDescendants(assetId: string): Promise<Asset[]> {
-  const response = await fetch(`${DIGITAL_TWIN_API_URL}/api/assets/${assetId}/descendants`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': 'test-tenant-001',
-    },
-  });
+  const response = await digitalTwinApiClient.get<Asset[]>(`/api/assets/${assetId}/descendants`);
+  return response.data;
+}
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch asset descendants: ${response.statusText}`);
-  }
-
-  return response.json();
+/**
+ * Get human-readable path (names) for an asset
+ */
+export async function getAssetPathNames(assetId: string): Promise<string> {
+  const response = await digitalTwinApiClient.get<{ path: string }>(`/api/assets/${assetId}/path-names`);
+  return response.data.path;
 }
 
 /**
  * Get device count for an asset (including descendants)
  */
 export async function getAssetDeviceCount(assetId: string, includeDescendants: boolean = true): Promise<number> {
-  const url = new URL(`${DIGITAL_TWIN_API_URL}/api/assets/${assetId}/device-count`);
-  if (includeDescendants) {
-    url.searchParams.append('includeDescendants', 'true');
-  }
-
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': 'test-tenant-001',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch device count: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  return typeof data === 'number' ? data : data.count || 0;
+  const params = includeDescendants ? '?includeDescendants=true' : '';
+  const response = await digitalTwinApiClient.get<number | { count: number }>(`/api/assets/${assetId}/device-count${params}`);
+  return typeof response.data === 'number' ? response.data : response.data.count || 0;
 }
 
 /**
  * Search assets by name or path
  */
 export async function searchAssets(query: string): Promise<Asset[]> {
-  const response = await fetch(`${DIGITAL_TWIN_API_URL}/api/assets/search?query=${encodeURIComponent(query)}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': 'test-tenant-001',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to search assets: ${response.statusText}`);
-  }
-
-  return response.json();
+  const response = await digitalTwinApiClient.get<Asset[]>(`/api/assets/search?query=${encodeURIComponent(query)}`);
+  return response.data;
 }
 
 /**
@@ -293,7 +224,7 @@ export function getAssetStatusColor(status: AssetStatus): string {
 
 // ==================== Asset Telemetry Functions ====================
 
-const QUERY_API_URL = process.env.NEXT_PUBLIC_QUERY_API_URL || 'http://localhost:5079';
+const QUERY_API_URL = serviceUrls.query;
 
 export interface DeviceWithLatestTelemetry {
   deviceId: string;

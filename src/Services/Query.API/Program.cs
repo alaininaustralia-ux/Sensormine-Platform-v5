@@ -80,6 +80,8 @@ builder.Services.AddDbContext<Sensormine.Storage.Data.ApplicationDbContext>(opti
     options.UseNpgsql(dataSource);
 });
 builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
+builder.Services.AddScoped<Sensormine.Storage.Interfaces.IAssetRepository, Sensormine.Storage.Repositories.AssetRepository>();
+builder.Services.AddScoped<Sensormine.Core.Repositories.IFieldMappingRepository, Sensormine.Storage.Repositories.FieldMappingRepository>();
 
 // Register query service
 builder.Services.AddScoped<ITimeSeriesQueryService, TimeSeriesQueryService>();

@@ -18,6 +18,7 @@ public class DeviceController : ControllerBase
 {
     private readonly IDeviceRepository _deviceRepository;
     private readonly IDeviceTypeRepository _deviceTypeRepository;
+    private readonly IFieldMappingRepository _fieldMappingRepository;
     private readonly ISchemaRegistryClient _schemaRegistryClient;
     private readonly ILogger<DeviceController> _logger;
 
@@ -27,11 +28,13 @@ public class DeviceController : ControllerBase
     public DeviceController(
         IDeviceRepository deviceRepository,
         IDeviceTypeRepository deviceTypeRepository,
+        IFieldMappingRepository fieldMappingRepository,
         ISchemaRegistryClient schemaRegistryClient,
         ILogger<DeviceController> logger)
     {
         _deviceRepository = deviceRepository ?? throw new ArgumentNullException(nameof(deviceRepository));
         _deviceTypeRepository = deviceTypeRepository ?? throw new ArgumentNullException(nameof(deviceTypeRepository));
+        _fieldMappingRepository = fieldMappingRepository ?? throw new ArgumentNullException(nameof(fieldMappingRepository));
         _schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -183,7 +186,14 @@ public class DeviceController : ControllerBase
                 }
             }
 
-            return Ok(MapToResponse(device, schemaNames));
+            // Fetch field mappings
+            var fieldMappings = await _fieldMappingRepository.GetByDeviceTypeIdAsync(device.DeviceTypeId, tenantId);
+            var fieldMappingsDict = new Dictionary<Guid, List<FieldMapping>> 
+            { 
+                { device.DeviceTypeId, fieldMappings.ToList() } 
+            };
+
+            return Ok(MapToResponse(device, schemaNames, fieldMappingsDict));
         }
         catch (Exception ex)
         {
@@ -238,7 +248,14 @@ public class DeviceController : ControllerBase
                 }
             }
 
-            return Ok(MapToResponse(device, schemaNames));
+            // Fetch field mappings
+            var fieldMappings = await _fieldMappingRepository.GetByDeviceTypeIdAsync(device.DeviceTypeId, tenantId);
+            var fieldMappingsDict = new Dictionary<Guid, List<FieldMapping>> 
+            { 
+                { device.DeviceTypeId, fieldMappings.ToList() } 
+            };
+
+            return Ok(MapToResponse(device, schemaNames, fieldMappingsDict));
         }
         catch (Exception ex)
         {
@@ -343,9 +360,18 @@ public class DeviceController : ControllerBase
                 ? await _schemaRegistryClient.GetSchemaNamesAsync(schemaIds)
                 : new Dictionary<Guid, string>();
 
+            // Fetch field mappings for all device types
+            var deviceTypeIds = devices.Select(d => d.DeviceTypeId).Distinct().ToList();
+            var fieldMappingsDict = new Dictionary<Guid, List<FieldMapping>>();
+            foreach (var deviceTypeId in deviceTypeIds)
+            {
+                var fieldMappings = await _fieldMappingRepository.GetByDeviceTypeIdAsync(deviceTypeId, tenantId);
+                fieldMappingsDict[deviceTypeId] = fieldMappings.ToList();
+            }
+
             return Ok(new DeviceListResponse
             {
-                Devices = devices.Select(d => MapToResponse(d, schemaNames)).ToList(),
+                Devices = devices.Select(d => MapToResponse(d, schemaNames, fieldMappingsDict)).ToList(),
                 TotalCount = totalCount,
                 Page = parameters.Page,
                 PageSize = parameters.PageSize
@@ -573,7 +599,15 @@ public class DeviceController : ControllerBase
 
                     var createdDevice = await _deviceRepository.CreateAsync(device);
                     result.SuccessCount++;
-                    result.SuccessfulDevices.Add(MapToResponse(createdDevice));
+                    
+                    // Fetch field mappings for this device type
+                    var fieldMappings = await _fieldMappingRepository.GetByDeviceTypeIdAsync(createdDevice.DeviceTypeId, tenantId);
+                    var fieldMappingsDict = new Dictionary<Guid, List<FieldMapping>> 
+                    { 
+                        { createdDevice.DeviceTypeId, fieldMappings.ToList() } 
+                    };
+                    
+                    result.SuccessfulDevices.Add(MapToResponse(createdDevice, null, fieldMappingsDict));
 
                     _logger.LogInformation("Successfully registered device {DeviceId} in bulk", deviceRequest.DeviceId);
                 }
@@ -617,7 +651,8 @@ public class DeviceController : ControllerBase
 
     private DeviceResponse MapToResponse(
         Sensormine.Core.Models.Device device, 
-        Dictionary<Guid, string>? schemaNames = null)
+        Dictionary<Guid, string>? schemaNames = null,
+        Dictionary<Guid, List<FieldMapping>>? fieldMappingsDict = null)
     {
         var schemaId = device.DeviceType?.SchemaId;
         string? schemaName = null;
@@ -625,6 +660,39 @@ public class DeviceController : ControllerBase
         if (schemaId.HasValue && schemaNames != null && schemaNames.TryGetValue(schemaId.Value, out var name))
         {
             schemaName = name;
+        }
+
+        // Populate customFieldValues with all field mappings from device type
+        var customFieldValues = new Dictionary<string, object>(device.CustomFieldValues ?? new Dictionary<string, object>());
+        List<FieldMappingDto>? fieldMappingDtos = null;
+        
+        if (fieldMappingsDict != null && fieldMappingsDict.TryGetValue(device.DeviceTypeId, out var fieldMappings))
+        {
+            foreach (var fieldMapping in fieldMappings.Where(fm => fm.IsVisible))
+            {
+                // Only add field if it doesn't already have a value
+                if (!customFieldValues.ContainsKey(fieldMapping.FieldName))
+                {
+                    customFieldValues[fieldMapping.FieldName] = null!;
+                }
+            }
+
+            // Map field mappings to DTOs
+            fieldMappingDtos = fieldMappings
+                .Where(fm => fm.IsVisible)
+                .Select(fm => new FieldMappingDto
+                {
+                    FieldName = fm.FieldName,
+                    FriendlyName = fm.FriendlyName,
+                    Description = fm.Description,
+                    Unit = fm.Unit,
+                    DataType = fm.DataType.ToString(),
+                    IsQueryable = fm.IsQueryable,
+                    IsVisible = fm.IsVisible,
+                    Category = fm.Category,
+                    DefaultAggregation = fm.DefaultAggregation
+                })
+                .ToList();
         }
 
         return new DeviceResponse
@@ -636,7 +704,7 @@ public class DeviceController : ControllerBase
             DeviceTypeId = device.DeviceTypeId,
             DeviceTypeName = device.DeviceType?.Name,
             SerialNumber = device.SerialNumber,
-            CustomFieldValues = device.CustomFieldValues,
+            CustomFieldValues = customFieldValues,
             Location = device.Location != null ? new LocationDto
             {
                 Latitude = device.Location.Latitude,
@@ -649,7 +717,8 @@ public class DeviceController : ControllerBase
             CreatedAt = device.CreatedAt,
             UpdatedAt = device.UpdatedAt ?? device.CreatedAt,
             SchemaId = schemaId,
-            SchemaName = schemaName
+            SchemaName = schemaName,
+            FieldMappings = fieldMappingDtos
         };
     }
 
@@ -753,6 +822,69 @@ public class DeviceController : ControllerBase
         catch
         {
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Get devices that have GPS coordinates
+    /// </summary>
+    /// <param name="deviceTypeId">Optional filter by device type</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of devices with GPS coordinates</returns>
+    [HttpGet("with-gps")]
+    [ProducesResponseType(typeof(List<DeviceResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<List<DeviceResponse>>> GetDevicesWithGps(
+        [FromQuery] Guid? deviceTypeId = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var tenantId = GetTenantId();
+            var devices = await _deviceRepository.GetDevicesWithGpsAsync(tenantId, deviceTypeId);
+
+            _logger.LogInformation(
+                "Retrieved {Count} devices with GPS coordinates for tenant {TenantId}",
+                devices.Count, tenantId);
+
+            // Get schema names for all unique schemas
+            var schemaIds = devices
+                .Where(d => d.DeviceType?.SchemaId != null)
+                .Select(d => d.DeviceType!.SchemaId!.Value)
+                .Distinct()
+                .ToList();
+
+            var schemaNames = new Dictionary<Guid, string>();
+            foreach (var schemaId in schemaIds)
+            {
+                var schemaName = await _schemaRegistryClient.GetSchemaNameAsync(schemaId);
+                if (schemaName != null)
+                {
+                    schemaNames[schemaId] = schemaName;
+                }
+            }
+
+            // Get field mappings for all unique device types
+            var deviceTypeIds = devices.Select(d => d.DeviceTypeId).Distinct().ToList();
+            var fieldMappingsDict = new Dictionary<Guid, List<FieldMapping>>();
+            foreach (var deviceTypeIdValue in deviceTypeIds)
+            {
+                var fieldMappings = await _fieldMappingRepository.GetByDeviceTypeIdAsync(deviceTypeIdValue, tenantId);
+                fieldMappingsDict[deviceTypeIdValue] = fieldMappings.ToList();
+            }
+
+            var responses = devices.Select(d => MapToResponse(d, schemaNames, fieldMappingsDict)).ToList();
+            return Ok(responses);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving devices with GPS coordinates");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+            {
+                Title = "Internal server error",
+                Detail = "An error occurred while retrieving devices with GPS coordinates",
+                Status = StatusCodes.Status500InternalServerError
+            });
         }
     }
 

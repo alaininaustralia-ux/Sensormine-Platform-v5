@@ -155,8 +155,17 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/Services/VideoMetadata.API",
       "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "debugWithChrome",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s/swagger"
+      },
+      "launchBrowser": {
+        "enabled": false
+      },
       "env": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5298"
       }
     },
     {
@@ -183,6 +192,39 @@
       "stopAtEntry": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },    {
+      "name": "AI.API",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/Services/AI.API/bin/Debug/net9.0/AI.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/AI.API",
+      "stopAtEntry": false,
+      "launchBrowser": {
+        "enabled": false
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5401"
+      }
+    },
+    {
+      "name": "Template.API",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/Services/Template.API/bin/Debug/net9.0/Template.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/Template.API",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5320"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s/swagger"
       }
     },
     {
@@ -221,7 +263,8 @@
       "cwd": "${workspaceFolder}/src/Services/Identity.API",
       "stopAtEntry": false,
       "env": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5072"
       }
     },
     {
@@ -235,6 +278,20 @@
       "stopAtEntry": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Sensormine.MCP.Server",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/Services/Sensormine.MCP.Server/bin/Debug/net9.0/Sensormine.MCP.Server.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Services/Sensormine.MCP.Server",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5400"
       }
     }
   ],
@@ -251,7 +308,8 @@
         "Device.API",
         "Preferences.API",
         "Dashboard.API",
-        "Identity.API"
+        "Identity.API",
+        "Sensormine.MCP.Server"
       ]
     },
     {
@@ -264,6 +322,7 @@
         "Dashboard.API",
         "Identity.API",
         "NexusConfiguration.API",
+        "Sensormine.MCP.Server",
         "Alerts.API",
         "DigitalTwin.API",
         "Edge.Gateway",
@@ -286,6 +345,7 @@
         "Dashboard.API",
         "Identity.API",
         "NexusConfiguration.API",
+        "Sensormine.MCP.Server",
         "Alerts.API",
         "DigitalTwin.API",
         "Edge.Gateway",
@@ -294,7 +354,19 @@
         "StreamProcessing.Service",
         "VideoMetadata.API",
         "Billing.API",
-        "Simulation.API"
+        "Simulation.API",
+        "Template.API"
+      ]
+    },
+    {
+      "name": "AI Agent Stack",
+      "configurations": [
+        "Sensormine Web",
+        "AI.API",
+        "Sensormine.MCP.Server",
+        "Device.API",
+        "Query.API",
+        "DigitalTwin.API"
       ]
     }
   ]

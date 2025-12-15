@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, ReactNode } from 'react';
-import { apiClient, endpoints } from '@/lib/api';
+import { apiClient, endpoints, setGlobalTenantId, setGlobalAuthToken } from '@/lib/api';
 import type { LoginResponse, User } from '@/lib/api';
 import { AuthContext } from './AuthContext';
 import { tokenStorage } from './storage';
@@ -36,9 +36,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const storedUser = tokenStorage.getUser();
 
       if (token && storedUser) {
-        // Restore auth token and tenant ID from storage
-        apiClient.setAuthToken(token);
-        apiClient.setTenantId((storedUser as User).tenantId);
+        // Restore auth token and tenant ID from storage for ALL API clients
+        setGlobalAuthToken(token);
+        setGlobalTenantId((storedUser as User).tenantId);
         
         setState({
           user: storedUser as User,
@@ -75,9 +75,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       tokenStorage.setRefreshToken(refreshToken);
       tokenStorage.setUser(user);
       
-      // Set auth token and tenant ID for all API requests
-      apiClient.setAuthToken(token);
-      apiClient.setTenantId(user.tenantId);
+      // Set auth token and tenant ID for ALL API clients
+      setGlobalAuthToken(token);
+      setGlobalTenantId(user.tenantId);
 
       setState({
         user,
@@ -109,10 +109,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Continue with logout even if API call fails
     }
 
-    // Clear local state
+    // Clear local state and tenant context from ALL API clients
     tokenStorage.clear();
-    apiClient.setAuthToken(null);
-    apiClient.setTenantId(null);
+    setGlobalAuthToken(null);
+    setGlobalTenantId(null);
 
     setState({
       user: null,
@@ -145,8 +145,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       tokenStorage.setToken(token);
       tokenStorage.setRefreshToken(newRefreshToken);
       tokenStorage.setUser(user);
-      apiClient.setAuthToken(token);
-      apiClient.setTenantId(user.tenantId);
+      setGlobalAuthToken(token);
+      setGlobalTenantId(user.tenantId);
 
       setState({
         user,

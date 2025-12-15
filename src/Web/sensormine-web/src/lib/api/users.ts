@@ -5,8 +5,9 @@
  */
 
 import { apiClient } from './client';
+import { serviceUrls } from './config';
 
-const IDENTITY_API_URL = process.env.NEXT_PUBLIC_IDENTITY_API_URL || 'http://localhost:5072';
+const IDENTITY_API_URL = serviceUrls.identity;
 
 export interface User {
   id: string;

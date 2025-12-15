@@ -20,6 +20,9 @@ public class DeviceTypeRepository : IDeviceTypeRepository
 
     public async Task<DeviceType?> GetByIdAsync(Guid id, string tenantId)
     {
+        if (string.IsNullOrWhiteSpace(tenantId))
+            throw new ArgumentNullException(nameof(tenantId), "Tenant ID cannot be null or empty");
+
         var tenantGuid = Guid.Parse(tenantId);
         return await _context.DeviceTypes
             .FirstOrDefaultAsync(dt => dt.Id == id && dt.TenantId == tenantGuid);
@@ -30,6 +33,9 @@ public class DeviceTypeRepository : IDeviceTypeRepository
         int page = 1,
         int pageSize = 20)
     {
+        if (string.IsNullOrWhiteSpace(tenantId))
+            throw new ArgumentNullException(nameof(tenantId), "Tenant ID cannot be null or empty");
+
         var tenantGuid = Guid.Parse(tenantId);
         var query = _context.DeviceTypes
             .Where(dt => dt.TenantId == tenantGuid)

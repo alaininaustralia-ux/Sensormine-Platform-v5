@@ -286,29 +286,29 @@ public class AssetRepository : IAssetRepository
     {
         var tenantGuid = Guid.Parse(tenantId);
         
-        // Count distinct schema IDs mapped to this asset
-        // Each schema represents a device type/configuration
-        var count = await _context.DataPointMappings
-            .Where(m => m.AssetId == assetId && m.TenantId == tenantGuid)
-            .Select(m => m.SchemaId)
-            .Distinct()
+        // Count devices directly assigned to this asset
+        var count = await _context.Devices
+            .Where(d => d.AssetId == assetId && d.TenantId == tenantGuid)
             .CountAsync(cancellationToken);
 
         return count;
     }
 
+    /// <summary>
+    /// Get device counts for multiple assets in a single query
+    /// </summary>
     public async Task<Dictionary<Guid, int>> GetBulkDeviceCountsAsync(List<Guid> assetIds, string tenantId, CancellationToken cancellationToken = default)
     {
         var tenantGuid = Guid.Parse(tenantId);
         
-        // Group by asset ID and count distinct schema IDs
-        var counts = await _context.DataPointMappings
-            .Where(m => assetIds.Contains(m.AssetId) && m.TenantId == tenantGuid)
-            .GroupBy(m => m.AssetId)
-            .Select(g => new { AssetId = g.Key, Count = g.Select(m => m.SchemaId).Distinct().Count() })
+        // Group by asset ID and count devices
+        var counts = await _context.Devices
+            .Where(d => d.AssetId.HasValue && assetIds.Contains(d.AssetId.Value) && d.TenantId == tenantGuid)
+            .GroupBy(d => d.AssetId!.Value)
+            .Select(g => new { AssetId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.AssetId, x => x.Count, cancellationToken);
 
-        // Add zero counts for assets with no mappings
+        // Add zero counts for assets with no devices
         foreach (var assetId in assetIds)
         {
             if (!counts.ContainsKey(assetId))
@@ -318,5 +318,33 @@ public class AssetRepository : IAssetRepository
         }
 
         return counts;
+    }
+
+    /// <summary>
+    /// Get human-readable path (names) for an asset by traversing ancestors
+    /// </summary>
+    public async Task<string> GetPathNamesAsync(Guid assetId, string tenantId, CancellationToken cancellationToken = default)
+    {
+        var tenantGuid = Guid.Parse(tenantId);
+        var asset = await _context.Assets
+            .FirstOrDefaultAsync(a => a.Id == assetId && a.TenantId == tenantGuid, cancellationToken);
+
+        if (asset == null)
+            return string.Empty;
+
+        // Get all ancestor IDs from the path
+        var pathIds = asset.Path.Split('.', StringSplitOptions.RemoveEmptyEntries)
+            .Select(id => Guid.Parse(id))
+            .ToList();
+
+        // Fetch all assets in the path in one query
+        var pathAssets = await _context.Assets
+            .Where(a => pathIds.Contains(a.Id) && a.TenantId == tenantGuid)
+            .OrderBy(a => a.Level)
+            .Select(a => a.Name)
+            .ToListAsync(cancellationToken);
+
+        // Join with " > "
+        return string.Join(" > ", pathAssets);
     }
 }

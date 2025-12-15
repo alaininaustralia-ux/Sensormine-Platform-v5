@@ -1,0 +1,490 @@
+{
+  "template": {
+    "id": "550e8400-e29b-41d4-a716-446655440002",
+    "name": "Industrial Monitoring Package",
+    "version": "1.0.0",
+    "schemaVersion": "1.0",
+    "description": "Complete monitoring setup for industrial facilities with temperature, pressure, vibration, and flow sensors. Includes comprehensive dashboards and alert rules.",
+    "author": "Sensormine",
+    "authorEmail": "support@sensormine.com",
+    "createdAt": "2025-12-13T00:00:00Z",
+    "updatedAt": "2025-12-13T00:00:00Z",
+    "tags": ["industrial", "monitoring", "temperature", "pressure", "vibration", "flow"],
+    "category": "Industrial IoT",
+    "license": "MIT",
+    "dependencies": [],
+    "compatibility": {
+      "minPlatformVersion": "5.0.0",
+      "maxPlatformVersion": null
+    },
+    "metadata": {
+      "industryType": "Manufacturing",
+      "useCases": ["Production Monitoring", "Equipment Health", "Safety Compliance"]
+    }
+  },
+  "resources": {
+    "schemas": [
+      {
+        "localId": "schema_1",
+        "name": "Industrial Temperature Sensor",
+        "version": "1.0.0",
+        "schemaDefinition": {
+          "type": "record",
+          "name": "IndustrialTemperatureSensor",
+          "fields": [
+            {"name": "temperature", "type": "float"},
+            {"name": "humidity", "type": "float"},
+            {"name": "pressure", "type": "float"},
+            {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"}
+          ]
+        },
+        "description": "Industrial-grade temperature, humidity, and pressure sensor"
+      },
+      {
+        "localId": "schema_2",
+        "name": "Vibration Sensor",
+        "version": "1.0.0",
+        "schemaDefinition": {
+          "type": "record",
+          "name": "VibrationSensor",
+          "fields": [
+            {"name": "vibration_x", "type": "float"},
+            {"name": "vibration_y", "type": "float"},
+            {"name": "vibration_z", "type": "float"},
+            {"name": "rms", "type": "float"},
+            {"name": "peak", "type": "float"},
+            {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"}
+          ]
+        },
+        "description": "3-axis vibration monitoring sensor"
+      },
+      {
+        "localId": "schema_3",
+        "name": "Flow Sensor",
+        "version": "1.0.0",
+        "schemaDefinition": {
+          "type": "record",
+          "name": "FlowSensor",
+          "fields": [
+            {"name": "flow_rate", "type": "float"},
+            {"name": "total_volume", "type": "float"},
+            {"name": "temperature", "type": "float"},
+            {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"}
+          ]
+        },
+        "description": "Flow rate and volume measurement sensor"
+      }
+    ],
+    "deviceTypes": [
+      {
+        "localId": "deviceType_1",
+        "name": "Industrial Temperature Sensor",
+        "description": "High-precision temperature sensor for industrial environments",
+        "schemaRef": "schema_1",
+        "customFields": {
+          "manufacturer": "ACME Industrial",
+          "model": "TEMP-3000",
+          "certifications": ["IP67", "ATEX", "IECEx"]
+        },
+        "fieldMappings": [
+          {
+            "fieldName": "temperature",
+            "friendlyName": "Temperature",
+            "description": "Process temperature",
+            "unit": "°C",
+            "dataType": "Float",
+            "isQueryable": true,
+            "isVisible": true,
+            "fieldSource": "Schema"
+          },
+          {
+            "fieldName": "humidity",
+            "friendlyName": "Humidity",
+            "description": "Ambient humidity",
+            "unit": "%",
+            "dataType": "Float",
+            "isQueryable": true,
+            "isVisible": true,
+            "fieldSource": "Schema"
+          },
+          {
+            "fieldName": "pressure",
+            "friendlyName": "Pressure",
+            "description": "Process pressure",
+            "unit": "Bar",
+            "dataType": "Float",
+            "isQueryable": true,
+            "isVisible": true,
+            "fieldSource": "Schema"
+          }
+        ],
+        "icon": "thermometer",
+        "color": "#FF6B6B"
+      },
+      {
+        "localId": "deviceType_2",
+        "name": "Vibration Sensor",
+        "description": "3-axis vibration monitoring for rotating equipment",
+        "schemaRef": "schema_2",
+        "customFields": {
+          "manufacturer": "VibTech",
+          "model": "VIB-500",
+          "mountingType": "Magnetic Base"
+        },
+        "fieldMappings": [
+          {
+            "fieldName": "vibration_x",
+            "friendlyName": "X-Axis Vibration",
+            "description": "Vibration in X direction",
+            "unit": "mm/s",
+            "dataType": "Float",
+            "isQueryable": true,
+            "isVisible": true,
+            "fieldSource": "Schema"
+          },
+          {
+            "fieldName": "vibration_y",
+            "friendlyName": "Y-Axis Vibration",
+            "description": "Vibration in Y direction",
+            "unit": "mm/s",
+            "dataType": "Float",
+            "isQueryable": true,
+            "isVisible": true,
+            "fieldSource": "Schema"
+          },
+          {
+            "fieldName": "vibration_z",
+            "friendlyName": "Z-Axis Vibration",
+            "description": "Vibration in Z direction",
+            "unit": "mm/s",
+            "dataType": "Float",
+            "isQueryable": true,
+            "isVisible": true,
+            "fieldSource": "Schema"
+          },
+          {
+            "fieldName": "rms",
+            "friendlyName": "RMS Vibration",
+            "description": "Root Mean Square vibration",
+            "unit": "mm/s",
+            "dataType": "Float",
+            "isQueryable": true,
+            "isVisible": true,
+            "fieldSource": "Schema"
+          }
+        ],
+        "icon": "activity",
+        "color": "#4ECDC4"
+      },
+      {
+        "localId": "deviceType_3",
+        "name": "Flow Sensor",
+        "description": "Flow rate and volume monitoring",
+        "schemaRef": "schema_3",
+        "customFields": {
+          "manufacturer": "FlowMaster",
+          "model": "FM-2000",
+          "pipeSize": "2 inch"
+        },
+        "fieldMappings": [
+          {
+            "fieldName": "flow_rate",
+            "friendlyName": "Flow Rate",
+            "description": "Current flow rate",
+            "unit": "L/min",
+            "dataType": "Float",
+            "isQueryable": true,
+            "isVisible": true,
+            "fieldSource": "Schema"
+          },
+          {
+            "fieldName": "total_volume",
+            "friendlyName": "Total Volume",
+            "description": "Cumulative volume",
+            "unit": "L",
+            "dataType": "Float",
+            "isQueryable": true,
+            "isVisible": true,
+            "fieldSource": "Schema"
+          }
+        ],
+        "icon": "droplet",
+        "color": "#45B7D1"
+      }
+    ],
+    "assets": [
+      {
+        "localId": "asset_1",
+        "name": "Production Facility",
+        "type": "Site",
+        "parentRef": null,
+        "icon": "factory",
+        "metadata": {
+          "address": "456 Industrial Blvd",
+          "city": "Manufacturing City",
+          "capacity": 10000
+        },
+        "location": null
+      },
+      {
+        "localId": "asset_2",
+        "name": "Production Line A",
+        "type": "Zone",
+        "parentRef": "asset_1",
+        "icon": "grid",
+        "metadata": {
+          "lineNumber": "A",
+          "capacity": 5000
+        },
+        "location": null
+      },
+      {
+        "localId": "asset_3",
+        "name": "Pump Station 1",
+        "type": "Equipment",
+        "parentRef": "asset_2",
+        "icon": "droplet",
+        "metadata": {
+          "manufacturer": "PumpCo",
+          "model": "P-1000",
+          "installDate": "2024-01-15"
+        },
+        "location": null
+      }
+    ],
+    "dashboards": [
+      {
+        "localId": "dashboard_1",
+        "name": "Production Overview",
+        "description": "Overall facility monitoring dashboard",
+        "layout": {
+          "columns": 12,
+          "rowHeight": 60
+        },
+        "widgets": [
+          {
+            "id": "widget_1",
+            "type": "chart",
+            "position": {"x": 0, "y": 0, "w": 6, "h": 4},
+            "config": {
+              "chartType": "line",
+              "title": "Temperature Trends",
+              "deviceTypeRef": "deviceType_1",
+              "fields": ["temperature"],
+              "timeRange": "24h",
+              "aggregation": "avg",
+              "refreshInterval": 30
+            }
+          },
+          {
+            "id": "widget_2",
+            "type": "chart",
+            "position": {"x": 6, "y": 0, "w": 6, "h": 4},
+            "config": {
+              "chartType": "line",
+              "title": "Pressure Monitoring",
+              "deviceTypeRef": "deviceType_1",
+              "fields": ["pressure"],
+              "timeRange": "24h",
+              "aggregation": "avg",
+              "refreshInterval": 30
+            }
+          },
+          {
+            "id": "widget_3",
+            "type": "chart",
+            "position": {"x": 0, "y": 4, "w": 6, "h": 4},
+            "config": {
+              "chartType": "line",
+              "title": "Vibration Analysis",
+              "deviceTypeRef": "deviceType_2",
+              "fields": ["rms"],
+              "timeRange": "24h",
+              "aggregation": "max",
+              "refreshInterval": 30
+            }
+          },
+          {
+            "id": "widget_4",
+            "type": "chart",
+            "position": {"x": 6, "y": 4, "w": 6, "h": 4},
+            "config": {
+              "chartType": "line",
+              "title": "Flow Rate",
+              "deviceTypeRef": "deviceType_3",
+              "fields": ["flow_rate"],
+              "timeRange": "24h",
+              "aggregation": "avg",
+              "refreshInterval": 30
+            }
+          }
+        ],
+        "filters": {
+          "assetRef": "asset_1"
+        }
+      },
+      {
+        "localId": "dashboard_2",
+        "name": "Equipment Health",
+        "description": "Detailed equipment health monitoring",
+        "layout": {
+          "columns": 12,
+          "rowHeight": 60
+        },
+        "widgets": [
+          {
+            "id": "widget_5",
+            "type": "gauge",
+            "position": {"x": 0, "y": 0, "w": 4, "h": 3},
+            "config": {
+              "title": "Temperature",
+              "deviceTypeRef": "deviceType_1",
+              "field": "temperature",
+              "min": 0,
+              "max": 100,
+              "thresholds": [
+                {"value": 60, "color": "green"},
+                {"value": 75, "color": "orange"},
+                {"value": 85, "color": "red"}
+              ]
+            }
+          },
+          {
+            "id": "widget_6",
+            "type": "gauge",
+            "position": {"x": 4, "y": 0, "w": 4, "h": 3},
+            "config": {
+              "title": "Vibration RMS",
+              "deviceTypeRef": "deviceType_2",
+              "field": "rms",
+              "min": 0,
+              "max": 10,
+              "thresholds": [
+                {"value": 2.5, "color": "green"},
+                {"value": 5, "color": "orange"},
+                {"value": 7.5, "color": "red"}
+              ]
+            }
+          },
+          {
+            "id": "widget_7",
+            "type": "kpi",
+            "position": {"x": 8, "y": 0, "w": 4, "h": 3},
+            "config": {
+              "title": "Active Devices",
+              "type": "count",
+              "assetRef": "asset_1"
+            }
+          }
+        ],
+        "filters": {
+          "assetRef": "asset_3"
+        }
+      }
+    ],
+    "alertRules": [
+      {
+        "localId": "alert_1",
+        "name": "Critical Temperature",
+        "description": "Critical temperature threshold exceeded",
+        "condition": "temperature > 85",
+        "deviceTypeRef": "deviceType_1",
+        "deviceRef": null,
+        "severity": 3,
+        "isEnabled": true,
+        "actions": [
+          {
+            "type": "email",
+            "config": {
+              "subject": "CRITICAL: High Temperature Alert",
+              "body": "Temperature has exceeded critical threshold of 85°C"
+            }
+          }
+        ],
+        "cooldownMinutes": 5
+      },
+      {
+        "localId": "alert_2",
+        "name": "High Vibration",
+        "description": "Abnormal vibration detected",
+        "condition": "rms > 5",
+        "deviceTypeRef": "deviceType_2",
+        "deviceRef": null,
+        "severity": 2,
+        "isEnabled": true,
+        "actions": [],
+        "cooldownMinutes": 15
+      },
+      {
+        "localId": "alert_3",
+        "name": "Low Flow Rate",
+        "description": "Flow rate below minimum threshold",
+        "condition": "flow_rate < 10",
+        "deviceTypeRef": "deviceType_3",
+        "deviceRef": null,
+        "severity": 2,
+        "isEnabled": true,
+        "actions": [],
+        "cooldownMinutes": 30
+      },
+      {
+        "localId": "alert_4",
+        "name": "High Pressure",
+        "description": "Pressure exceeds safe operating limit",
+        "condition": "pressure > 10",
+        "deviceTypeRef": "deviceType_1",
+        "deviceRef": null,
+        "severity": 3,
+        "isEnabled": true,
+        "actions": [],
+        "cooldownMinutes": 5
+      }
+    ],
+    "nexusConfigurations": [],
+    "navigation": [
+      {
+        "localId": "nav_1",
+        "name": "Production Monitoring",
+        "items": [
+          {
+            "label": "Overview",
+            "type": "dashboard",
+            "dashboardRef": "dashboard_1",
+            "icon": "home"
+          },
+          {
+            "label": "Equipment Health",
+            "type": "dashboard",
+            "dashboardRef": "dashboard_2",
+            "icon": "activity"
+          },
+          {
+            "label": "Alerts",
+            "type": "alerts",
+            "filter": {},
+            "icon": "bell"
+          }
+        ]
+      }
+    ]
+  },
+  "mappings": {
+    "references": {
+      "schema_1": ["deviceType_1"],
+      "schema_2": ["deviceType_2"],
+      "schema_3": ["deviceType_3"],
+      "deviceType_1": ["dashboard_1", "dashboard_2", "alert_1", "alert_4"],
+      "deviceType_2": ["dashboard_1", "dashboard_2", "alert_2"],
+      "deviceType_3": ["dashboard_1", "alert_3"],
+      "asset_1": ["dashboard_1"],
+      "asset_2": [],
+      "asset_3": ["dashboard_2"]
+    }
+  },
+  "importOptions": {
+    "conflictResolution": "skip",
+    "preserveIds": false,
+    "importDevices": false,
+    "importData": false
+  }
+}

@@ -89,6 +89,13 @@ export function DeviceConnectionConfig({
   const { toast } = useToast();
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
+  // Validate that deviceId is a valid GUID/UUID
+  const isValidGuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(deviceId);
+  
+  if (!isValidGuid) {
+    console.warn(`DeviceId is not a valid GUID: ${deviceId}`);
+  }
+
   // Generate connection details based on protocol
   const mqttTopic = `devices/${deviceId}/telemetry`;
   const mqttPort = 1883;

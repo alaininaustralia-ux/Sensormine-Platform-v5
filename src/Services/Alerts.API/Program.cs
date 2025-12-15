@@ -19,7 +19,7 @@ builder.Services.AddOpenApi();
 
 // Add Database Context
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Host=localhost;Database=sensormine;Username=postgres;Password=postgres";
+    ?? "Host=localhost;Port=5452;Database=sensormine_metadata;Username=sensormine;Password=sensormine123";
 
 // Configure Npgsql for dynamic JSON serialization
 var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
@@ -33,6 +33,23 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Add Repositories
 builder.Services.AddScoped<IAlertRuleRepository, AlertRuleRepository>();
 builder.Services.AddScoped<IAlertInstanceRepository, AlertInstanceRepository>();
+
+// Add Notification Service
+builder.Services.Configure<Alerts.API.Services.NotificationSettings>(
+    builder.Configuration.GetSection("Notifications"));
+builder.Services.AddHttpClient(); // For webhook notifications
+builder.Services.AddScoped<Alerts.API.Services.INotificationService, Alerts.API.Services.NotificationService>();
+
+// Add Query.API HttpClient
+builder.Services.AddHttpClient("QueryApi", client =>
+{
+    var queryApiUrl = builder.Configuration["QueryApiUrl"] ?? "http://localhost:5079";
+    client.BaseAddress = new Uri(queryApiUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+// Add Background Services
+builder.Services.AddHostedService<Alerts.API.Services.AlertEvaluationService>();
 
 // Add CORS for development
 builder.Services.AddCors(options =>

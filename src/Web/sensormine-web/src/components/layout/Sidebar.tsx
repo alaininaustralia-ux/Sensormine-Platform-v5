@@ -20,24 +20,38 @@ import {
   ChevronDown,
   ChevronRight,
   Bookmark,
-  File
+  File,
+  Sparkles,
+  MapPin,
+  Package
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { getBookmarks, type BookmarkItem } from '@/lib/bookmarks';
+import { CircuitAnimation } from './CircuitAnimation';
+import { usePreferencesStore } from '@/lib/stores/preferences-store';
+import type { CustomNavigationItem } from '@/lib/types/preferences';
+
+interface SidebarProps {
+  onCollapsedChange?: (collapsed: boolean) => void;
+}
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Dashboards', href: '/dashboards', icon: LayoutDashboard },
   { name: 'Devices', href: '/devices', icon: Cpu },
+  { name: 'Map', href: '/map', icon: MapPin },
   { name: 'Alerts', href: '/alerts', icon: Bell },
-  { name: 'Charts', href: '/charts', icon: LineChart },
+  { name: 'AI Agent', href: '/ai-agent', icon: Sparkles },
 ];
 
 const settingsNavigation = [
+  { name: 'Navigation', href: '/settings/navigation' },
   { name: 'Device Types', href: '/settings/device-types' },
   { name: 'Schemas', href: '/settings/schemas' },
   { name: 'Digital Twin', href: '/settings/digital-twin' },
+  { name: 'Video Analytics', href: '/settings/video-analytics' },
   { name: 'Alert Rules', href: '/settings/alert-rules' },
+  { name: 'Solution Kits', href: '/settings/solution-kits' },
   { name: 'Nexus Configuration', href: '/settings/nexus-configuration' },
   { name: 'Users', href: '/settings/users' },
 ];
@@ -50,16 +64,34 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LineChart,
   Settings,
   File,
+  Sparkles,
+  Package,
 };
 
-export function Sidebar() {
+export function Sidebar({ onCollapsedChange }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [settingsExpanded, setSettingsExpanded] = useState(
     pathname?.startsWith('/settings') ?? false
   );
   const [bookmarksExpanded, setBookmarksExpanded] = useState(true);
+  const [customNavExpanded, setCustomNavExpanded] = useState(true);
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
+  const [isClient, setIsClient] = useState(false);
+  
+  // Get custom navigation items from preferences store
+  const getCustomNavItems = usePreferencesStore((state) => state.getCustomNavItems);
+  const customNavItems = isClient ? getCustomNavItems() : [];
+  
+  // Notify parent of collapsed state changes
+  useEffect(() => {
+    onCollapsedChange?.(collapsed);
+  }, [collapsed, onCollapsedChange]);
+  
+  // Mark as client-side after hydration to avoid SSR mismatch
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   
   // Load bookmarks on client side only to avoid hydration mismatch
   useEffect(() => {
@@ -67,6 +99,23 @@ export function Sidebar() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setBookmarks(getBookmarks());
   }, [pathname]); // Refresh bookmarks when navigation changes
+  
+  // Helper function to generate URL from custom nav item
+  const getNavItemUrl = (item: CustomNavigationItem): string => {
+    if (item.url) return item.url;
+    switch (item.targetType) {
+      case 'dashboard':
+        return item.targetId ? `/dashboards/${item.targetId}` : '/dashboards';
+      case 'device':
+        return item.targetId ? `/devices/${item.targetId}` : '/devices';
+      case 'asset':
+        return item.targetId ? `/assets/${item.targetId}` : '/assets';
+      case 'form':
+        return item.targetId ? `/forms/${item.targetId}` : '/forms';
+      default:
+        return '/';
+    }
+  };
 
   return (
     <>
@@ -81,13 +130,16 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-40 h-screen w-64 bg-linear-to-b from-[#001F3F] via-[#002F5F] to-[#003F7F] text-white transition-transform',
+          'fixed left-0 top-0 z-40 h-screen w-64 bg-linear-to-b from-[#001F3F] via-[#002F5F] to-[#003F7F] text-white transition-transform overflow-hidden',
           collapsed && 'lg:w-20',
           'max-lg:translate-x-0',
           collapsed && 'max-lg:-translate-x-full'
         )}
       >
-        <div className="flex h-full flex-col">
+        {/* Circuit Animation Background */}
+        <CircuitAnimation />
+        
+        <div className="flex h-full flex-col relative z-10">
           {/* Logo */}
           <div className="flex h-16 items-center justify-center border-b border-white/10 px-6">
             <Link href="/" className="flex items-center space-x-2">
@@ -101,9 +153,14 @@ export function Sidebar() {
                   priority
                 />
               ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-[#0066CC] to-[#00AAFF] shadow-lg">
-                  <span className="text-xl font-bold">S</span>
-                </div>
+                <Image 
+                  src="/small logo.png" 
+                  alt="SensorMine" 
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 object-contain"
+                  priority
+                />
               )}
             </Link>
           </div>
@@ -131,7 +188,32 @@ export function Sidebar() {
                 </Link>
               );
             })}
-
+            {/* Custom Navigation Items (at top, no section header) */}
+            {!collapsed && customNavItems.length > 0 && (
+              <div className="mt-4 space-y-1 border-t border-white/10 pt-4">
+                {customNavItems.map((item) => {
+                  const itemUrl = getNavItemUrl(item);
+                  const isActive = pathname === itemUrl;
+                  const Icon = item.icon ? iconMap[item.icon] || File : File;
+                  
+                  return (
+                    <Link
+                      key={item.id}
+                      href={itemUrl}
+                      className={cn(
+                        'group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
+                        isActive
+                          ? 'bg-linear-to-r from-[#0066CC] to-[#0088FF] text-white shadow-lg shadow-blue-500/50'
+                          : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                      )}
+                    >
+                      <Icon className="h-5 w-5 shrink-0 mr-3" />
+                      <span className="truncate">{item.title}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
             {/* Settings Section with Dropdown */}
             <div className="space-y-1">
               <button
@@ -180,6 +262,8 @@ export function Sidebar() {
                 </div>
               )}
             </div>
+
+
 
             {/* Bookmarks Section */}
             {!collapsed && bookmarks.length > 0 && (

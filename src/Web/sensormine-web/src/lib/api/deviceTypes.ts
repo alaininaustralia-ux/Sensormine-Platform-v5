@@ -17,7 +17,7 @@ import type {
 export type { DeviceType, DeviceTypeRequest, DeviceTypeListResponse, SearchDeviceTypesRequest };
 
 // Create dedicated client for Device.API (device types are managed by Device.API)
-const deviceApiClient = new ApiClient(serviceUrls.device, apiConfig.timeout);
+export const deviceApiClient = new ApiClient(serviceUrls.device, apiConfig.timeout);
 
 const BASE_PATH = '/api/DeviceType';
 

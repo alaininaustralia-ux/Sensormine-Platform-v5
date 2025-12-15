@@ -3,7 +3,6 @@ using Sensormine.Core.Models;
 using Sensormine.Core.Repositories;
 using Device.API.Services;
 using Device.API.DTOs;
-using System.Security.Claims;
 
 namespace Device.API.Controllers;
 
@@ -35,18 +34,15 @@ public class FieldMappingController : ControllerBase
     /// Get field mappings for a device type (merged from schema, custom fields, and system fields)
     /// </summary>
     /// <param name="deviceTypeId">Device type ID</param>
+    /// <param name="tenantId">Tenant ID from header</param>
     /// <returns>List of field mappings with friendly names and metadata</returns>
     [HttpGet]
     [ProducesResponseType(typeof(List<FieldMappingResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<FieldMappingResponse>>> GetFieldMappings(Guid deviceTypeId)
+    public async Task<ActionResult<List<FieldMappingResponse>>> GetFieldMappings(
+        Guid deviceTypeId,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
-        var tenantId = User.FindFirst("tenant_id")?.Value;
-        if (string.IsNullOrEmpty(tenantId))
-        {
-            return Unauthorized(new { message = "Tenant ID not found in token" });
-        }
-
         var deviceType = await _deviceTypeRepository.GetByIdAsync(deviceTypeId, tenantId);
         if (deviceType == null)
         {
@@ -61,6 +57,7 @@ public class FieldMappingController : ControllerBase
     /// Update field mappings for a device type (friendly names, visibility, display order, etc.)
     /// </summary>
     /// <param name="deviceTypeId">Device type ID</param>
+    /// <param name="tenantId">Tenant ID from header</param>
     /// <param name="request">Bulk update request with field mappings</param>
     /// <returns>Updated field mappings</returns>
     [HttpPut]
@@ -68,15 +65,10 @@ public class FieldMappingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<List<FieldMappingResponse>>> UpdateFieldMappings(
-        Guid deviceTypeId, 
+        Guid deviceTypeId,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId,
         [FromBody] BulkUpdateFieldMappingsRequest request)
     {
-        var tenantId = User.FindFirst("tenant_id")?.Value;
-        if (string.IsNullOrEmpty(tenantId))
-        {
-            return Unauthorized(new { message = "Tenant ID not found in token" });
-        }
-
         var deviceType = await _deviceTypeRepository.GetByIdAsync(deviceTypeId, tenantId);
         if (deviceType == null)
         {
@@ -90,6 +82,7 @@ public class FieldMappingController : ControllerBase
             FriendlyName = dto.FriendlyName,
             Description = dto.Description,
             Unit = dto.Unit,
+            JsonPath = dto.JsonPath,
             MinValue = dto.MinValue,
             MaxValue = dto.MaxValue,
             IsQueryable = dto.IsQueryable,
@@ -123,17 +116,15 @@ public class FieldMappingController : ControllerBase
     /// Synchronize field mappings after schema or device type changes
     /// </summary>
     /// <param name="deviceTypeId">Device type ID</param>
+    /// <param name="tenantId">Tenant ID from header</param>
     /// <returns>Synchronized field mappings</returns>
     [HttpPost("sync")]
     [ProducesResponseType(typeof(List<FieldMappingResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<FieldMappingResponse>>> SynchronizeFieldMappings(Guid deviceTypeId)
+    public async Task<ActionResult<List<FieldMappingResponse>>> SynchronizeFieldMappings(
+        Guid deviceTypeId,
+        [FromHeader(Name = "X-Tenant-Id")] string tenantId)
     {
-        var tenantId = User.FindFirst("tenant_id")?.Value;
-        if (string.IsNullOrEmpty(tenantId))
-        {
-            return Unauthorized(new { message = "Tenant ID not found in token" });
-        }
 
         var deviceType = await _deviceTypeRepository.GetByIdAsync(deviceTypeId, tenantId);
         if (deviceType == null)

@@ -111,6 +111,26 @@ public class DeviceResponse
     // Schema information from Device Type
     public Guid? SchemaId { get; set; }
     public string? SchemaName { get; set; }
+
+    // Field mappings from Device Type
+    public List<FieldMappingDto>? FieldMappings { get; set; }
+}
+
+/// <summary>
+/// Field mapping DTO with metadata
+/// </summary>
+public class FieldMappingDto
+{
+    public string FieldName { get; set; } = string.Empty;
+    public string FriendlyName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Unit { get; set; }
+    public string DataType { get; set; } = string.Empty;
+    public string? JsonPath { get; set; }
+    public bool IsQueryable { get; set; }
+    public bool IsVisible { get; set; }
+    public string? Category { get; set; }
+    public string? DefaultAggregation { get; set; }
 }
 
 /// <summary>
